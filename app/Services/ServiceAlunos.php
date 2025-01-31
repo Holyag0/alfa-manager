@@ -1,39 +1,39 @@
 <?php
 
 namespace App\Services;
-use App\Models\User;
+use App\Models\Alunos;
 
 class ServiceAlunos
 {
-    private $user;
+    private $Alunos;
     
-    public function __construct(User $users){
-       $this->user = $users;
+    public function __construct(Alunos $Alunos){
+       $this->Alunos = $Alunos;
 
    }
     
-    public function getUsers() {
-        return $this->user;
+    public function getAlunos() {
+        return $this->Alunos;
     }
 
-    public function usersList() {
-        return $this->getUsers()->pluck('nome','id');
+    public function AlunossList() {
+        return $this->getAlunos()->pluck('nome','id');
     }
 
     public function all() {
-        return $this->getUsers()->get()->paginate();
+        return $this->getAlunos()->get()->paginate();
     }
     public function show($id) {
-        return $this->getUsers()->find($id);
+        return $this->getAlunos()->find($id);
     }
     public function create($data) {
-        return $this->getUsers()->create($data);
+        return $this->getAlunos()->create($data);
     }
     public function update($data, $id) {
-        return $this->getUsers()->find($id)->update($data);
+        return $this->getAlunos()->find($id)->update($data);
     }
     public function delete($id) {
-        return $this->getUsers()->find($id)->delete();
+        return $this->getAlunos()->find($id)->delete();
     }
 
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Cadastros;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Requests\UsersRequest;
 use App\Services\ServiceUsers;
 use Inertia\Inertia;
 
@@ -32,8 +33,9 @@ class UserController extends Controller
     public function create() {
 
     }
-    public function store(Request $request) {
+    public function store(UsersRequest $request) {
         $data = $request;
+        dd($data);
         $this->users()->create($data);
     }
     public function show() {

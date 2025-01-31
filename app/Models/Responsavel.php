@@ -8,8 +8,15 @@ class Responsavel extends Model
 {
     protected $fillable = [
         'nome',
+        'cpf',
+        'rg',
+        'parentesco',
+        'data_nascimento',
         'telefone',
-        'email'
+        'email',
+        'tipo',
+        'endereco_id',
+        'status'
     ];
 
     /**
@@ -20,5 +27,9 @@ class Responsavel extends Model
     public function alunos()
     {
         return $this->hasMany(Alunos::class);
+    }
+    public function endereco()
+    {
+        return $this->hasMany(Endereco::class);
     }
 }

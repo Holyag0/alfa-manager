@@ -21,12 +21,10 @@ return new class extends Migration {
             $table->string('mae');
             $table->string('status');
             $table->string('file_foto')->nullable();
-            $table->unsignedBigInteger('endereco_id');
             $table->unsignedBigInteger('responsavel_id');
             $table->timestamps();
 
-            $table->foreign('endereco_id')->references('id')->on('enderecos')->onDelete('cascade');
-            $table->foreign('responsavel_id')->references('id')->on('responsaveis')->onDelete('cascade');
+            $table->foreign('responsavel_id')->references('id')->on('responsavels')->onDelete('cascade');
         });
     }
 

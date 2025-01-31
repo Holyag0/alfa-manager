@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Alunos extends Model
 {
-    // Definindo os campos que podem ser preenchidos
+
     protected $fillable = [
         'nome',
         'data_nascimento',
@@ -15,19 +15,9 @@ class Alunos extends Model
         'email',
         'telefone',
         'file_foto',
-        'endereco_id',
         'responsavel_id'
     ];
 
-    /**
-     * Relação com o modelo Endereco
-     *
-     * @return BelongsTo
-     */
-    public function endereco(): BelongsTo
-    {
-        return $this->belongsTo(Endereco::class);
-    }
 
     /**
      * Relação com o modelo Responsavel

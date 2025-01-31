@@ -27,6 +27,7 @@ class ServiceUsers
         return $this->getUsers()->find($id);
     }
     public function create($data) {
+        $data['password'] = bcrypt($data['password']);
         return $this->getUsers()->create($data);
     }
     public function update($data, $id) {
