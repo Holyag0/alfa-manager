@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers\Cadastros;
 
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\UsersRequest;
 use App\Services\ServiceUsers;
 use Inertia\Inertia;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
      /**
      * @var ServiceUsers
@@ -18,6 +20,17 @@ class UserController extends Controller
     public function __construct(ServiceUsers $user) {
         $this->users = $user;
     }
+    public static function middleware(): array
+    {
+        return [
+            // Aplicar middleware de permissão para métodos específicos
+            new Middleware('permission:show-users', only: ['index']),
+            new Middleware('permission:create-users', only: ['create', 'store']),
+            new Middleware('permission:edit-users', only: ['edit', 'update']),
+            new Middleware('permission:delete-users', only: ['destroy']),
+        ];
+    }
+
    
      /**
      * @return ServiceUsers

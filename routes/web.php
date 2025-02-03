@@ -16,10 +16,10 @@ Route::middleware(['auth',HandleInertiaRequests::class])->group(function() {
     Route::get('/', function (){ return Inertia::render('welcome');})->name('home');
     Route::get('logout', [LoginController::class, 'logout'])->middleware('auth');
 
-    Route::group(['prefix'=>'cadastros'],function() {
+    Route::group(['prefix'=>'cadastros' , 
+    'middleware'=>['permission:show-users|create-users|edit-users|delete-users']],
+    function() {
         Route::resource('users', UserController::class);
     });
-   
-
 
 });
