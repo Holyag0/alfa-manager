@@ -1,25 +1,24 @@
 <?php
+
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Middleware\HandleInertiaRequests;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Cadastros\UserController;
-use Illuminate\Routing\Route as RoutingRoute;
 
-Route::middleware([HandleInertiaRequests::class])->group(function () {
-    Route::get('login', [LoginController::class, 'homeLogin'])->name('login');
-    Route::post('login-authenticate', [LoginController::class, 'authenticate'])->name('auth');
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
-Route::middleware(['auth',HandleInertiaRequests::class])->group(function() {
-
-    Route::get('/', function (){ return Inertia::render('welcome');})->name('home');
-    Route::get('logout', [LoginController::class, 'logout'])->middleware('auth');
-
-    Route::group(['prefix'=>'cadastros' , 
-    'middleware'=>['permission:show-users|create-users|edit-users|delete-users']],
-    function() {
-        Route::resource('users', UserController::class);
-    });
-
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard');
+    })->name('dashboard');
 });
