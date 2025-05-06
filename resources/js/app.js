@@ -1,32 +1,23 @@
-import { createApp, h } from 'vue'
-import { createInertiaApp,Link, Head  } from '@inertiajs/vue3'
-import {route} from "ziggy-js"
-import Layout from './Shared/Layout.vue'
+import './bootstrap';
+import '../css/app.css';
+
+import { createApp, h } from 'vue';
+import { createInertiaApp } from '@inertiajs/vue3';
+import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
+import { ZiggyVue } from '../../vendor/tightenco/ziggy';
+
+const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+
 createInertiaApp({
-    resolve: async name => {
-        let page = (await import(`./Pages/${name}`)).default;
-
-        if (page.layout === undefined) {
-            page.layout = Layout;
-        }
-
-        return page;
-    },
+    title: (title) => `${title} - ${appName}`,
+    resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob('./Pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
-        createApp({ render: () => h(App, props) })
-        .mixin({ methods: { route } })
-        .component('Link', Link)
-        .component('Head', Head)
+        return createApp({ render: () => h(App, props) })
             .use(plugin)
+            .use(ZiggyVue)
             .mount(el);
     },
-    title: title => "alfa - " + title,
-
     progress: {
-        delay: 250,
-        color: '#00FF00',
-        includeCSS: true,
-        showSpinner: true,
-      },
+        color: '#4B5563',
+    },
 });
-
