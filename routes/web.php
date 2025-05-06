@@ -22,3 +22,6 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 });
+Route::get('/teams/create', function () {
+    return 'Página de criação de equipes';
+})->middleware(['auth', 'role:admin|developer']);
