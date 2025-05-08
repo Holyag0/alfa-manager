@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             RolesAndPermissionsSeeder::class, 
         ]);
         $this->call(UsersTableSeeder::class);
+        
         User::factory()->withPersonalTeam()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',

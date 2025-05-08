@@ -15,7 +15,7 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Criar permissões
         $permissions = [
-            'create', 'read', 'update', 'delete',
+            'user-create', 'user-read', 'user-update', 'user-delete',
             'create finances', 'read finances', 'update finances', 'delete finances',
             'create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat',
             'create board', 'read board', 'update board', 'delete board'
