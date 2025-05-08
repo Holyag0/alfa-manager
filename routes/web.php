@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\Cadastros\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -21,7 +21,6 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+    Route::resource('users', UserController::class);
 });
-Route::get('/teams/create', function () {
-    return 'Página de criação de equipes';
-})->middleware(['auth', 'role:admin|developer']);

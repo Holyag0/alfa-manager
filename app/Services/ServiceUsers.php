@@ -2,15 +2,18 @@
 
 namespace App\Services;
 use App\Models\User;
+use App\Actions\Fortify\CreateNewUser;
 
 class ServiceUsers
 {
-    private $user;
+    private User $user;
+    private CreateNewUser $createNewUser;
     
-    public function __construct(User $users){
-       $this->user = $users;
-
-   }
+    public function __construct(User $user, CreateNewUser $createNewUser)
+    {
+        $this->user = $user;
+        $this->createNewUser = $createNewUser;
+    } 
     
     public function getUsers() {
         return $this->user;
@@ -27,14 +30,15 @@ class ServiceUsers
         return $this->getUsers()->find($id);
     }
     public function create($data) {
-        $data['password'] = bcrypt($data['password']);
-        return $this->getUsers()->create($data);
+        // $data['password'] = bcrypt($data['password']);
+        // return $this->getUsers()->create($data);
+        return $this->createNewUser->create($data);
     }
     public function update($data, $id) {
-        return $this->getUsers()->find($id)->update($data);
+        return $this->getUsers()->findOrFail($id)->update($data);
     }
     public function delete($id) {
-        return $this->getUsers()->find($id)->delete();
+        return $this->getUsers()->findOrFail($id)->delete();
     }
 
 }

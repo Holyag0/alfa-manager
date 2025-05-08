@@ -1,25 +1,26 @@
 <template>
+<Disclosure>
     <header class="relative isolate z-10 bg-gradient-to-b from-sky-500 rounded-sm  to-emerald-500 ">
         <nav class="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8" aria-label="Global">
             <div class="flex lg:flex-1">
                 <a href="#" class="-m-1.5 p-1.5">
                     <span class="sr-only">Your Company</span>
-                    <img class="h-8 w-auto" src="./Imagens/20200615180924320.png"
-                        alt="" />
+                    <img class="h-8 w-auto" src="./Imagens/20200615180924320.png" alt="" />
                 </a>
             </div>
             <div class="flex lg:hidden">
-                <button type="button"
-                    class="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
-                    @click="mobileMenuOpen = true">
+                <DisclosureButton
+                    class="relative inline-flex items-center justify-center rounded-md p-2 text-gray-100 hover:bg-green-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                    <span class="absolute -inset-0.5" />
                     <span class="sr-only">Open main menu</span>
-                    <Bars3Icon class="size-6" aria-hidden="true" />
-                </button>
+                    <Bars3Icon v-if="!open" class="block size-6" aria-hidden="true" />
+                    <XMarkIcon v-else class="block size-6" aria-hidden="true" />
+                </DisclosureButton>
+
             </div>
             <PopoverGroup class="hidden lg:flex lg:gap-x-12">
                 <Popover>
-                    <PopoverButton 
-                    class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
+                    <PopoverButton class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
                     transition ease-in-out delay-150 hover:text-green-500 hover:translate-y-1 hover:scale-110 ">
                         Cadastro
                         <ChevronDownIcon class="size-5 flex-none text-white " aria-hidden="true" />
@@ -29,8 +30,7 @@
                         enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0"
                         leave-active-class="transition ease-in duration-150"
                         leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-1">
-                        <PopoverPanel
-                            class="absolute inset-x-0 top-0 -z-10 bg-sky-800 pt-14 shadow-lg rounded-md">
+                        <PopoverPanel class="absolute inset-x-0 top-0 -z-10 bg-sky-800 pt-14 shadow-lg rounded-md">
                             <div class="mx-auto grid max-w-7xl grid-cols-4 gap-x-4 px-6 py-10 lg:px-8 xl:gap-x-8">
                                 <div v-for="item in products" :key="item.name"
                                     class="group relative rounded-lg p-6 text-sm/6 hover:bg-white/5">
@@ -41,8 +41,8 @@
                                             aria-hidden="true" />
                                     </div>
                                     <Link :href="item.href" class="mt-6 block font-semibold text-white">
-                                        {{ item.name }}
-                                        <span class="absolute inset-0" />
+                                    {{ item.name }}
+                                    <span class="absolute inset-0" />
                                     </Link>
                                     <p class="mt-1 text-gray-100">{{ item.description }}</p>
                                 </div>
@@ -68,141 +68,159 @@
                 <a href="#" class="text-sm/6 font-semibold text-gray-100">Company</a>
             </PopoverGroup>
             <div class="lg:flex lg:flex-1 lg:justify-end">
-                <Menu as="div" class="relative ml-3">
-                    <div>
-                        <MenuButton
-                            class="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm">
-                            <span class="absolute -inset-1.5" />
-                            <span class="sr-only">Open user menu</span>
-                            <img class="size-8 rounded-full" :src="user.imageUrl" alt="" />
-                        </MenuButton>
-                    </div>
-                    <transition enter-active-class="transition ease-out duration-100"
-                        enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100"
-                        leave-active-class="transition ease-in duration-75"
-                        leave-from-class="transform opacity-100 scale-100"
-                        leave-to-class="transform opacity-0 scale-95">
-                        <MenuItems
-                            class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg focus:outline-none">
-                            <MenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
-                            <Link :href="item.href"
-                                :class="[active ? 'bg-gray-100 outline-none' : '', 'block px-4 py-2 text-sm text-gray-700']">{{
-                                item.name }}</Link>
-                            </MenuItem>
-                        </MenuItems>
-                    </transition>
-                </Menu>
+                <Dropdown align="right" width="48">
+                    <template #trigger :layout="layout">
+                        <button v-if="$page.props.jetstream.managesProfilePhotos"
+                            class="flex text-sm border-2 border-transparent rounded-full focus:outline-none focus:border-gray-300 transition">
+                            <img class="size-8 rounded-full object-cover" :src="$page.props.auth.user.profile_photo_url"
+                                :alt="$page.props.auth.user.name">
+                        </button>
+
+                        <span v-else class="inline-flex rounded-md">
+                            <button type="button"
+                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 transition ease-in-out duration-150">
+                                {{ $page.props.auth?.user?.name ?? ''}}
+
+                                <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                </svg>
+                            </button>
+                        </span>
+                    </template>
+
+                    <template #content 
+                    >
+                        <!-- Account Management -->
+                        <div class="block px-4 py-2 text-xs text-gray-400">
+                            Manage Account
+                        </div>
+
+                        <DropdownLink :href="route('profile.show')">
+                            Profile
+                        </DropdownLink>
+
+                        <DropdownLink v-if="$page.props.jetstream.hasApiFeatures" :href="route('api-tokens.index')">
+                            API Tokens
+                        </DropdownLink>
+
+                        <div class="border-t border-gray-200" />
+
+                        <!-- Authentication -->
+                        <form @submit.prevent="logout">
+                            <DropdownLink as="button">
+                                Log Out
+                            </DropdownLink>
+                        </form>
+                    </template>
+                </Dropdown>
             </div>
         </nav>
-        <Dialog class="lg:hidden" @close="mobileMenuOpen = false" :open="mobileMenuOpen">
-            <div class="fixed inset-0 z-10" />
-            <DialogPanel
-                class="fixed inset-y-0 right-0 z-10 w-full overflow-y-auto bg-white px-6 py-6 sm:max-w-sm ">
-                <div class="flex items-center justify-between">
-                    <a href="#" class="-m-1.5 p-1.5">
-                        <span class="sr-only">Your Company</span>
-                        <img class="h-8 w-auto"
-                            src="https://tailwindui.com/plus/img/logos/mark.svg?color=indigo&shade=600" alt="" />
-                    </a>
-                    <button type="button" class="-m-2.5 rounded-md p-2.5 text-gray-700" @click="mobileMenuOpen = false">
-                        <span class="sr-only">Close menu</span>
-                        <XMarkIcon class="size-6" aria-hidden="true" />
-                    </button>
-                </div>
-                <div class="mt-6 flow-root">
-                    <div class="-my-6 divide-y divide-gray-500/10">
-                        <div class="space-y-2 py-6">
-                            <Disclosure as="div" class="-mx-3" v-slot="{ open }">
-                                <DisclosureButton
-                                    class="flex w-full items-center  justify-between rounded-lg py-2 pl-3 pr-3.5 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">
-                                    Product
-                                    <ChevronDownIcon :class="[open ? 'rotate-180' : '', 'size-5 flex-none']"
-                                        aria-hidden="true" />
-                                </DisclosureButton>
-                                <DisclosurePanel class="mt-2 space-y-2">
-                                    <DisclosureButton v-for="item in [...products, ...callsToAction]" :key="item.name"
-                                        as="a" :href="item.href"
-                                        class="block rounded-lg py-2 pl-6 pr-3 text-sm/7 font-semibold text-gray-900 hover:bg-gray-50">
-                                        {{ item.name }}</DisclosureButton>
-                                </DisclosurePanel>
-                            </Disclosure>
-                            <a href="#"
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">Features</a>
-                            <a href="#"
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">Marketplace</a>
-                            <a href="#"
-                                class="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-gray-900 hover:bg-gray-50">Company</a>
-                        </div>
-                        <div class="py-6">
-                            <a href="#"
-                                class="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-gray-100 hover:bg-gray-50">
-                                Login
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </DialogPanel>
-        </Dialog>
     </header>
+    <DisclosurePanel class="border-b border-gray-700 md:hidden">
+        <div class="space-y-1 px-2 py-3 sm:px-3">
+            <DisclosureButton
+                :class="['bg-gray-900 text-white', 'text-gray-300 hover:bg-gray-700 hover:text-white', 'block rounded-md px-3 py-2 text-base font-medium']"
+                :aria-current="'page'">{{ 'item.name' }}</DisclosureButton>
+        </div>
+        <div class="border-t border-gray-700 pb-3 pt-4">
+            <div class="flex items-center px-5">
+                <div class="shrink-0">
+                    <img class="size-10 rounded-full" alt="" />
+                </div>
+                <div class="ml-3">
+                    <div class="text-base/5 font-medium text-white">{{ 'user.name' }}</div>
+                    <div class="text-sm font-medium text-gray-400">{{ 'user.email' }}</div>
+                </div>
+                <button type="button"
+                    class="relative ml-auto shrink-0 rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
+                    <span class="absolute -inset-1.5" />
+                    <span class="sr-only">View notifications</span>
+                    <BellIcon class="size-6" aria-hidden="true" />
+                </button>
+            </div>
+            <div class="mt-3 space-y-1 px-2">
+                <DisclosureButton
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    {{ 'item.name' }}</DisclosureButton>
+            </div>
+        </div>
+    </DisclosurePanel>
+
+
+</Disclosure>
 </template>
-  
-  <script setup>
-  import { ref } from 'vue'
-  import {
+
+<script setup>
+import ApplicationMark from '@/Components/ApplicationMark.vue';
+import Banner from '@/Components/Banner.vue';
+import Dropdown from '@/Components/Dropdown.vue';
+import DropdownLink from '@/Components/DropdownLink.vue';
+import NavLink from '@/Components/NavLink.vue';
+import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import { ref } from 'vue'
+import {
     Dialog, DialogPanel, Disclosure,
     DisclosureButton, DisclosurePanel,
-    Popover,PopoverButton, PopoverGroup, PopoverPanel,
-    Menu, MenuButton, MenuItem, MenuItems 
-  } from '@headlessui/vue'
-  import {
+    Popover, PopoverButton, PopoverGroup, PopoverPanel,
+    Menu, MenuButton, MenuItem, MenuItems
+} from '@headlessui/vue'
+import {
     Bars3Icon,
     ChartPieIcon,
     CursorArrowRaysIcon,
     FingerPrintIcon,
     SquaresPlusIcon,
     XMarkIcon,
-  } from '@heroicons/vue/24/outline'
+} from '@heroicons/vue/24/outline'
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon, RectangleGroupIcon } from '@heroicons/vue/20/solid'
-import { Link } from '@inertiajs/vue3';
+import { Link,router  } from '@inertiajs/vue3';
 
 
-  const user = {
-  name: 'Tom Cook',
-  email: 'tom@example.com',
-  imageUrl:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+const user = {
+    name: 'Tom Cook',
+    email: 'tom@example.com',
+    imageUrl:
+        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
 }
 const userNavigation = [
-  { name: 'Your Profile', href: '#' },
-  { name: 'Settings', href: '#' },
-  { name: 'Sign out', href: '/logout' },
+    { name: 'Your Profile', href: '#' },
+    { name: 'Settings', href: '#' },
+    { name: 'Sign out', href: '/logout' },
 ]
-  const products = [
+const products = [
     {
-      name: 'Alunos',
-      description: 'Get a better understanding where your traffic is coming from',
-      href: '#',
-      icon: ChartPieIcon,
+        name: 'Alunos',
+        description: 'Get a better understanding where your traffic is coming from',
+        href: '#',
+        icon: ChartPieIcon,
     },
     {
-      name: 'Usuários',
-      description: 'Speak directly to your customers with our engagement tool',
-      href: route('users.index'),
-      icon: CursorArrowRaysIcon,
+        name: 'Usuários',
+        description: 'Speak directly to your customers with our engagement tool',
+        href: route('users.index'),
+        icon: CursorArrowRaysIcon,
     },
     { name: 'Cargos', description: 'Your customers’ data will be safe and secure', href: '#', icon: FingerPrintIcon },
     {
-      name: 'Permissões',
-      description: 'Your customers’ data will be safe and secure',
-      href: '#',
-      icon: SquaresPlusIcon,
+        name: 'Permissões',
+        description: 'Your customers’ data will be safe and secure',
+        href: '#',
+        icon: SquaresPlusIcon,
     },
-  ]
-  const callsToAction = [
+]
+const callsToAction = [
     { name: 'Watch demo', href: '#', icon: PlayCircleIcon },
     { name: 'Contact sales', href: '#', icon: PhoneIcon },
     { name: 'View all products', href: '#', icon: RectangleGroupIcon },
-  ]
-  
-  const mobileMenuOpen = ref(false)
-  </script>
+]
+
+const mobileMenuOpen = ref(false)
+const logout = () => {
+    router.post(route('logout'));
+};
+defineProps({
+    layout:false
+})
+</script>
