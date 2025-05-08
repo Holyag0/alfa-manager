@@ -87,22 +87,28 @@
   import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue'
   import { XMarkIcon } from '@heroicons/vue/24/outline'
   import { PlusIcon } from '@heroicons/vue/20/solid'
+  
   const open = ref(false)
+  
   const form = useForm({
     nome: '',
     email: '',
     password: '',
     password_confirmation: '',
   })
+  
   const submitUsuario = () => {
-      ComfirmPassword()
-      form.post(route('users.store', form))
+    if (!confirmPassword()) return
+  
+    form.post(route('users.store'))
+  }
+  
+  const confirmPassword = () => {
+    if (form.password !== form.password_confirmation) {
+      alert('As senhas não conferem')
+      return false
     }
-    const ComfirmPassword = () => {
-      if(form.password != form.password_confirmation){
-        alert('As senhas não conferem')
-      }else{
-        return true
-      }
-    }
+    return true
+  }
   </script>
+  

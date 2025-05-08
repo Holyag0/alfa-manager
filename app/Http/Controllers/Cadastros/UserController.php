@@ -24,14 +24,12 @@ class UserController extends Controller implements HasMiddleware
     {
         return [
             // Aplicar middleware de permissão para métodos específicos
-            new Middleware('permission:show-users', only: ['index']),
-            new Middleware('permission:create-users', only: ['create', 'store']),
-            new Middleware('permission:edit-users', only: ['edit', 'update']),
-            new Middleware('permission:delete-users', only: ['destroy']),
+            new Middleware('permission:read', only: ['index','show']),
+            new Middleware('permission:create', only: ['create', 'store']),
+            new Middleware('permission:update', only: ['edit', 'update']),
+            new Middleware('permission:delete', only: ['destroy']),
         ];
     }
-
-   
      /**
      * @return ServiceUsers
      */
@@ -47,9 +45,8 @@ class UserController extends Controller implements HasMiddleware
 
     }
     public function store(UsersRequest $request) {
-        $data = $request;
-        dd($data);
-        $this->users()->create($data);
+        dd($request->all());
+        $this->users()->create($request->all());
     }
     public function show() {
 
