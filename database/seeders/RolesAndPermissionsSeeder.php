@@ -15,36 +15,39 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Criar permissões
         $permissions = [
-            'create', 'read', 'update', 'delete',
-            'create finances', 'read finances', 'update finances', 'delete finances',
-            'create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat',
-            'create board', 'read board', 'update board', 'delete board'
+            'user-create', 'user-read', 'user-update', 'user-delete',
+            'create-finances', 'read-finances', 'update-finances', 'delete-finances',
+            'create-secretariat', 'read-secretariat', 'update-secretariat', 'delete-secretariat',
+            'create-board', 'read-board', 'update-board', 'delete-board'
         ];
+
         foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
         }
 
         // Criar roles e atribuir permissões existentes
-        $financePermissions = ['create finances', 'read finances', 'update finances', 'delete finances'];
-        $secretariatPermissions = ['create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat'];
-        $boardPermissions = ['create board', 'read board', 'update board', 'delete board'];
+        $financePermissions = ['create-finances', 'read-finances', 'update-finances', 'delete-finances'];
+        $secretariatPermissions = ['create-secretariat', 'read-secretariat', 'update-secretariat', 'delete-secretariat'];
+        $boardPermissions = ['create-board', 'read-board', 'update-board', 'delete-board'];
+        $userPermissions = ['user-create', 'user-read', 'user-update', 'user-delete'];
 
-        $role = Role::firstOrCreate(['name' => 'financeiro']);
+        $role = Role::firstOrCreate(['name' => 'financeiro', 'guard_name' => 'web']);
         $role->syncPermissions($financePermissions);
 
-        $role = Role::firstOrCreate(['name' => 'secretaria']);
+        $role = Role::firstOrCreate(['name' => 'secretaria', 'guard_name' => 'web']);
         $role->syncPermissions($secretariatPermissions);
 
-        $role = Role::firstOrCreate(['name' => 'diretoria']);
+        $role = Role::firstOrCreate(['name' => 'diretoria', 'guard_name' => 'web']);
         $role->syncPermissions($boardPermissions);
 
-        // Criar role admin e atribuir permissões
-        $adminPermissions = ['create', 'read', 'update', 'delete'];
-        $role = Role::firstOrCreate(['name' => 'admin']);
-        $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
+        $role = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+        $role->syncPermissions(array_merge($userPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
 
-        // Criar role developer com permissões de admin
-        $role = Role::firstOrCreate(['name' => 'developer']);
-        $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
+        $role = Role::firstOrCreate(['name' => 'developer', 'guard_name' => 'web']);
+        $role->syncPermissions(array_merge($userPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
     }
 }
+

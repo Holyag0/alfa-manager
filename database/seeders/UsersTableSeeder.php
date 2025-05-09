@@ -13,14 +13,14 @@ class UsersTableSeeder extends Seeder
     public function run()
     {
         // Cria um usuário administrador
-        $adminUser = User::withPersonalTeam()->create([
+        $adminUser = User::create([
             'name' => 'Hiago santos',
             'email' => 'masterDev@gmail.com',
             'password' => bcrypt('alfa!%$&1547')
         ]);
         $adminUser->assignRole('developer');
         // Cria um usuário secretário
-        $secretaryUser = User::withPersonalTeam()->create([
+        $secretaryUser = User::create([
             'name' => 'Secretário Exemplo',
             'email' => 'secretario@example.com',
             'password' => bcrypt('password')

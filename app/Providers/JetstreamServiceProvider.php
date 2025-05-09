@@ -47,48 +47,48 @@ class JetstreamServiceProvider extends ServiceProvider
         Jetstream::defaultApiTokenPermissions(['read']);
 
         // Integrate Spatie Laravel Permission roles
-        $this->createSpatieRolesAndPermissions();
+        // $this->createSpatieRolesAndPermissions();
     }
 
     /**
      * Create roles and permissions using Spatie Laravel Permission.
      */
-    protected function createSpatieRolesAndPermissions()
-    {
-        // Reset cached roles and permissions
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+    // protected function createSpatieRolesAndPermissions()
+    // {
+    //     // Reset cached roles and permissions
+    //     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Create permissions
-        $permissions = [
-            'create', 'read', 'update', 'delete',
-            'create finances', 'read finances', 'update finances', 'delete finances',
-            'create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat',
-            'create board', 'read board', 'update board', 'delete board'
-        ];
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
-        }
+    //     // Create permissions
+    //     $permissions = [
+    //         'create', 'read', 'update', 'delete',
+    //         'create finances', 'read finances', 'update finances', 'delete finances',
+    //         'create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat',
+    //         'create board', 'read board', 'update board', 'delete board'
+    //     ];
+    //     foreach ($permissions as $permission) {
+    //         Permission::firstOrCreate(['name' => $permission]);
+    //     }
 
-        // Create roles and assign existing permissions
-        $financePermissions = ['create finances', 'read finances', 'update finances', 'delete finances'];
-        $secretariatPermissions = ['create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat'];
-        $boardPermissions = ['create board', 'read board', 'update board', 'delete board'];
+    //     // Create roles and assign existing permissions
+    //     $financePermissions = ['create finances', 'read finances', 'update finances', 'delete finances'];
+    //     $secretariatPermissions = ['create secretariat', 'read secretariat', 'update secretariat', 'delete secretariat'];
+    //     $boardPermissions = ['create board', 'read board', 'update board', 'delete board'];
 
-        $role = Role::firstOrCreate(['name' => 'financeiro']);
-        $role->syncPermissions($financePermissions);
+    //     $role = Role::firstOrCreate(['name' => 'financeiro']);
+    //     $role->syncPermissions($financePermissions);
 
-        $role = Role::firstOrCreate(['name' => 'secretaria']);
-        $role->syncPermissions($secretariatPermissions);
+    //     $role = Role::firstOrCreate(['name' => 'secretaria']);
+    //     $role->syncPermissions($secretariatPermissions);
 
-        $role = Role::firstOrCreate(['name' => 'diretoria']);
-        $role->syncPermissions($boardPermissions);
+    //     $role = Role::firstOrCreate(['name' => 'diretoria']);
+    //     $role->syncPermissions($boardPermissions);
 
-        // Create admin and developer roles with all permissions
-        $adminPermissions = ['create', 'read', 'update', 'delete'];
-        $role = Role::firstOrCreate(['name' => 'admin']);
-        $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
+    //     // Create admin and developer roles with all permissions
+    //     $adminPermissions = ['create', 'read', 'update', 'delete'];
+    //     $role = Role::firstOrCreate(['name' => 'admin']);
+    //     $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
 
-        $role = Role::firstOrCreate(['name' => 'developer']);
-        $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
-    }
+    //     $role = Role::firstOrCreate(['name' => 'developer']);
+    //     $role->syncPermissions(array_merge($adminPermissions, $financePermissions, $secretariatPermissions, $boardPermissions));
+    // }
 }
