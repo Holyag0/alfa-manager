@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Middleware;
 
-use App\Models\Cfc;
 use Inertia\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,6 +37,7 @@ class HandleInertiaRequests extends Middleware
                 'email'       => $user->email,
                 'permissions' => $permissions,
                 'roles'       => $roles,
+                'profile_photo_url' => $user->profile_photo_url
             ];
         }
 

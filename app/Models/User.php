@@ -18,6 +18,11 @@ class User extends Authenticatable
     use HasFactory, HasProfilePhoto;
     use Notifiable,TwoFactorAuthenticatable;
     use HasApiTokens, HasRoles;
+    use HasFactory;
+    use HasProfilePhoto;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
+
     /**
      * The attributes that are mass assignable.
      *
