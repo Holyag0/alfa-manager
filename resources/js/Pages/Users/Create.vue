@@ -1,5 +1,6 @@
-<template><button @click="open = true" type="button"
-  class="inline-flex items-center rounded-md bg-teal-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+<template>
+<button @click="open = true" type="button"
+  class="inline-flex items-center rounded-md bg-green-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
   <PlusIcon class="-ml-0.5 mr-1.5 size-5" aria-hidden="true" />
   Cadastro
 </button>
@@ -18,7 +19,7 @@
               <form @submit.prevent='submitUsuario'
                 class="flex h-full flex-col divide-y divide-gray-200 bg-white shadow-xl">
                 <div class="h-0 flex-1 overflow-y-auto">
-                  <div class="bg-sky-800 px-4 py-6 sm:px-6">
+                  <div class="bg-gradient-to-b from-emerald-500  rounded-sm  to-sky-500 px-4 py-6 sm:px-6">
                     <div class="flex items-center justify-between">
                       <DialogTitle class="text-base font-semibold text-white">Novo Usuário</DialogTitle>
                       <div class="ml-3 flex h-7 items-center">
@@ -32,7 +33,7 @@
                       </div>
                     </div>
                     <div class="mt-1">
-                      <p class="text-sm text-indigo-300">
+                      <p class="text-sm text-gray-300">
                         Preencha os campos abaixo para cadastrar um novo usuário do sistema.
                       </p>
                     </div>
@@ -80,8 +81,9 @@
                                 e a
                                 <a target="_blank" :href="route('policy.show')"
                                   class="underline hover:text-gray-900">
-                                  Política de Privacidade
+                                  Política de Privacidade 
                                 </a>
+                                da Escola Alfa Baby
                               </div>
                             </div>
                           </InputLabel>
@@ -97,7 +99,7 @@
                     class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
                     @click="open = false">Cancel</button>
                   <button type="submit"
-                    class="ml-4 inline-flex justify-center rounded-md bg-teal-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
+                    class="ml-4 inline-flex justify-center rounded-md bg-green-500  px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">Save</button>
                 </div>
               </form>
             </DialogPanel>
@@ -127,12 +129,13 @@ const form = useForm({
   password: '',
   password_confirmation: '',
   terms: false,
+  errors: Object,
 });
 
 const submitUsuario = () => {
-  if (!confirmPassword()) return
+  // if (!confirmPassword()) return
 
-  form.post(route('users.store'))
+  form.post(route('user.store'))
 }
 
 const confirmPassword = () => {

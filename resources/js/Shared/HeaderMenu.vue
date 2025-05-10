@@ -21,7 +21,7 @@
             <PopoverGroup class="hidden lg:flex lg:gap-x-12">
                 <Popover>
                     <PopoverButton class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
-                    transition ease-in-out delay-150 hover:text-green-500 hover:translate-y-1 hover:scale-110 ">
+                    transition ease-in-out delay-150 hover:text-sky-500 hover:translate-y-1 hover:scale-110 ">
                         Cadastro
                         <ChevronDownIcon class="size-5 flex-none text-white " aria-hidden="true" />
                     </PopoverButton>
@@ -93,8 +93,8 @@
                     <template #content 
                     >
                         <!-- Account Management -->
-                        <div class="block px-4 py-2 text-xs text-gray-400">
-                           {{$page.props.auth.user.profile_photo_url}}
+                        <div class="block px-4 py-2 text-xs text-gray-500">
+                          Opções do Perfil
                         </div>
 
                         <DropdownLink :href="route('profile.show')">

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\UsersRequest;
 use App\Services\ServiceUsers;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller implements HasMiddleware
 {
@@ -42,19 +43,26 @@ class UserController extends Controller implements HasMiddleware
        return Inertia::render('Users/Index');
     }
     public function create() {
-
+        
     }
     public function store(UsersRequest $request) {
-        dd($request->all());
-        $this->users()->create($request->all());
+        try {
+            $this->users()->create($request->validated());
+            session()->flash('success', 'Usuário criado com sucesso');
+        } catch (\Exception $e) {
+            // Loga o erro para depuração
+            Log::error('Erro ao criar usuário:', ['error' => $e->getMessage()]);
+            // Retorna uma mensagem de erro amigável para o usuário
+            session()->flash('error', 'Erro ao criar o usuário. Por favor, tente novamente.');
+        }
     }
     public function show() {
-
+        // função feita pelo jetsteam
     }
     public function edit(Request $request) {
-
+        // função feita pelo jetsteam
     }
     public function destroy(Request $request) {
-
+        // função feita pelo jetsteam
     }
 }   
