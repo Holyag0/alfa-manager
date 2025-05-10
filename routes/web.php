@@ -22,5 +22,5 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    Route::resource('users', UserController::class);
+    Route::resource('user', UserController::class);
 });

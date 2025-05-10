@@ -94,7 +94,7 @@
                     >
                         <!-- Account Management -->
                         <div class="block px-4 py-2 text-xs text-gray-400">
-                            Manage Account
+                           {{$page.props.auth.user.profile_photo_url}}
                         </div>
 
                         <DropdownLink :href="route('profile.show')">
@@ -122,7 +122,7 @@
         <div class="space-y-1 px-2 py-3 sm:px-3">
             <DisclosureButton
                 :class="['bg-gray-900 text-white', 'text-gray-300 hover:bg-gray-700 hover:text-white', 'block rounded-md px-3 py-2 text-base font-medium']"
-                :aria-current="'page'">{{ 'item.name' }}</DisclosureButton>
+                :aria-current="'page'">{{ item.name }}</DisclosureButton>
         </div>
         <div class="border-t border-gray-700 pb-3 pt-4">
             <div class="flex items-center px-5">
@@ -130,8 +130,8 @@
                     <img class="size-10 rounded-full" alt="" />
                 </div>
                 <div class="ml-3">
-                    <div class="text-base/5 font-medium text-white">{{ 'user.name' }}</div>
-                    <div class="text-sm font-medium text-gray-400">{{ 'user.email' }}</div>
+                    <div class="text-base/5 font-medium text-white">{{ user.name }}</div>
+                    <div class="text-sm font-medium text-gray-400">{{ user.email }}</div>
                 </div>
                 <button type="button"
                     class="relative ml-auto shrink-0 rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
@@ -143,7 +143,7 @@
             <div class="mt-3 space-y-1 px-2">
                 <DisclosureButton
                     class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    {{ 'item.name' }}</DisclosureButton>
+                    {{ item.name}}</DisclosureButton>
             </div>
         </div>
     </DisclosurePanel>
@@ -159,7 +159,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import {
     Dialog, DialogPanel, Disclosure,
     DisclosureButton, DisclosurePanel,
@@ -199,7 +199,7 @@ const products = [
     {
         name: 'Usuários',
         description: 'Speak directly to your customers with our engagement tool',
-        href: route('users.index'),
+        href: route('user.index'),
         icon: CursorArrowRaysIcon,
     },
     { name: 'Cargos', description: 'Your customers’ data will be safe and secure', href: '#', icon: FingerPrintIcon },
@@ -221,6 +221,7 @@ const logout = () => {
     router.post(route('logout'));
 };
 defineProps({
-    layout:false
+    layout:false,
+    
 })
 </script>
