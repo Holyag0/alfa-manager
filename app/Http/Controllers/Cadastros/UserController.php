@@ -39,8 +39,10 @@ class UserController extends Controller implements HasMiddleware
         return $this->users;
     }
 
-    public function index() {
-       return Inertia::render('Users/Index');
+    public function index()
+    {
+        $users = $this->users()->all();
+        return Inertia::render('Users/Index', ['users' => $users]);
     }
     public function create() {
         

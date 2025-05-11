@@ -1,6 +1,8 @@
 <template>
 <button @click="open = true" type="button"
-  class="inline-flex items-center rounded-md bg-green-500 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+  class="inline-flex items-center rounded-md bg-green-500 px-3 py-2 text-sm font-semibold 
+  text-white shadow-sm hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 
+   transition ease-in-out delay-150 hover:translate-y-1 hover:scale-110">
   <PlusIcon class="-ml-0.5 mr-1.5 size-5" aria-hidden="true" />
   Cadastro
 </button>
@@ -41,54 +43,7 @@
                   <div class="flex flex-1 flex-col justify-between">
                     <div class="divide-y divide-gray-200 px-4 sm:px-6">
                       <div class="space-y-6 pb-5 pt-6">
-                        <div>
-                          <InputLabel for="name" value="Nome" />
-                          <TextInput id="name" v-model="form.name" type="text" class="mt-1 block w-full" required
-                            autofocus autocomplete="name" />
-                          <InputError class="mt-2" :message="form.errors.name" />
-                        </div>
-
-                        <div>
-                          <InputLabel for="email" value="Email" />
-                          <TextInput id="email" v-model="form.email" type="email" class="mt-1 block w-full" required
-                            autocomplete="username" />
-                          <InputError class="mt-2" :message="form.errors.email" />
-                        </div>
-
-                        <div>
-                          <InputLabel for="password" value="Senha" />
-                          <TextInput id="password" v-model="form.password" type="password" class="mt-1 block w-full"
-                            required autocomplete="new-password" />
-                          <InputError class="mt-2" :message="form.errors.password" />
-                        </div>
-
-                        <div>
-                          <InputLabel for="password_confirmation" value="Confirmar Senha" />
-                          <TextInput id="password_confirmation" v-model="form.password_confirmation" type="password"
-                            class="mt-1 block w-full" required autocomplete="new-password" />
-                          <InputError class="mt-2" :message="form.errors.password_confirmation" />
-                        </div>
-
-                        <div v-if="$page.props.jetstream.hasTermsAndPrivacyPolicyFeature">
-                          <InputLabel for="terms">
-                            <div class="flex items-center">
-                              <Checkbox id="terms" v-model:checked="form.terms" name="terms" required />
-                              <div class="ml-2 text-sm text-gray-600">
-                                Eu concordo com os
-                                <a target="_blank" :href="route('terms.show')"
-                                  class="underline hover:text-gray-900">
-                                  Termos de Serviço</a>
-                                e a
-                                <a target="_blank" :href="route('policy.show')"
-                                  class="underline hover:text-gray-900">
-                                  Política de Privacidade 
-                                </a>
-                                da Escola Alfa Baby
-                              </div>
-                            </div>
-                          </InputLabel>
-                          <InputError class="mt-2" :message="form.errors.terms" />
-                        </div>
+                      
 
                       </div>
                     </div>
