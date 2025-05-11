@@ -62,6 +62,10 @@
         </Menu>
       </div>
     </div>
+    <div class="mt-8">
+      <TableUser :users="users.data" />
+    </div>
+    
   </template>
   
   <script setup>
@@ -76,4 +80,8 @@
     PencilIcon,
   } from '@heroicons/vue/20/solid'
   import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
+  import TableUser from './components/TableUser.vue';
+  defineProps({
+    users:Object
+  })
   </script>

@@ -24,7 +24,9 @@ class ServiceUsers
     }
 
     public function all() {
-        return $this->getUsers()->get()->paginate();
+        return $this->getUsers()
+        ->orderBy('id','desc')
+        ->paginate();
     }
     public function show($id) {
         return $this->getUsers()->find($id);
