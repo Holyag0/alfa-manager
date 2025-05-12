@@ -11,6 +11,7 @@ use App\Services\ServiceUsers;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 
+
 class UserController extends Controller implements HasMiddleware
 {
      /**
@@ -25,9 +26,9 @@ class UserController extends Controller implements HasMiddleware
     {
         return [
             // Aplicar middleware de permissão para métodos específicos
-            new Middleware('permission:user-create', only: ['create', 'store']),
+            new Middleware('permission:user-create', only: ['create','store']),
             new Middleware('permission:user-read', only: ['index','show']),
-            new Middleware('permission:user-update', only: ['edit', 'update']),
+            new Middleware('permission:user-update', only: ['edit','update']),
             new Middleware('permission:user-delete', only: ['destroy']),
         ];
     }
@@ -58,8 +59,10 @@ class UserController extends Controller implements HasMiddleware
             session()->flash('error', 'Erro ao criar o usuário. Por favor, tente novamente.');
         }
     }
-    public function show() {
-        // função feita pelo jetsteam
+    public function show($id) {
+        $user = $this->users()->show($id);
+        $sessions = $this->users()->getSession();
+        return Inertia::render('Users/Edit',['user'=> $user,'sessions'=> $sessions]);
     }
     public function edit(Request $request) {
         // função feita pelo jetsteam
