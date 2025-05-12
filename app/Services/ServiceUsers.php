@@ -3,7 +3,7 @@
 namespace App\Services;
 use App\Models\User;
 use App\Actions\Fortify\CreateNewUser;
-
+use Illuminate\Support\Facades\DB;
 class ServiceUsers
 {
     private User $user;
@@ -17,6 +17,13 @@ class ServiceUsers
     
     public function getUsers() {
         return $this->user;
+    }
+    public function getSession(){
+
+        $consulta = DB::table('sessions')
+        ->where('user_id', auth()->user()->id)
+        ->get();
+        return $consulta;
     }
 
     public function usersList() {
