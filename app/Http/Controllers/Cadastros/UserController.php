@@ -49,7 +49,7 @@ class UserController extends Controller implements HasMiddleware
     }
     public function store(UsersRequest $request) {
         try {
-            $this->users()->create($request->validated());
+            $this->users()->create($request->all());
             session()->flash('success', 'Usuário criado com sucesso');
         } catch (\Exception $e) {
             // Loga o erro para depuração
