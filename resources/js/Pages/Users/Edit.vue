@@ -1,14 +1,15 @@
 <script setup>
-import DeleteUserForm from '@/Pages/Profile/Partials/DeleteUserForm.vue';
-import LogoutOtherBrowserSessionsForm from '@/Pages/Profile/Partials/LogoutOtherBrowserSessionsForm.vue';
+import DeleteUserForm from '@/Pages/Users/components/DeleteUserForm.vue';
+import LogoutOtherBrowserSessionsForm from '@/Pages/Users/components/LogoutOtherBrowserSessionsForm.vue';
 import SectionBorder from '@/Components/SectionBorder.vue';
-import TwoFactorAuthenticationForm from '@/Pages/Profile/Partials/TwoFactorAuthenticationForm.vue';
-import UpdatePasswordForm from '@/Pages/Profile/Partials/UpdatePasswordForm.vue';
-import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfileInformationForm.vue';
+import TwoFactorAuthenticationForm from '@/Pages/Users/components/TwoFactorAuthenticationForm.vue';
+import UpdatePasswordForm from '@/Pages/Users/components/UpdatePasswordForm.vue';
+import UpdateProfileInformationForm from '@/Pages/Users/components/UpdateProfileInformationForm.vue';
 
 defineProps({
     confirmsTwoFactorAuthentication: Boolean,
     sessions: Array,
+    user:Object
 });
 </script>
 
@@ -19,7 +20,7 @@ defineProps({
 <div>
     <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
         <div v-if="$page.props.jetstream.canUpdateProfileInformation">
-            <UpdateProfileInformationForm :user="$page.props.auth.user" />
+            <UpdateProfileInformationForm :user="user" />
             <SectionBorder />
         </div>
 
@@ -34,7 +35,7 @@ defineProps({
         </div>
             <LogoutOtherBrowserSessionsForm :sessions="sessions" class="mt-10 sm:mt-0" />
             <SectionBorder />
-            <DeleteUserForm class="mt-10 sm:mt-0" />
+            <DeleteUserForm class="mt-10 sm:mt-0" :user="user"  />
     </div>
 </div>
 </template>

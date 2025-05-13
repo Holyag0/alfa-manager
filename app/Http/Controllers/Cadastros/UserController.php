@@ -11,7 +11,6 @@ use App\Services\ServiceUsers;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 
-
 class UserController extends Controller implements HasMiddleware
 {
      /**
@@ -61,13 +60,39 @@ class UserController extends Controller implements HasMiddleware
     }
     public function show($id) {
         $user = $this->users()->show($id);
-        $sessions = $this->users()->getSession();
-        return Inertia::render('Users/Edit',['user'=> $user,'sessions'=> $sessions]);
+    
+        if (!$user) {
+            return session()->flash('error','Usuário Não Existe');
+        }
+        $sessions = $this->users()->getSession($user->id);
+    
+        return Inertia::render('Users/Edit',[
+            'user' => $user,
+            'sessions' => $sessions
+        ]);
     }
-    public function edit(Request $request) {
-        // função feita pelo jetsteam
+    public function update(Request $request, $id) {
+        $user = $this->users()->show($id);
+    
+        if (!$user) {
+            return session()->flash('error','Usuário Não Existe');
+        }
+        try {
+            $this->users()->update($user, $request->all());
+            return redirect()->back()->with('success', 'Usuário atualizado com sucesso.');
+        } catch (\Throwable $e) {
+            // opcional: logar o erro
+            Log::error('Erro ao atualizar usuário', ['error' => $e->getMessage()]);
+           return session()->flash('error','Erro ao atualizar usuário.');
+        }
     }
-    public function destroy(Request $request) {
-        // função feita pelo jetsteam
+    public function destroy(Request $request,$id) {
+        try {
+            $this->users()->delete($id);
+            return redirect()->back()->with('success', 'Usuário deletado com sucesso.');
+        } catch (\Exception $e) {
+            Log::error('Erro ao deletar usuário', ['error' => $e->getMessage()]);
+            return redirect()->back()->withErrors(['Erro ao deletar usuário: ' . $e->getMessage()]);
+        }
     }
 }   
