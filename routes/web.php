@@ -4,6 +4,10 @@ use App\Http\Controllers\Cadastros\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\Cadastros\PermissionController;
+use App\Http\Controllers\Cadastros\RoleController;
+
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -23,4 +27,7 @@ Route::middleware([
     })->name('dashboard');
 
     Route::resource('user', UserController::class);
+    Route::resource('roles', RoleController::class);
+    Route::resource('permissions', PermissionController::class);
+    
 });

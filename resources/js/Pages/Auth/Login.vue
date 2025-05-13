@@ -7,7 +7,7 @@ import InputError from '@/Components/InputError.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
-
+import FlashMessenger from '@/Shared/FlashMessenger.vue';
 defineProps({
     canResetPassword: Boolean,
     status: String,
@@ -34,7 +34,7 @@ defineOptions({
 
 <template>
     <Head title="Log in" />
-
+    <FlashMessenger/>
     <AuthenticationCard>
         <template #logo>
             <AuthenticationCardLogo />
