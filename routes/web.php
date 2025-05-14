@@ -22,10 +22,10 @@ Route::middleware([
     })->name('dashboard');
 
     Route::resource('user', App\Http\Controllers\Cadastros\UserController::class);
-    Route::prefix('cadastros')->group( function(){
+    // Route::prefix('cadastros')->group( function(){
         Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
         Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
-    });
+    // });
     
     
 });

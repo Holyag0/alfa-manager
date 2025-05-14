@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
-    <Head title="Novo Papel" />
+  <div class="min-h-screen p-4 sm:p-6 lg:p-8">
+    <Head :title="`Editar Papel: ${role.name}`" />
     
     <!-- Cabeçalho com navegação de voltar -->
     <div class="mb-5">
@@ -16,13 +16,13 @@
     </div>
     
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Cadastrar Novo Papel</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Editar Papel: {{ role.name }}</h1>
       </div>
     </header>
 
-    <!-- Formulário de cadastro -->
+    <!-- Formulário de edição -->
     <div class="mt-6 overflow-hidden bg-white rounded-lg shadow">
       <div class="p-6">
         <form @submit.prevent="submit">
@@ -92,16 +92,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
-  permissions: Array
+  role: Object,
+  permissions: Array,
+  rolePermissions: Array
 });
 
 const form = useForm({
-  name: '',
+  name: props.role.name,
   permissions: []
+});
+
+// Preenche as permissões do papel ao montar o componente
+onMounted(() => {
+  form.permissions = props.rolePermissions || [];
 });
 
 // Agrupa as permissões por categoria (baseada no prefixo antes do hífen)
@@ -153,6 +160,6 @@ function formatPermissionName(permissionName) {
 
 // Submete o formulário
 function submit() {
-  form.post(route('roles.store'));
+  form.put(route('roles.update', props.role.id));
 }
 </script>

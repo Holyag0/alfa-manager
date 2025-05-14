@@ -17,9 +17,9 @@
     </header>
 
     <!-- Mensagem de sucesso -->
-    <div v-if="$page.props.flash.success" class="p-4 mt-4 text-green-700 bg-green-100 rounded-lg">
+    <!-- <div v-if="$page.props.flash.success" class="p-4 mt-4 text-green-700 bg-green-100 rounded-lg">
       {{ $page.props.flash.success }}
-    </div>
+    </div> -->
 
     <!-- Tabela de papéis -->
     <div class="mt-6 overflow-hidden">

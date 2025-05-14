@@ -15,11 +15,11 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // Criar permissões
         $permissions = [
-            'user-create', 'user-read', 'user-update', 'user-delete',
-            'financeiro-create', 'financeiro-read', 'financeiro-update','financeiro-delete',
-            'aluno-create', 'aluno-read', 'aluno-update', 'aluno-delete',
-            'role-create', 'role-read', 'role-update', 'role-delete',
-            'permission-create','permission-read','permission-update','permission-delete'
+            'user-create', 'user-read','user-show','user-edit','user-update','user-delete',
+            'financeiro-create', 'financeiro-read','financeiro-show','financeiro-edit','financeiro-update','financeiro-delete',
+            'aluno-create', 'aluno-read','aluno-show','aluno-edit','aluno-update', 'aluno-delete',
+            'role-create', 'role-read','role-show','role-edit','role-update', 'role-delete',
+            'permission-create','permission-read','permission-show','permission-edit','permission-update','permission-delete'
         ];
 
         foreach ($permissions as $permission) {
@@ -29,11 +29,11 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
         // Criar roles e atribuir permissões existentes
-        $userPermissions = ['user-create', 'user-read', 'user-update', 'user-delete'];
-        $financePermissions = ['financeiro-create', 'financeiro-read', 'financeiro-update', 'financeiro-delete'];
-        $rolePermissions = ['role-create', 'role-read', 'role-update', 'role-delete'];
-        $alunosPermissions = ['aluno-create', 'aluno-read', 'aluno-update', 'aluno-delete'];
-        $crudPermissions =['permission-create','permission-read','permission-update','permission-delete'];
+        $userPermissions = ['user-create', 'user-read','user-show','user-edit','user-update', 'user-delete'];
+        $financePermissions = ['financeiro-create', 'financeiro-read','financeiro-show','financeiro-edit','financeiro-update', 'financeiro-delete'];
+        $rolePermissions = ['role-create', 'role-read','role-show','role-edit','role-update', 'role-delete'];
+        $alunosPermissions = ['aluno-create', 'aluno-read','aluno-show','aluno-edit','aluno-update', 'aluno-delete'];
+        $crudPermissions =['permission-create','permission-read','permission-show','permission-edit','permission-update','permission-delete'];
 
         $role = Role::firstOrCreate(['name' => 'financeiro', 'guard_name' => 'web']);
         $role->syncPermissions($financePermissions);

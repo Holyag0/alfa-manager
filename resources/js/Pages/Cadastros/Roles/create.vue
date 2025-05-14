@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
+  <div class="min-h-screen p-4 sm:p-6 lg:p-8">
     <Head title="Novo Papel" />
     
     <!-- Cabeçalho com navegação de voltar -->
@@ -16,7 +16,7 @@
     </div>
     
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="px-4 py-5 sm:px-6">
         <h1 class="text-2xl font-bold text-gray-900">Cadastrar Novo Papel</h1>
       </div>
@@ -93,7 +93,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/inertia-vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
   permissions: Array
