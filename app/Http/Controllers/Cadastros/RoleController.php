@@ -109,7 +109,6 @@ class RoleController extends Controller
         $role = $this->role->show($id);
         $permissions = $this->role->getAllPermissions();
         $rolePermissions = $this->role->getRolePermissions($id);
-
         return Inertia::render('Cadastros/Roles/edit', [
             'role' => $role,
             'permissions' => $permissions,

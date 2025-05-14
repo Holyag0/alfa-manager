@@ -1,12 +1,7 @@
 <?php
-
-use App\Http\Controllers\Cadastros\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\Cadastros\PermissionController;
-use App\Http\Controllers\Cadastros\RoleController;
-
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -26,8 +21,11 @@ Route::middleware([
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-    Route::resource('user', UserController::class);
-    Route::resource('roles', RoleController::class);
-    Route::resource('permissions', PermissionController::class);
+    Route::resource('user', App\Http\Controllers\Cadastros\UserController::class);
+    Route::prefix('cadastros')->group( function(){
+        Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
+        Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
+    });
+    
     
 });

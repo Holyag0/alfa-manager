@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
+  <div class="min-h-screen p-4  sm:p-6 lg:p-8 ">
     <Head title="Gerenciamento de Papéis" />
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="flex items-center justify-between px-4 py-5 sm:px-6">
         <h1 class="text-2xl font-bold text-gray-900">Gerenciamento de Papéis (Roles)</h1>
           <Link
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Tabela de papéis -->
-    <div class="mt-6 overflow-hidden bg-white rounded-lg shadow">
+    <div class="mt-6 overflow-hidden">
       <div class="p-6">
         <div v-if="roles.data.length === 0" class="p-4 text-center text-gray-500">
           Nenhum papel encontrado.
@@ -59,14 +59,15 @@
                       <EyeIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Visualizar
                     </Link>
+                    <!-- v-if="getPermission('role-edit')"  -->
                     <Link 
-                      v-if="getPermission('role-edit')" 
-                      :href="route('roles.edit', role.id)" 
+                      :href="route('roles.edit',role.id)" 
                       class="inline-flex items-center text-indigo-600 hover:text-indigo-900"
-                    >
+                    >   
                       <PencilIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Editar
                     </Link>
+                    <!-- v-if="getPermission('role-delete')"  -->
                     <button 
                       v-if="getPermission('role-delete')" 
                       @click="confirmDelete(role)" 

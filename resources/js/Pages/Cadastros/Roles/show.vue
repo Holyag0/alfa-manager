@@ -1,22 +1,14 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
+  <div class="min-h-screen p-4  sm:p-6 lg:p-8">
     <Head :title="`Papel: ${role.name}`" />
     
     <!-- Cabeçalho com navegação de voltar -->
     <div class="mb-5">
-      <Link
-        :href="route('roles.index')"
-        class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-900"
-      >
-        <svg class="w-5 h-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-        </svg>
-        Voltar para a lista
-      </Link>
+     
     </div>
     
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="flex items-center justify-between px-4 py-5 sm:px-6">
         <h1 class="text-2xl font-bold text-gray-900">Detalhes do Papel</h1>
         <div class="flex space-x-3">
@@ -29,7 +21,6 @@
         </div>
       </div>
     </header>
-
     <!-- Detalhes do papel -->
     <div class="mt-6 overflow-hidden bg-white rounded-lg shadow">
       <div class="px-4 py-5 border-b border-gray-200 sm:px-6">
@@ -59,7 +50,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head, Link } from '@inertiajs/inertia-vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
   role: Object

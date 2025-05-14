@@ -93,7 +93,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/inertia-vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
   permissions: Array
