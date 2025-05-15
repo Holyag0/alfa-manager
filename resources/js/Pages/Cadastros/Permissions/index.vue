@@ -1,21 +1,23 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
-    <Head title="Gerenciamento de Permissões" />
+  <div class="min-h-screen p-4 sm:p-6 lg:p-8">
+    <Head title="Permissões" />
     
     <!-- Breadcrumb de navegação -->
-    <BreadCrumbs :items="[
+    <!-- <BreadCrumbs :items="[
       { name: 'Cadastros', url: route('menuCadastros') },
       { name: 'Permissões' }
-    ]" />
+    ]" /> -->
     
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="flex items-center justify-between px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Gerenciamento de Permissões</h1>
+        <h1 class="text-2xl font-bold text-sky-700">Gerenciamento de Permissões</h1>
         <Link
           v-if="getPermission('permission-create')"
           :href="route('permissions.create')"
-          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-green-500 border border-transparent rounded-md shadow-sm
+           hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+           hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
         >
           <PlusIcon class="w-5 h-5 mr-2" aria-hidden="true" />
           Nova Permissão
@@ -24,9 +26,9 @@
     </header>
 
     <!-- Mensagem de sucesso -->
-    <div v-if="$page.props.flash.success" class="p-4 mt-4 text-green-700 bg-green-100 rounded-lg">
+    <!-- <div v-if="$page.props.flash.success" class="p-4 mt-4 text-green-700 bg-green-100 rounded-lg">
       {{ $page.props.flash.success }}
-    </div>
+    </div> -->
 
     <!-- Tabela de permissões -->
     <div class="mt-6 overflow-hidden bg-white rounded-lg shadow">
@@ -66,9 +68,18 @@
                 <td class="px-6 py-4 text-sm text-right whitespace-nowrap">
                   <div class="flex justify-end space-x-3">
                     <Link 
+                      :href="route('permissions.show',permission.id)" 
+                      class="inline-flex items-center text-blue-600 hover:text-blue-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
+                    >
+                      <EyeIcon class="w-4 h-4 mr-1" aria-hidden="true" />
+                      Dados
+                    </Link>
+                    <Link 
                       v-if="getPermission('permission-edit')" 
                       :href="route('permissions.edit', permission.id)" 
-                      class="inline-flex items-center text-indigo-600 hover:text-indigo-900"
+                      class="inline-flex items-center text-indigo-600 hover:text-indigo-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
                     >
                       <PencilIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Editar
@@ -76,7 +87,8 @@
                     <button 
                       v-if="getPermission('permission-delete')" 
                       @click="confirmDelete(permission)" 
-                      class="inline-flex items-center text-red-600 hover:text-red-900"
+                      class="inline-flex items-center text-red-600 hover:text-red-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
                     >
                       <TrashIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Excluir
@@ -150,15 +162,16 @@
 
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/inertia-vue3';
-import Pagination from '../../../Shared/Pagination.vue';
-import BreadCrumbs from '../../../Shared/Accordion.vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import Pagination from '@/Shared/Pagination.vue';
+import {EyeIcon } from '@heroicons/vue/24/solid'
+// import BreadCrumbs from '../../../Shared/Accordion.vue';
 
 import { 
   PlusIcon, 
   PencilIcon, 
   TrashIcon 
-} from '@heroicons/vue/outline';
+} from '@heroicons/vue/24/solid';
 
 const props = defineProps({
   permissions: Object
@@ -182,7 +195,7 @@ function closeModal() {
 }
 
 function getPermission(permission) {
-  const allPermissions = page.props.value.auth.user.permissions;
+  const allPermissions = page.props.auth.user.permissions;
   return allPermissions.includes(permission);
 }
 </script>

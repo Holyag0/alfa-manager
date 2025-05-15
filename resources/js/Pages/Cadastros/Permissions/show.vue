@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen p-4 bg-gray-50 sm:p-6 lg:p-8">
+  <div class="min-h-screen p-4 sm:p-6 lg:p-8">
     <Head :title="`Permissão: ${permission.name}`" />
     
     <!-- Cabeçalho com navegação de voltar -->
     <div class="mb-5">
       <Link
         :href="route('permissions.index')"
-        class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-900"
+        class="inline-flex items-center text-sm font-medium text-sky-700 hover:text-indigo-900"
       >
         <svg class="w-5 h-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -16,13 +16,13 @@
     </div>
     
     <!-- Cabeçalho da página -->
-    <header class="bg-white rounded-lg shadow">
+    <header class="">
       <div class="flex items-center justify-between px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Detalhes da Permissão</h1>
+        <h1 class="text-2xl font-bold text-sky-700">Detalhes da Permissão</h1>
         <div class="flex space-x-3">
           <Link
             :href="route('permissions.edit', permission.id)"
-            class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-green-500 border border-transparent rounded-md shadow-sm hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Editar
           </Link>
@@ -47,7 +47,7 @@
             <li v-for="role in permission.roles" :key="role.id" class="flex">
               <Link 
                 :href="route('roles.edit', role.id)"
-                class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-700 bg-indigo-100 rounded-md hover:bg-indigo-200"
+                class="inline-flex items-center px-3 py-2 text-sm font-medium text-sky-700 bg-indigo-100 rounded-md hover:bg-indigo-200"
               >
                 <svg class="w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { Head, Link } from '@inertiajs/inertia-vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
   permission: Object

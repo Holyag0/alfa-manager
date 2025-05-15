@@ -1,12 +1,12 @@
 <template>
   <div class="min-h-screen p-4 sm:p-6 lg:p-8">
-    <Head title="Novo Papel" />
+    <Head title="Novo Cargo" />
     
     <!-- Cabeçalho com navegação de voltar -->
     <div class="mb-5">
       <Link
         :href="route('roles.index')"
-        class="inline-flex items-center text-sm font-medium text-indigo-600 hover:text-indigo-900"
+        class="inline-flex items-center text-sm font-medium text-sky-600 hover:text-indigo-900"
       >
         <svg class="w-5 h-5 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -18,7 +18,7 @@
     <!-- Cabeçalho da página -->
     <header class="">
       <div class="px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Cadastrar Novo Papel</h1>
+        <h1 class="text-2xl font-bold text-sky-700">Cadastrar Novo Papel</h1>
       </div>
     </header>
 
@@ -55,7 +55,7 @@
                           type="checkbox"
                           :value="permission.id"
                           v-model="form.permissions"
-                          class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                          class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-teal-500"
                         />
                       </div>
                       <div class="ml-3 text-sm">

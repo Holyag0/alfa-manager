@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Services\ServicePermission;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-
 class PermissionController extends Controller
 {
     /**
@@ -60,7 +59,7 @@ class PermissionController extends Controller
      */
     public function store(Request $request)
     {
-        $this->validate($request, [
+        $request->validate([
             'name' => 'required|unique:permissions,name',
         ]);
 
@@ -109,7 +108,7 @@ class PermissionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $this->validate($request, [
+        $request->validate([
             'name' => 'required|unique:permissions,name,' . $id,
         ]);
 

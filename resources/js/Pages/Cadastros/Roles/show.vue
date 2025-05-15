@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen p-4  sm:p-6 lg:p-8">
-    <Head :title="`Papel: ${role.name}`" />
+    <Head :title="`Cargos: ${role.name}`" />
     
     <!-- Cabeçalho com navegação de voltar -->
     <div class="mb-5">

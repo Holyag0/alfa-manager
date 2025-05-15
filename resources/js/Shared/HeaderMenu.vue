@@ -192,23 +192,28 @@ const userNavigation = [
 const products = [
     {
         name: 'Alunos',
-        description: 'Get a better understanding where your traffic is coming from',
+        description: 'Matricule novos alunos, veja lista de alunos matriculados e todas infomações dos alunos alfa baby.',
         href: '#',
         icon: ChartPieIcon,
     },
     {
         name: 'Usuários',
-        description: 'Speak directly to your customers with our engagement tool',
+        description: 'Crie contas para quem vai usar o sistema e administre usuários da escola alfa baby. ',
         href: route('user.index'),
         icon: CursorArrowRaysIcon,
     },
-    { name: 'Cargos', description: 'Your customers’ data will be safe and secure', href: '#', icon: FingerPrintIcon },
+    { name: 'Cargos', 
+        description: 'Aqui você pode criar cargos para usuários da alfa baby', 
+        href: route('roles.index'), 
+        icon: FingerPrintIcon 
+    },
     {
         name: 'Permissões',
-        description: 'Your customers’ data will be safe and secure',
-        href: '#',
+        description: 'Permita,crie e edite o que cada usuário pode fazer no sistema',
+        href: route('permissions.index'),
         icon: SquaresPlusIcon,
     },
+    
 ]
 const callsToAction = [
     { name: 'Watch demo', href: '#', icon: PlayCircleIcon },

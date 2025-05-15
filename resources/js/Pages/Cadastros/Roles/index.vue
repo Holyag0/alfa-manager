@@ -1,14 +1,15 @@
 <template>
   <div class="min-h-screen p-4  sm:p-6 lg:p-8 ">
-    <Head title="Gerenciamento de Papéis" />
+    <Head title="Cargos" />
     <!-- Cabeçalho da página -->
     <header class="">
       <div class="flex items-center justify-between px-4 py-5 sm:px-6">
-        <h1 class="text-2xl font-bold text-gray-900">Gerenciamento de Papéis (Roles)</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Gerenciamento de Cargos</h1>
           <Link
           v-if="getPermission('role-create')"
           :href="route('roles.create')"
-          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white 
+          bg-green-500 border border-transparent rounded-md shadow-sm hover:bg-teal-500 focus:outline-none focus:ring-2 focus:ring-offset-2"
         >
           <PlusIcon class="w-5 h-5 mr-2" aria-hidden="true" />
           Novo Papel
@@ -54,7 +55,8 @@
                   <div class="flex justify-end space-x-3">
                     <Link 
                       :href="route('roles.show', role.id)" 
-                      class="inline-flex items-center text-blue-600 hover:text-blue-900"
+                      class="inline-flex items-center text-blue-600 hover:text-blue-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
                     >
                       <EyeIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Visualizar
@@ -62,7 +64,8 @@
                     <!-- v-if="getPermission('role-edit')"  -->
                     <Link 
                       :href="route('roles.edit',role.id)" 
-                      class="inline-flex items-center text-indigo-600 hover:text-indigo-900"
+                      class="inline-flex items-center text-indigo-600 hover:text-indigo-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
                     >   
                       <PencilIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Editar
@@ -71,7 +74,8 @@
                     <button 
                       v-if="getPermission('role-delete')" 
                       @click="confirmDelete(role)" 
-                      class="inline-flex items-center text-red-600 hover:text-red-900"
+                      class="inline-flex items-center text-red-600 hover:text-red-900
+                      hover:translate-y-1 hover:scale-110  transition ease-in-out delay-150"
                     >
                       <TrashIcon class="w-4 h-4 mr-1" aria-hidden="true" />
                       Excluir
@@ -85,7 +89,7 @@
         
         <!-- Paginação -->
         <div class="mt-6">
-          <!-- <Pagination :links="roles.links" /> -->
+          <Pagination :links="roles.links" />
         </div>
       </div>
     </div>
@@ -143,7 +147,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-// import Pagination from '../../../Shared/Pagination.vue';
+import Pagination from '@/Shared/Pagination.vue';
 import { 
   PlusIcon, 
   EyeIcon, 
