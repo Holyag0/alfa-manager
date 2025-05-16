@@ -7,19 +7,20 @@ use Illuminate\Routing\Controllers\Middleware;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\UsersRequest;
-use App\Services\ServiceUsers;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
-
+use App\Services\ServiceRole;
+use App\Services\ServiceUsers;
 class UserController extends Controller implements HasMiddleware
 {
      /**
      * @var ServiceUsers
      */
     private $users;
-
-    public function __construct(ServiceUsers $user) {
+    private $roles;
+    public function __construct(ServiceUsers $user, ServiceRole $roles)  {
         $this->users = $user;
+        $this->roles = $roles;
     }
     public static function middleware(): array
     {
@@ -38,6 +39,32 @@ class UserController extends Controller implements HasMiddleware
     {
         return $this->users;
     }
+    public function serviceRole(){
+        return $this->roles;
+    }
+     public function atribuirRole()
+    {
+        $users = $this->users()->usersList();
+        $roles = $this->serviceRole()->roleList();
+        return Inertia::render('Users/Atribuir-Roles', [
+            'users' => $users,'roles' => $roles
+        ]);
+    }
+    public function storeRoleToUser(Request $request)
+    {
+        try {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'role' => 'required|exists:roles,name'
+        ]);
+        $this->users()->atribuirRolesUsers($validated['user_id'], $validated['role']);
+        return redirect()->back()->with('success', 'Role atribuída com sucesso!');
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao atribuir role: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Ocorreu um erro ao atribuir a role.');
+        }
+    }
 
     public function index()
     {
@@ -52,9 +79,7 @@ class UserController extends Controller implements HasMiddleware
             $this->users()->create($request->all());
             session()->flash('success', 'Usuário criado com sucesso');
         } catch (\Exception $e) {
-            // Loga o erro para depuração
             Log::error('Erro ao criar usuário:', ['error' => $e->getMessage()]);
-            // Retorna uma mensagem de erro amigável para o usuário
             session()->flash('error', 'Erro ao criar o usuário. Por favor, tente novamente.');
         }
     }

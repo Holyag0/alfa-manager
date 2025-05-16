@@ -43,7 +43,10 @@ class ServiceRole
       ->orderBy('name')
       ->paginate(10);
   }
-
+  public function roleList(): \Illuminate\Support\Collection {
+    return $this->getRole()
+    ->pluck('name','id');
+  }
   /**
    * Find role by ID with permissions
    * 

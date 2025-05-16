@@ -42,6 +42,7 @@ class ServicePermission
       ->orderBy('name')
       ->paginate(10);
   }
+  
 
   /**
    * Find permission by ID with roles
