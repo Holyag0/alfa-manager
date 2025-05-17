@@ -27,7 +27,7 @@ Route::middleware([
         Route::get('/', function () {
             return redirect()->route('user.index');
         });
-        Route::get('atribuir-cargo','atribuirRole')->name('atribuir.cargo');
+        Route::get('atribuir-cargo-{id}', 'atribuirRole')->name('atribuir.cargo');
         Route::post('atribuindo-cargo','storeRoleToUser')->name('atribuindo-cargo.store');
     });
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);

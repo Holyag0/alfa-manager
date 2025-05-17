@@ -42,12 +42,12 @@ class UserController extends Controller implements HasMiddleware
     public function serviceRole(){
         return $this->roles;
     }
-     public function atribuirRole()
+     public function atribuirRole($id)
     {
-        $users = $this->users()->usersList();
+        $user = $this->users()->show($id);
         $roles = $this->serviceRole()->roleList();
         return Inertia::render('Users/Atribuir-Roles', [
-            'users' => $users,'roles' => $roles
+            'user' => $user,'roles' => $roles
         ]);
     }
     public function storeRoleToUser(Request $request)
@@ -58,11 +58,11 @@ class UserController extends Controller implements HasMiddleware
             'role' => 'required|exists:roles,name'
         ]);
         $this->users()->atribuirRolesUsers($validated['user_id'], $validated['role']);
-        return redirect()->back()->with('success', 'Role atribuída com sucesso!');
+        return redirect()->back()->with('success', 'Cargo atribuído com sucesso!');
 
         } catch (\Exception $e) {
             Log::error('Erro ao atribuir role: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Ocorreu um erro ao atribuir a role.');
+            return redirect()->back()->with('error', 'Ocorreu um erro ao atribuir a Cargo.');
         }
     }
 
