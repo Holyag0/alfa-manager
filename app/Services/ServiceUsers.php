@@ -17,7 +17,7 @@ class ServiceUsers
     private DeleteByJetstream $deleteByJetstream;
 
     public function __construct(
-        User $user, 
+        User $user,
         CreateByJetstream $createByJetstream,
         UpdateByJetStream $updateJetstream,
         DeleteByJetstream $deleteByJetstream
@@ -28,35 +28,55 @@ class ServiceUsers
         $this->deleteByJetstream = $deleteByJetstream;
     }
 
-    public function getUser(): User {
+    public function getUser(): User
+    {
         return $this->user;
     }
 
-    public function getSession(int $id): \Illuminate\Support\Collection{
+    public function getSession(int $id): \Illuminate\Support\Collection
+    {
         return DB::table('sessions')
             ->where('user_id', $id)
             ->get();
     }
 
-    public function usersList(): \Illuminate\Support\Collection{
-        return $this->getUser()->pluck('nome', 'id');
+    public function usersList(): \Illuminate\Support\Collection
+    {
+        return $this->getUser()->pluck('name', 'id');
     }
+    public function atribuirRolesUsers($id, $role)
+    {
+        $user = $this->getUser()->find($id);
 
-    public function all(int $perPage = 15): LengthAwarePaginator {
+        if (!$user) {
+            throw new \Exception("Usuário não encontrado.");
+        }
+        
+        if (!$user->hasRole($role)) {
+            $user->assignRole($role);
+        }
+
+        return $user;
+    }
+    public function all(int $perPage = 15): LengthAwarePaginator
+    {
         return $this->getUser()
             ->orderBy('id', 'desc')
             ->paginate($perPage);
     }
 
-    public function show(int $id): ?User{
+    public function show(int $id): ?User
+    {
         return $this->getUser()->find($id);
     }
 
-    public function create(array $data): User{
+    public function create(array $data): User
+    {
         return $this->createByJetstream->create($data);
     }
 
-    public function update(User $user, array $data): void{
+    public function update(User $user, array $data): void
+    {
         $this->updateJetstream->update($user, $data);
     }
 

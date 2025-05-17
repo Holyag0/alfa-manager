@@ -22,10 +22,17 @@ Route::middleware([
     })->name('dashboard');
 
     Route::resource('user', App\Http\Controllers\Cadastros\UserController::class);
-    // Route::prefix('cadastros')->group( function(){
-        Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
-        Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
-    // });
+    Route::prefix('usuario')->controller(App\Http\Controllers\Cadastros\UserController::class)
+    ->group( function(){
+        Route::get('/', function () {
+            return redirect()->route('user.index');
+        });
+        Route::get('atribuir-cargo-{id}', 'atribuirRole')->name('atribuir.cargo');
+        Route::post('atribuindo-cargo','storeRoleToUser')->name('atribuindo-cargo.store');
+    });
+    Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
+    Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);    
     
+   
     
 });

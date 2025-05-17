@@ -1,7 +1,7 @@
 <template>
     <div class="lg:flex lg:items-center lg:justify-between">
       <div class="min-w-0 flex-1">
-        <h2 class="text-2xl/7 font-bold text-gray-100 sm:truncate sm:text-3xl sm:tracking-tight">
+        <h2 class="text-2xl/7 font-bold text-sky-700 sm:truncate sm:text-3xl sm:tracking-tight">
             Usuários
         </h2>
         <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
@@ -32,10 +32,11 @@
         </span>
   
         <span class="ml-3 hidden sm:block">
-          <button type="button" class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
+          <Link type="button" :href="''"
+                class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
             <LinkIcon class="-ml-0.5 mr-1.5 size-5 text-gray-400" aria-hidden="true" />
             View
-          </button>
+          </Link>
         </span>
   
         <span class="sm:ml-3">
@@ -81,6 +82,7 @@
   } from '@heroicons/vue/20/solid'
   import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
   import TableUser from './components/TableUser.vue';
+import { Link } from '@inertiajs/vue3';
   defineProps({
     users:Object
   })
