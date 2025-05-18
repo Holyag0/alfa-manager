@@ -58,6 +58,13 @@ class ServiceUsers
 
         return $user;
     }
+    public function desatribuirRolesUser($id,$roles){
+        $user = $this->show($id);
+        foreach ($roles as $role) {
+            $user->removeRole($role);
+        }
+        return $user;
+    }
     public function all(int $perPage = 15): LengthAwarePaginator
     {
         return $this->getUser()

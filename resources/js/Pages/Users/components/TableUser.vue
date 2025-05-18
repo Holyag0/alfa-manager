@@ -33,14 +33,22 @@
             <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
               <MenuItems class="absolute right-0 z-10 mt-2 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-hidden">
                 <MenuItem v-slot="{ active }">
-                  <Link :href="route('user.show',person.id)" :class="[active ? 'bg-gray-50 outline-hidden' : '', 'block px-3 py-1 text-sm/6 text-gray-900']"
-                    >View profile<span class="sr-only">, {{ person.name }}</span></Link 
+                  <Link :href="route('user.show',person.id)" :class="[active ? 'bg-gray-50 outline-hidden' : '', 'block px-3 py-1 text-sm/6 text-gray-900']">
+                    Ver Perfil
+                    <span class="sr-only">, {{ person.name }}</span></Link 
                   >
                 </MenuItem>
                 <MenuItem v-slot="{ active }">
                   <Link :href="route('atribuir.cargo', person.id)"
                     :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm/6 text-gray-900']">
                         Atribuir Cargo
+                  <span class="sr-only">, {{ person.name }}</span>
+                  </Link>
+                </MenuItem>
+                <MenuItem v-slot="{ active }">
+                  <Link :href="route('desatribuir.cargo', person.id)"
+                    :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm/6 text-gray-900']">
+                        Tirar Cargo
                   <span class="sr-only">, {{ person.name }}</span>
                   </Link>
                 </MenuItem>
