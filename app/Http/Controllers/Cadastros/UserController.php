@@ -11,6 +11,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use App\Services\ServiceRole;
 use App\Services\ServiceUsers;
+use App\Http\Requests\RemoveUserRolesRequest;
+use App\Http\Requests\StoreUserRoleRequest;
 class UserController extends Controller implements HasMiddleware
 {
      /**
@@ -50,21 +52,60 @@ class UserController extends Controller implements HasMiddleware
             'user' => $user,'roles' => $roles
         ]);
     }
-    public function storeRoleToUser(Request $request)
+    public function storeRoleToUser(StoreUserRoleRequest $request)
     {
         try {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'role' => 'required|exists:roles,name'
-        ]);
-        $this->users()->atribuirRolesUsers($validated['user_id'], $validated['role']);
-        return redirect()->back()->with('success', 'Cargo atribuído com sucesso!');
+            $validated = $request->validated();
 
+            $this->users()->atribuirRolesUsers($validated['user_id'], $validated['role']);
+
+            return redirect()->back()->with('success', 'Cargo atribuído com sucesso!');
         } catch (\Exception $e) {
             Log::error('Erro ao atribuir role: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Ocorreu um erro ao atribuir a Cargo.');
+
+            return redirect()->back()->with('error', 'Ocorreu um erro ao atribuir o cargo.');
         }
     }
+
+    public function desatribuirRole($id)
+    {
+        try {
+            $user = $this->users()->show($id);
+            if ($user->roles->isEmpty()) {
+                return redirect()->route('user.index')
+                ->with('error', 'Usuário não tem Nenhum cargo, Não é possivel tirar cargo.');
+            }
+            $roles = $user->roles;
+
+            return Inertia::render('Users/Desatribuir-Roles', [
+                'user' => $user,
+                'roles' => $roles
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao carregar desatribuição de cargos: ' . $e->getMessage());
+
+            return redirect()->route('user.index')
+                ->with('error', 'Ocorreu um erro ao carregar os cargos do usuário, não encontrado.');
+        }
+    }
+
+    public function removeRoleFromUser(RemoveUserRolesRequest $request)
+    {
+        try {
+            $validated = $request->validated();
+
+            $user = $this->users()->desatribuirRolesUser($validated['user_id'], $validated['roles']);
+
+            return redirect()->route('user.index')
+                ->with('success', 'Cargos removidos do Usuário: ' . $user->name . ' com sucesso.');
+        } catch (\Exception $e) {
+            Log::error('Erro ao remover cargos do usuário: ' . $e->getMessage());
+
+            return redirect()->back()
+                ->with('error', 'Ocorreu um erro ao tentar remover os cargos do usuário.');
+        }
+    }
+
 
     public function index()
     {

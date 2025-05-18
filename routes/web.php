@@ -29,6 +29,9 @@ Route::middleware([
         });
         Route::get('atribuir-cargo-{id}', 'atribuirRole')->name('atribuir.cargo');
         Route::post('atribuindo-cargo','storeRoleToUser')->name('atribuindo-cargo.store');
+        Route::get('desatribuir-cargo-{id}','desatribuirRole')->name('desatribuir.cargo');
+        Route::post('desatribuindo-cargo','removeRoleFromUser')->name('desatribuir.cargo.store');
+
     });
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
     Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);    
