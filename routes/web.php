@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,19 +24,15 @@ Route::middleware([
 
     Route::resource('user', App\Http\Controllers\Cadastros\UserController::class);
     Route::prefix('usuario')->controller(App\Http\Controllers\Cadastros\UserController::class)
-    ->group( function(){
-        Route::get('/', function () {
-            return redirect()->route('user.index');
+        ->group(function () {
+            Route::get('/', function () {
+                return redirect()->route('user.index');
+            });
+            Route::get('atribuir-cargo-{id}', 'atribuirRole')->name('atribuir.cargo');
+            Route::post('atribuindo-cargo', 'storeRoleToUser')->name('atribuindo-cargo.store');
+            Route::get('desatribuir-cargo-{id}', 'desatribuirRole')->name('desatribuir.cargo');
+            Route::post('desatribuindo-cargo', 'removeRoleFromUser')->name('desatribuir.cargo.store');
         });
-        Route::get('atribuir-cargo-{id}', 'atribuirRole')->name('atribuir.cargo');
-        Route::post('atribuindo-cargo','storeRoleToUser')->name('atribuindo-cargo.store');
-        Route::get('desatribuir-cargo-{id}','desatribuirRole')->name('desatribuir.cargo');
-        Route::post('desatribuindo-cargo','removeRoleFromUser')->name('desatribuir.cargo.store');
-
-    });
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
-    Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);    
-    
-   
-    
+    Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
 });

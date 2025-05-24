@@ -18,6 +18,9 @@ const form = useForm({
 const submit = () => {
     form.post(route('password.email'));
 };
+defineOptions({
+  layout: false
+})
 </script>
 
 <template>

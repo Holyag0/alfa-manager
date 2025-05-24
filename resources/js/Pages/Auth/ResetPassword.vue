@@ -24,6 +24,9 @@ const submit = () => {
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
 };
+defineOptions({
+  layout: false
+})
 </script>
 
 <template>
