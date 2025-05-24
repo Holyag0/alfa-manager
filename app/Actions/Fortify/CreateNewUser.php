@@ -19,6 +19,14 @@ class CreateNewUser implements CreatesNewUsers
      */
     public function create(array $input): User
     {
+        $referer = request()->headers->get('referer');
+        $registerUrl = route('register');
+    
+        if (str_contains($referer, $registerUrl)) {
+            if (!auth()->check() || !auth()->user()->hasRole('Programador')) {
+                abort(403, 'Acesso negado.');
+            }
+        }
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
