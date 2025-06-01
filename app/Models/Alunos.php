@@ -15,7 +15,7 @@ class Alunos extends Model
         'email',
         'telefone',
         'file_foto',
-        'responsavel_id'
+        'responsavel_id',
     ];
 
 

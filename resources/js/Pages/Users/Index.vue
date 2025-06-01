@@ -32,10 +32,10 @@
         </span>
   
         <span class="ml-3 hidden sm:block">
-          <Link type="button" :href="''"
+          <Link type="button" :href="route('admin.users.index')"
                 class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
-            <LinkIcon class="-ml-0.5 mr-1.5 size-5 text-gray-400" aria-hidden="true" />
-            View
+            <CogIcon class="-ml-0.5 mr-1.5 size-5 text-gray-400" aria-hidden="true" />
+            Config
           </Link>
         </span>
   
@@ -79,11 +79,13 @@
     LinkIcon,
     MapPinIcon,
     PencilIcon,
+    CogIcon
   } from '@heroicons/vue/20/solid'
   import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
   import TableUser from './components/TableUser.vue';
-import { Link } from '@inertiajs/vue3';
-  defineProps({
-    users:Object
-  })
-  </script>
+  import { Link } from '@inertiajs/vue3';
+    defineProps({
+      users:Object
+    })
+    </script>
+    
