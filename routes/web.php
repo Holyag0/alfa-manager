@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +32,14 @@ Route::middleware([
             Route::get('desatribuir-cargo-{id}', 'desatribuirRole')->name('desatribuir.cargo');
             Route::post('desatribuindo-cargo', 'removeRoleFromUser')->name('desatribuir.cargo.store');
         });
+    Route::middleware('permission:manage-auth')->group(function () {
+        Route::get('/admin-autorizacao', 
+            [App\Http\Controllers\UserManagementController::class, 'index'])
+            ->name('admin.users.index');
+        Route::patch('/admin/users/{user}/toggle-auth', 
+            [App\Http\Controllers\UserManagementController::class, 'toggleAuth'])
+            ->name('admin.users.toggle-auth');
+    });
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
     Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
 });
