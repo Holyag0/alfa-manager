@@ -35,7 +35,7 @@
           <Link type="button" :href="route('admin.users.index')"
                 class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50">
             <CogIcon class="-ml-0.5 mr-1.5 size-5 text-gray-400" aria-hidden="true" />
-            Config
+            Autorizações
           </Link>
         </span>
   

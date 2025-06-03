@@ -22,7 +22,7 @@
                 <Popover>
                     <PopoverButton class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
                     transition ease-in-out delay-150 hover:text-sky-800 hover:translate-y-1 hover:scale-110 ">
-                        Cadastro
+                        Gestão
                         <ChevronDownIcon class="size-5 flex-none text-white " aria-hidden="true" />
                     </PopoverButton>
 
@@ -173,6 +173,7 @@ import {
     FingerPrintIcon,
     SquaresPlusIcon,
     XMarkIcon,
+    UserGroupIcon,
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon, RectangleGroupIcon } from '@heroicons/vue/20/solid'
 import { Link,router  } from '@inertiajs/vue3';
@@ -194,7 +195,7 @@ const products = [
         name: 'Alunos',
         description: 'Matricule novos alunos, veja lista de alunos matriculados e todas infomações dos alunos alfa baby.',
         href: route('admin.students.index'),
-        icon: ChartPieIcon,
+        icon:UserGroupIcon,
     },
     {
         name: 'Usuários',

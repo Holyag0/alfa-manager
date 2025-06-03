@@ -6,9 +6,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex justify-between items-center py-6">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900">Alunos</h1>
+              <h1 class="text-3xl font-bold text-sky-800">Alunos</h1>
               <p class="mt-1 text-sm text-gray-600">
-                Gerencie todos os alunos da escola
+                Gerencie todos os alunos da escola alfa baby
               </p>
             </div>
             <Link
