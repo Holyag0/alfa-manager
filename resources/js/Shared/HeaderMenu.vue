@@ -193,7 +193,7 @@ const products = [
     {
         name: 'Alunos',
         description: 'Matricule novos alunos, veja lista de alunos matriculados e todas infomações dos alunos alfa baby.',
-        href: '#',
+        href: route('admin.students.index'),
         icon: ChartPieIcon,
     },
     {

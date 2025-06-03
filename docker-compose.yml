@@ -50,7 +50,8 @@ services:
       timeout: 5s
 
   phpmyadmin:
-    image: arm64v8/phpmyadmin:latest
+    #image: arm64v8/phpmyadmin:latest
+    image: phpmyadmin:latest  #-linux 
     ports:
       - '${FORWARD_PHPMYADMIN_PORT:-8081}:80'
     environment:

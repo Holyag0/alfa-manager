@@ -122,5 +122,55 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
+    // 'providers' => [
+    //     // ... outros providers
+    //     App\Providers\ServiceLayerServiceProvider::class,
+    // ],
+    /*
+    |--------------------------------------------------------------------------
+    | School Management Services Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configurações específicas dos services do sistema escolar
+    |
+    */
+    'school' => [
+        'cache' => [
+            'enabled' => env('SCHOOL_CACHE_ENABLED', true),
+            'ttl' => env('SCHOOL_CACHE_TTL', 3600), // 1 hora
+            'prefix' => env('SCHOOL_CACHE_PREFIX', 'school_'),
+        ],
+        
+        'logging' => [
+            'enabled' => env('SCHOOL_LOGGING_ENABLED', true),
+            'channel' => env('SCHOOL_LOG_CHANNEL', 'single'),
+            'level' => env('SCHOOL_LOG_LEVEL', 'info'),
+        ],
 
+        'pagination' => [
+            'students_per_page' => env('SCHOOL_STUDENTS_PER_PAGE', 15),
+            'classrooms_per_page' => env('SCHOOL_CLASSROOMS_PER_PAGE', 12),
+            'guardians_per_page' => env('SCHOOL_GUARDIANS_PER_PAGE', 15),
+        ],
+
+        'uploads' => [
+            'student_photos' => [
+                'disk' => 'public',
+                'path' => 'students/photos',
+                'max_size' => 2048, // KB
+                'allowed_types' => ['jpeg', 'jpg', 'png'],
+            ],
+        ],
+
+        'registration' => [
+            'auto_generate' => env('SCHOOL_AUTO_GENERATE_REGISTRATION', true),
+            'format' => env('SCHOOL_REGISTRATION_FORMAT', 'YYYY###'), // YYYY = ano, ### = sequencial
+        ],
+
+        'classroom' => [
+            'default_capacity' => env('SCHOOL_DEFAULT_CLASSROOM_CAPACITY', 30),
+            'max_capacity' => env('SCHOOL_MAX_CLASSROOM_CAPACITY', 50),
+            'min_capacity' => env('SCHOOL_MIN_CLASSROOM_CAPACITY', 5),
+        ],
+    ],
 ];
