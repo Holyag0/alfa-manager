@@ -120,26 +120,34 @@ class GuardianService extends BaseService
     /**
      * Buscar responsáveis para API (autocomplete)
      */
-    public function searchGuardiansForApi(string $search, int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function searchGuardiansForApi(string $search, int $limit = 10, bool $includeStudentsCount = false)
     {
-        $cacheKey = 'search_' . md5($search . $limit);
+        $cacheKey = 'search_' . md5($search . $limit . ($includeStudentsCount ? '1' : '0'));
         
-        return $this->executeWithCache($cacheKey, function () use ($search, $limit) {
-            return Guardian::search($search)
+        return $this->executeWithCache($cacheKey, function () use ($search, $limit, $includeStudentsCount) {
+            
+            // ✅ Use o scope explicitamente
+            return Guardian::search($search) // Seu scope atual
                 ->select('id', 'name', 'phone', 'email', 'profession')
+                ->orderBy('name') // Melhora a UX
                 ->limit($limit)
                 ->get()
-                ->map(function ($guardian) {
-                    return [
+                ->map(function ($guardian) use ($includeStudentsCount) {
+                    $data = [
                         'id' => $guardian->id,
                         'name' => $guardian->name,
                         'phone' => $guardian->formatted_phone,
                         'email' => $guardian->email,
                         'profession' => $guardian->profession,
-                        'students_count' => $guardian->students()->count(),
                     ];
+                    
+                    if ($includeStudentsCount) {
+                        $data['students_count'] = $guardian->students()->count();
+                    }
+                    
+                    return $data;
                 });
-        }, 30); // Cache por 30 minutos
+        }, 30);
     }
 
     /**

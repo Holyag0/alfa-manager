@@ -1,6 +1,8 @@
 <?php
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Services\GuardianService;
+use Illuminate\Support\Facades\Log;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -60,23 +62,41 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json($classrooms);
     })->name('api.classrooms.search');
     // Buscar responsáveis
-    Route::get('guardians/search', function (Request $request) {
-        $guardians = \App\Models\Guardian::search($request->get('q', ''))
-            ->select('id', 'name', 'phone', 'email', 'profession')
-            ->limit($request->get('limit', 10))
-            ->get()
-            ->map(function ($guardian) {
-                return [
-                    'id' => $guardian->id,
-                    'name' => $guardian->name,
-                    'phone' => $guardian->formatted_phone,
-                    'email' => $guardian->email,
-                    'profession' => $guardian->profession,
-                ];
-            });
-        
-        return response()->json($guardians);
-    })->name('api.guardians.search');
+    Route::get('guardians/search', function (Request $request, GuardianService $service) {
+        dd('oi');
+    $request->validate([
+        'q' => 'required|string|min:2|max:100',
+        'limit' => 'integer|min:1|max:50'
+    ]);
+
+    try {
+        $guardians = $service->searchGuardiansForApi(
+            search: $request->get('q'),
+            limit: $request->get('limit', 10),
+            includeStudentsCount: false // Para performance
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $guardians,
+            'count' => $guardians->count(),
+            'search_term' => $request->get('q')
+        ]);
+
+    } catch (\Exception $e) {
+        Log::error('Guardian search API error:', [
+            'search_term' => $request->get('q'),
+            'error' => $e->getMessage(),
+            'user_id' => auth()->id()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Erro interno na busca',
+            'data' => []
+        ], 500);
+    }
+})->name('api.guardians.search');
     // DASHBOARD E ESTATÍSTICAS
     // Dados para dashboard
     Route::get('dashboard/stats', function () {

@@ -59,13 +59,25 @@ class Guardian extends Model
     }
 
     // Scopes
-    public function scopeSearch($query, $search)
+    public function scopeSearch($query, string $search)
     {
-        return $query->where(function ($q) use ($search) {
+        if (empty(trim($search))) {
+            return $query;
+        }
+
+        $search = trim($search);
+        $cleanSearch = preg_replace('/\D/', '', $search); // Remove pontuação
+
+        return $query->where(function ($q) use ($search, $cleanSearch) {
+            // Busca por nome e email (texto)
             $q->where('name', 'like', "%{$search}%")
-              ->orWhere('phone', 'like', "%{$search}%")
-              ->orWhere('cpf', 'like', "%{$search}%")
-              ->orWhere('email', 'like', "%{$search}%");
+            ->orWhere('email', 'like', "%{$search}%");
+            
+            // Busca por telefone e CPF (apenas números)
+            if (strlen($cleanSearch) >= 3) {
+                $q->orWhereRaw("REPLACE(REPLACE(REPLACE(phone, '(', ''), ')', ''), '-', '') LIKE ?", ["%{$cleanSearch}%"])
+                ->orWhereRaw("REPLACE(REPLACE(REPLACE(cpf, '.', ''), '-', ''), ' ', '') LIKE ?", ["%{$cleanSearch}%"]);
+            }
         });
     }
 

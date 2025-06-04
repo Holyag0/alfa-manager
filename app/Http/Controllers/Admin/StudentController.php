@@ -51,7 +51,7 @@ class StudentController extends Controller
     public function store(StoreStudentRequest $request)
     {
         try {
-            $student = $this->studentService->createStudent($request->validated());
+            $student = $this->studentService->createStudent($request->all());
 
             return redirect()->route('admin.students.show', $student)
                 ->with('success', 'Aluno cadastrado com sucesso!');
