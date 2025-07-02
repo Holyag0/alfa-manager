@@ -80,11 +80,16 @@ class EnrollmentService
     }
 
     /**
-     * Consulta matrículas por filtros.
+     * Consulta matrículas por filtros, com paginação.
      */
-    public function searchEnrollments(array $filters = [])
+    public function searchEnrollments(array $filters = [], $perPage = 10)
     {
-        $query = Enrollment::query();
+        $query = Enrollment::with(['student', 'guardian', 'classroom']);
+        if (!empty($filters['student'])) {
+            $query->whereHas('student', function ($q) use ($filters) {
+                $q->where('name', 'like', '%' . $filters['student'] . '%');
+            });
+        }
         if (!empty($filters['student_id'])) {
             $query->where('student_id', $filters['student_id']);
         }
@@ -97,6 +102,16 @@ class EnrollmentService
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
-        return $query->get();
+        return $query->paginate($perPage);
+    }
+
+    /**
+     * Atualiza uma matrícula existente.
+     */
+    public function updateEnrollment($id, array $data)
+    {
+        $enrollment = Enrollment::findOrFail($id);
+        $enrollment->update($data);
+        return $enrollment;
     }
 } 

@@ -23,5 +23,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+        \App\Models\Student::factory(20)->create();
+        \App\Models\Guardian::factory(10)->create();
+        \App\Models\Classroom::factory(5)->create();
+        \App\Models\Enrollment::factory(30)->create();
     }
 }

@@ -42,4 +42,14 @@ Route::middleware([
     });
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
     Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
+
+    // CRUD principal de matrículas
+    Route::resource('matriculas', App\Http\Controllers\EnrollmentController::class);
+    // Rotas adicionais de matrículas
+    Route::prefix('matriculas')->name('matriculas.')->controller(App\Http\Controllers\EnrollmentController::class)
+        ->group(function () {
+            Route::post('{id}/cancelar', 'cancel')->name('cancelar');
+            Route::post('{id}/trocar-turma', 'changeClassroom')->name('trocar-turma');
+            // Outras rotas adicionais podem ser adicionadas aqui
+        });
 });
