@@ -24,7 +24,25 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
         \App\Models\Student::factory(20)->create();
-        \App\Models\Guardian::factory(10)->create();
+        // Criar 10 guardians, cada um com 2 contatos (phone e email)
+        \App\Models\Guardian::factory(10)->create()->each(function($guardian) {
+            \App\Models\Contact::factory()->create([
+                'guardian_id' => $guardian->id,
+                'type' => 'phone',
+                'value' => fake()->phoneNumber(),
+                'label' => 'pessoal',
+                'is_primary' => true,
+                'contact_for' => 'pessoal',
+            ]);
+            \App\Models\Contact::factory()->create([
+                'guardian_id' => $guardian->id,
+                'type' => 'email',
+                'value' => fake()->unique()->safeEmail(),
+                'label' => 'pessoal',
+                'is_primary' => false,
+                'contact_for' => 'pessoal',
+            ]);
+        });
         \App\Models\Classroom::factory(5)->create();
         \App\Models\Enrollment::factory(30)->create();
     }

@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('guardian_id')->constrained('guardians')->onDelete('cascade');
             $table->string('type'); // celular, fixo, whatsapp, etc.
             $table->string('value'); // número, email, etc.
+            $table->string('label')->nullable(); // pessoal, trabalho, emergencia, etc
             $table->boolean('is_primary')->default(false);
             $table->string('contact_for')->nullable(); // trabalho, pessoal, emergência, etc.
             $table->timestamps();

@@ -46,7 +46,6 @@ class EnrollmentService
             ]);
         });
     }
-
     /**
      * Cancela uma matrícula.
      */
@@ -60,7 +59,6 @@ class EnrollmentService
         $enrollment->save();
         return $enrollment;
     }
-
     /**
      * Troca o aluno de turma.
      */
@@ -78,7 +76,6 @@ class EnrollmentService
         $enrollment->save();
         return $enrollment;
     }
-
     /**
      * Consulta matrículas por filtros, com paginação.
      */

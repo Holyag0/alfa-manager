@@ -34,14 +34,7 @@ class EnrollmentController extends Controller
 
     public function create()
     {
-        $students = Student::all();
-        $guardians = Guardian::all();
-        $classrooms = Classroom::all();
-        return Inertia::render('Matriculas/Create', [
-            'students' => $students,
-            'guardians' => $guardians,
-            'classrooms' => $classrooms,
-        ]);
+        return Inertia::render('Matriculas/Wizard');
     }
 
     public function edit($id)

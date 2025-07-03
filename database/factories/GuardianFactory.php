@@ -11,8 +11,6 @@ class GuardianFactory extends Factory
     {
         return [
             'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'phone' => $this->faker->phoneNumber(),
             'relationship' => $this->faker->randomElement(['Pai', 'Mãe', 'Tio', 'Avô', 'Responsável']),
             'cpf' => $this->faker->unique()->numerify('###########'),
             'rg' => $this->faker->numerify('#########'),
