@@ -24,6 +24,28 @@
       </button>
     </div>
 
+    <!-- Mensagem de Erro -->
+    <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-4 mb-8">
+      <div class="flex items-center">
+        <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center mr-3">
+          <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 18.5c-.77.833.192 2.5 1.732 2.5z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium text-red-900">{{ errorMessage }}</p>
+        </div>
+        <button 
+          @click="errorMessage = ''" 
+          class="p-1 ml-3 text-red-400 hover:text-red-600 focus:outline-none"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Informações do Responsável -->
     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
       <div class="flex items-center">
@@ -398,12 +420,22 @@
         <div class="flex justify-end pt-6 border-t border-green-200">
           <button 
             type="submit" 
-            class="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            :disabled="submitting"
+            :class="[
+              'inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-lg',
+              submitting 
+                ? 'bg-green-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700 hover:shadow-xl transform hover:-translate-y-0.5'
+            ]"
           >
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg v-if="submitting" class="animate-spin w-5 h-5 mr-3" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+            <svg v-else class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
             </svg>
-            Cadastrar e Continuar
+            {{ submitting ? 'Cadastrando...' : 'Cadastrar e Continuar' }}
           </button>
         </div>
       </form>
@@ -425,6 +457,8 @@ const students = ref([]);
 const search = ref('');
 const loading = ref(false);
 const selectedStudent = ref(null);
+const submitting = ref(false);
+const errorMessage = ref('');
 
 const page = usePage();
 
@@ -507,6 +541,9 @@ function removePhoto() {
 }
 
 function submitNewStudent() {
+  submitting.value = true;
+  errorMessage.value = '';
+  
   const formData = new FormData();
   Object.entries(newStudent.value).forEach(([key, value]) => {
     formData.append(key, value ?? '');
@@ -524,7 +561,12 @@ function submitNewStudent() {
       }
     },
     onError: (errors) => {
-      emit('next', { ...newStudent.value, id: Date.now() });
+      errorMessage.value = 'Erro ao cadastrar o aluno. Verifique os dados e tente novamente.';
+      // Scroll to top to show the error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    onFinish: () => {
+      submitting.value = false;
     }
   });
 }
@@ -542,4 +584,11 @@ watch(
     }
   }
 );
+
+// Limpar mensagem de erro quando o usuário começar a digitar
+watch([() => newStudent.value.name, () => newStudent.value.cpf], () => {
+  if (errorMessage.value) {
+    errorMessage.value = '';
+  }
+});
 </script>

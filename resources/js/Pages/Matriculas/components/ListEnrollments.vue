@@ -116,16 +116,27 @@ function statusLabel(status) {
   }
 }
 
-function openPhotoModal(student) {
+async function openPhotoModal(student) {
   selectedStudent.value = null;
   loadingStudent.value = true;
   showPhotoModal.value = true;
-  fetch(`/students/${student.id}`)
-    .then(res => res.json())
-    .then(data => {
-      selectedStudent.value = data;
-      loadingStudent.value = false;
-    });
+  
+  try {
+    const response = await fetch(`/api/students/${student.id}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    selectedStudent.value = data;
+  } catch (error) {
+    console.error('Erro ao carregar dados do aluno:', error);
+    // Em caso de erro, usa os dados básicos que já temos
+    selectedStudent.value = student;
+  } finally {
+    loadingStudent.value = false;
+  }
 }
 function closePhotoModal() {
   showPhotoModal.value = false;
