@@ -11,7 +11,6 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
@@ -20,8 +19,14 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
-
+    // Rotas CRUD`s
+    Route::resource('guardian',App\Http\Controllers\Matriculas\GuardianController::class);
+    Route::resource('students', App\Http\Controllers\Matriculas\StudentController::class);
     Route::resource('user', App\Http\Controllers\Cadastros\UserController::class);
+    Route::resource('matriculas', App\Http\Controllers\Matriculas\EnrollmentController::class);
+    Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
+    Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
+    //rotas adicionais 
     Route::prefix('usuario')->controller(App\Http\Controllers\Cadastros\UserController::class)
         ->group(function () {
             Route::get('/', function () {
@@ -40,16 +45,17 @@ Route::middleware([
             [App\Http\Controllers\UserManagementController::class, 'toggleAuth'])
             ->name('admin.users.toggle-auth');
     });
-    Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
-    Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
-
-    // CRUD principal de matrículas
-    Route::resource('matriculas', App\Http\Controllers\EnrollmentController::class);
-    // Rotas adicionais de matrículas
-    Route::prefix('matriculas')->name('matriculas.')->controller(App\Http\Controllers\EnrollmentController::class)
+    Route::prefix('matriculas')->name('matriculas.')->controller(App\Http\Controllers\Matriculas\EnrollmentController::class)
         ->group(function () {
             Route::post('{id}/cancelar', 'cancel')->name('cancelar');
             Route::post('{id}/trocar-turma', 'changeClassroom')->name('trocar-turma');
-            // Outras rotas adicionais podem ser adicionadas aqui
+        });
+    
+    // Rotas para gerenciar vínculos entre responsáveis e alunos
+    Route::prefix('students/{student}/guardians')->name('students.guardians.')->controller(App\Http\Controllers\Matriculas\GuardianController::class)
+        ->group(function () {
+            Route::get('search-not-linked', 'searchNotLinked')->name('search-not-linked');
+            Route::post('attach', 'attachToStudent')->name('attach');
+            Route::delete('{guardian}', 'detachFromStudent')->name('detach');
         });
 });

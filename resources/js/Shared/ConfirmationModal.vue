@@ -6,7 +6,7 @@
       </h2>
       <div class="mb-4">
         <slot name="message">Tem certeza que deseja continuar?</slot>
-      </div>
+              </div>
       <div class="flex justify-end space-x-2">
         <button @click="$emit('cancel')" class="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Cancelar</button>
         <button @click="$emit('confirm')" class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">Confirmar</button>

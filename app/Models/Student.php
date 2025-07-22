@@ -17,6 +17,7 @@ class Student extends Model
         'email',
         'phone',
         'cpf',
+        'photo',
         'rg',
         'birth_certificate_number',
         'notes',

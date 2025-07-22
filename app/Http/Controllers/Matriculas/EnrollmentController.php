@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Matriculas;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\EnrollmentRequest;
 use App\Services\EnrollmentService;
 use App\Models\Enrollment;
@@ -40,13 +41,10 @@ class EnrollmentController extends Controller
     public function edit($id)
     {
         $enrollment = Enrollment::with(['student', 'guardian', 'classroom'])->findOrFail($id);
-        $students = Student::all();
-        $guardians = Guardian::all();
         $classrooms = Classroom::all();
+        
         return Inertia::render('Matriculas/Edit', [
             'enrollment' => $enrollment,
-            'students' => $students,
-            'guardians' => $guardians,
             'classrooms' => $classrooms,
         ]);
     }
@@ -54,44 +52,28 @@ class EnrollmentController extends Controller
     public function store(EnrollmentRequest $request)
     {
         $data = $request->validated();
-        // try {
-            $enrollment = $this->service->createEnrollment($data);
-            return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');
-        // } catch (\Exception $e) {
-        //     return back()->with('error', $e->getMessage());
-        // }
+        $enrollment = $this->service->createEnrollment($data);
+        return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');
     }
 
     public function cancel(Request $request, $id)
     {
         $reason = $request->input('reason');
-        // try {
-            $enrollment = $this->service->cancelEnrollment($id, $reason);
-            return redirect()->route('matriculas.index')->with('success', 'Matrícula cancelada com sucesso!');
-        // } catch (\Exception $e) {
-        //     return back()->with('error', $e->getMessage());
-        // }
+        $enrollment = $this->service->cancelEnrollment($id, $reason);
+        return redirect()->route('matriculas.index')->with('success', 'Matrícula cancelada com sucesso!');
     }
 
     public function changeClassroom(Request $request, $id)
     {
         $newClassroomId = $request->input('classroom_id');
-        // try {
-            $enrollment = $this->service->changeClassroom($id, $newClassroomId);
-            return redirect()->route('matriculas.index')->with('success', 'Turma alterada com sucesso!');
-        // } catch (\Exception $e) {
-        //     return back()->with('error', $e->getMessage());
-        // }
+        $enrollment = $this->service->changeClassroom($id, $newClassroomId);
+        return redirect()->route('matriculas.index')->with('success', 'Turma alterada com sucesso!');
     }
 
     public function update(EnrollmentRequest $request, $id)
     {
         $data = $request->validated();
-        // try {
-            $enrollment = $this->service->updateEnrollment($id, $data);
-            return redirect()->route('matriculas.index')->with('success', 'Matrícula atualizada com sucesso!');
-        // } catch (\Exception $e) {
-        //     return back()->with('error', $e->getMessage());
-        // }
+        $enrollment = $this->service->updateEnrollment($id, $data);
+        return redirect()->route('matriculas.index')->with('success', 'Matrícula atualizada com sucesso!');
     }
 } 

@@ -1,135 +1,117 @@
 <template>
-  <div class="">
-    <!-- Header do Step -->
-    <div class="flex items-center mb-8">
-      <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
-        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-lg max-w-6xl w-full p-6 mx-4 max-h-[95vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold text-gray-900">Adicionar Responsável</h3>
+        <button @click="$emit('close')" class="text-gray-400 hover:text-gray-600">
+          <XMarkIcon class="w-6 h-6" />
+        </button>
       </div>
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900">Responsável</h2>
-        <p class="text-gray-600">Busque ou cadastre o responsável pelo aluno</p>
-      </div>
-    </div>
 
-    <!-- Busca de Responsável -->
-    <div class="mb-8">
-      <div class="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200">
-        <div class="flex items-center mb-4">
-          <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <label class="text-sm font-semibold text-gray-700">Buscar responsável existente</label>
-        </div>
-        
-        <div class="relative">
-          <input 
-            v-model="search" 
-            @input="onSearch" 
-            type="text" 
-            placeholder="Digite o nome ou CPF do responsável" 
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 pl-10"
-          />
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Toggle entre buscar e criar -->
+      <div class="mb-6 flex bg-gray-100 rounded-lg p-1">
+        <button 
+          @click="mode = 'search'" 
+          :class="[mode === 'search' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500', 'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors']"
+        >
+          Buscar Existente
+        </button>
+        <button 
+          @click="mode = 'create'" 
+          :class="[mode === 'create' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500', 'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors']"
+        >
+          Criar Novo
+        </button>
+      </div>
+
+      <!-- Modo buscar existente -->
+      <div v-if="mode === 'search'" class="space-y-4">
+        <div class="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200">
+          <div class="flex items-center mb-4">
+            <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
+            <label class="text-sm font-semibold text-gray-700">Buscar responsável existente</label>
           </div>
-        </div>
-
-        <!-- Resultados da Busca -->
-        <div v-if="search && guardians.length" class="mt-4 bg-white rounded-lg shadow-md border border-gray-200 max-h-60 overflow-y-auto">
-          <div 
-            v-for="guardian in guardians" 
-            :key="guardian.id"
-            :class="[
-              'px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200 flex items-center',
-              selectedGuardian && selectedGuardian.id === guardian.id 
-                ? 'bg-blue-50 border-l-4 border-l-blue-500' 
-                : 'hover:bg-gray-50'
-            ]"
-            @click="selectGuardian(guardian)"
-          >
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <div class="font-semibold text-gray-900">{{ guardian.name }}</div>
-              <div class="text-sm text-gray-500">CPF: {{ guardian.cpf }}</div>
-            </div>
-            <div v-if="selectedGuardian && selectedGuardian.id === guardian.id" class="text-blue-600">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          
+          <div class="relative">
+            <input 
+              v-model="searchTerm"
+              @input="searchGuardians"
+              type="text" 
+              placeholder="Digite o nome ou CPF do responsável"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 pl-10"
+            />
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
             </div>
           </div>
-        </div>
 
-        <!-- Estados da Busca -->
-        <div v-if="search && !guardians.length && !loading" class="mt-4 text-center py-4">
-          <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.563M15 9.34c-1.168-.91-2.544-1.34-4-1.34s-2.832.43-4 1.34"/>
-          </svg>
-          <p class="text-sm text-gray-500">Nenhum responsável encontrado</p>
-        </div>
-
-        <div v-if="loading" class="mt-4 flex items-center justify-center py-4">
-          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-          <span class="text-sm text-blue-600">Buscando...</span>
-        </div>
-
-        <!-- Responsável Selecionado -->
-        <div v-if="selectedGuardian" class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div class="flex items-start">
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <h4 class="font-semibold text-blue-900 mb-1">Responsável selecionado</h4>
-              <p class="text-sm text-blue-800">{{ selectedGuardian.name }}</p>
-              <p class="text-sm text-blue-700">CPF: {{ selectedGuardian.cpf }}</p>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end">
-            <button 
-              @click="confirmGuardian" 
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          <!-- Resultados da Busca -->
+          <div v-if="searchTerm && searchResults.length" class="mt-4 bg-white rounded-lg shadow-md border border-gray-200 max-h-60 overflow-y-auto">
+            <div 
+              v-for="guardian in searchResults" 
+              :key="guardian.id"
+              :class="[
+                'px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200 flex items-center',
+                selectedGuardian && selectedGuardian.id === guardian.id 
+                  ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                  : 'hover:bg-gray-50'
+              ]"
+              @click="selectGuardian(guardian)"
             >
-              Continuar
-              <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
+              <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-gray-900">{{ guardian.name }}</div>
+                <div class="text-sm text-gray-500">CPF: {{ guardian.cpf }}</div>
+              </div>
+              <div v-if="selectedGuardian && selectedGuardian.id === guardian.id" class="text-blue-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estados da Busca -->
+          <div v-if="searchTerm && !searchResults.length && !loading" class="mt-4 text-center py-4">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.563M15 9.34c-1.168-.91-2.544-1.34-4-1.34s-2.832.43-4 1.34"/>
+            </svg>
+            <p class="text-sm text-gray-500">Nenhum responsável encontrado</p>
+          </div>
+
+          <div v-if="loading" class="mt-4 flex items-center justify-center py-4">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+            <span class="text-sm text-blue-600">Buscando...</span>
+          </div>
+
+          <!-- Responsável Selecionado -->
+          <div v-if="selectedGuardian" class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-semibold text-blue-900 mb-1">Responsável selecionado</h4>
+                <p class="text-sm text-blue-800">{{ selectedGuardian.name }}</p>
+                <p class="text-sm text-blue-700">CPF: {{ selectedGuardian.cpf }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Divider -->
-    <div class="relative mb-8">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-300"></div>
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-4 bg-white text-gray-500 font-medium">ou</span>
-      </div>
-    </div>
-
-    <!-- Cadastro de Novo Responsável -->
-    <div class="bg-green-50 rounded-xl p-6 border-2 border-dashed border-green-300">
-      <div class="flex items-center mb-6">
-        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        <label class="text-sm font-semibold text-green-800">Cadastrar novo responsável</label>
-      </div>
-      
-      <form @submit.prevent="submitNewGuardian" class="space-y-6">
+      <!-- Modo criar novo -->
+      <div v-else class="space-y-6">
         <!-- Seção: Dados Pessoais -->
         <div class="bg-white rounded-xl p-6 border border-green-200 shadow-sm">
           <h4 class="flex items-center text-lg font-semibold text-gray-800 mb-6">
@@ -208,7 +190,7 @@
           </div>
         </div>
 
-        <!-- Seção: Endereços - MOVIDA PARA CÁ -->
+        <!-- Seção: Endereços -->
         <div class="bg-white rounded-xl p-6 border border-green-200 shadow-sm">
           <h4 class="flex items-center text-lg font-semibold text-gray-800 mb-6">
             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
@@ -393,7 +375,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                     <select v-model="contact.label" class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-white">
-                      <option value="pessoal">📱 Whastapp/Pessoal</option>
+                      <option value="pessoal">📱 WhatsApp/Pessoal</option>
                       <option value="fixo">📞 Fixo</option>
                       <option value="trabalho">💼 Trabalho</option>
                       <option value="emergencia">🚨 Emergência</option>
@@ -511,68 +493,55 @@
             ></textarea>
           </div>
         </div>
-        
-        <!-- Botão de Submit -->
-        <div class="flex justify-end pt-6 border-t border-green-200">
-          <button 
-            type="submit" 
-            class="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-          >
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Cadastrar e Continuar
-          </button>
-        </div>
-      </form>
+      </div>
+
+      <!-- Botões -->
+      <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+        <button 
+          @click="$emit('close')"
+          class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+          :disabled="processing"
+        >
+          Cancelar
+        </button>
+        <button 
+          @click="handleSubmit"
+          :disabled="!canSubmit || processing"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+        >
+          {{ processing ? 'Processando...' : (mode === 'search' ? 'Vincular Responsável' : 'Criar e Vincular') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import debounce from 'lodash/debounce';
+import { ref, reactive, computed, watch } from 'vue'
+import { router } from '@inertiajs/vue3'
+import { XMarkIcon, UserIcon } from '@heroicons/vue/20/solid'
+import { debounce } from 'lodash'
+import axios from 'axios'
 
-const emit = defineEmits(['next']);
+const props = defineProps({
+  student: Object
+})
 
-const guardians = ref([]);
-const search = ref('');
-const loading = ref(false);
-const selectedGuardian = ref(null);
+const emit = defineEmits(['close', 'added'])
 
-const page = usePage();
+const mode = ref('search')
+const searchTerm = ref('')
+const searchResults = ref([])
+const selectedGuardian = ref(null)
+const loading = ref(false)
+const processing = ref(false)
 
-const fetchGuardians = debounce(async () => {
-  if (!search.value) {
-    guardians.value = [];
-    selectedGuardian.value = null;
-    return;
-  }
-  loading.value = true;
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(search.value)}`);
-  guardians.value = await response.json();
-  loading.value = false;
-}, 400);
-
-function onSearch() {
-  fetchGuardians();
-}
-
-function selectGuardian(guardian) {
-  selectedGuardian.value = guardian;
-}
-
-function confirmGuardian() {
-  if (selectedGuardian.value) {
-    emit('next', selectedGuardian.value);
-  }
-}
+const principalContactIndex = ref(0)
+const principalAddressIndex = ref(0)
 
 const newGuardian = reactive({
   name: '',
   cpf: '',
-  email: '',
   rg: '',
   birth_date: '',
   gender: '',
@@ -584,42 +553,80 @@ const newGuardian = reactive({
   notes: '',
   status: 'active',
   contacts: [
-    { type: 'phone', value: '', label: 'pessoal' }
+    { type: 'phone', value: '', label: 'pessoal', is_primary: true, contact_for: 'pessoal' }
   ],
   addresses: [
     { zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '', address_for: 'casa', is_primary: true, loading: false, error: '' }
   ]
-});
+})
 
-const principalContactIndex = ref(0);
-const principalAddressIndex = ref(0);
+const canSubmit = computed(() => {
+  if (mode.value === 'search') {
+    return selectedGuardian.value !== null
+  } else {
+    return newGuardian.name && newGuardian.cpf && 
+           newGuardian.contacts.some(c => c.value) &&
+           newGuardian.addresses.some(a => a.zip_code || a.street)
+  }
+})
 
-function addContact() {
-  newGuardian.contacts.push({ type: 'phone', value: '', label: 'pessoal' });
+const searchGuardians = debounce(async () => {
+  if (searchTerm.value.length < 2) {
+    searchResults.value = []
+    return
+  }
+  
+  loading.value = true
+  try {
+    const response = await axios.get(route('students.guardians.search-not-linked', props.student.id), {
+      params: { q: searchTerm.value }
+    })
+    searchResults.value = response.data
+  } catch (error) {
+    console.error('Erro na busca:', error)
+    searchResults.value = []
+  } finally {
+    loading.value = false
+  }
+}, 300)
+
+const selectGuardian = (guardian) => {
+  selectedGuardian.value = guardian
 }
 
-function removeContact(idx) {
-  if (newGuardian.contacts.length === 1) return;
-  newGuardian.contacts.splice(idx, 1);
-  if (principalContactIndex.value === idx) {
-    principalContactIndex.value = 0;
-  } else if (principalContactIndex.value > idx) {
-    principalContactIndex.value--;
+const handleSubmit = () => {
+  if (mode.value === 'search') {
+    linkExistingGuardian()
+  } else {
+    createAndLinkGuardian()
   }
 }
 
-watch(
-  () => newGuardian.contacts.length,
-  (len) => {
-    if (principalContactIndex.value >= len) {
-      principalContactIndex.value = 0;
+const linkExistingGuardian = () => {
+  if (!selectedGuardian.value) return
+  
+  processing.value = true
+  
+  router.post(route('students.guardians.attach', props.student.id), {
+    guardian_id: selectedGuardian.value.id
+  }, {
+    onSuccess: () => {
+      emit('added')
+    },
+    onError: (errors) => {
+      console.error('Erro ao vincular responsável:', errors)
+    },
+    onFinish: () => {
+      processing.value = false
     }
-  }
-);
+  })
+}
 
-function submitNewGuardian() {
-  // Limpar payload antes de enviar
-  const addresses = (newGuardian.addresses || []).map(addr => ({
+const createAndLinkGuardian = () => {
+  processing.value = true
+  
+  // Preparar dados para envio
+  const addresses = newGuardian.addresses.map((addr, idx) => ({
     zip_code: addr.zip_code,
     street: addr.street,
     number: addr.number,
@@ -628,13 +635,17 @@ function submitNewGuardian() {
     city: addr.city,
     state: addr.state,
     address_for: addr.address_for,
-    is_primary: addr.is_primary,
-  }));
-  const contacts = (newGuardian.contacts || []).map(contact => ({
+    is_primary: principalAddressIndex.value === idx,
+  }))
+  
+  const contacts = newGuardian.contacts.map((contact, idx) => ({
     type: contact.type,
     value: contact.value,
     label: contact.label,
-  }));
+    is_primary: principalContactIndex.value === idx,
+    contact_for: contact.label,
+  }))
+
   const payload = {
     name: newGuardian.name,
     cpf: newGuardian.cpf,
@@ -650,66 +661,112 @@ function submitNewGuardian() {
     status: newGuardian.status,
     addresses,
     contacts,
-  };
+  }
+  
   router.post(route('guardian.store'), payload, {
-    preserveState: true,
-    replace: true,
+    onSuccess: (page) => {
+      const createdGuardian = page.props.flash?.guardian
+      if (createdGuardian) {
+        router.post(route('students.guardians.attach', props.student.id), {
+          guardian_id: createdGuardian.id
+        }, {
+          onSuccess: () => {
+            emit('added')
+          },
+          onFinish: () => {
+            processing.value = false
+          }
+        })
+      } else {
+        emit('added')
+        processing.value = false
+      }
+    },
     onError: (errors) => {
-      emit('next', { ...newGuardian, id: Date.now() });
+      console.error('Erro ao criar responsável:', errors)
+      processing.value = false
     }
-  });
+  })
 }
 
-function addAddress() {
-  if (!newGuardian.addresses) newGuardian.addresses = [];
-  newGuardian.addresses.push({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '', address_for: 'casa', is_primary: false, loading: false, error: '' });
+// Funções para contatos
+const addContact = () => {
+  newGuardian.contacts.push({ type: 'phone', value: '', label: 'pessoal', is_primary: false, contact_for: 'pessoal' })
 }
 
-function removeAddress(idx) {
-  if (!newGuardian.addresses || newGuardian.addresses.length === 1) return;
-  newGuardian.addresses.splice(idx, 1);
-  if (principalAddressIndex.value === idx) principalAddressIndex.value = 0;
-  else if (principalAddressIndex.value > idx) principalAddressIndex.value--;
+const removeContact = (idx) => {
+  if (newGuardian.contacts.length === 1) return
+  newGuardian.contacts.splice(idx, 1)
+  if (principalContactIndex.value === idx) {
+    principalContactIndex.value = 0
+  } else if (principalContactIndex.value > idx) {
+    principalContactIndex.value--
+  }
 }
 
-async function buscarCep(idx) {
-  if (!newGuardian.addresses || !newGuardian.addresses[idx]) return;
-  const addr = newGuardian.addresses[idx];
-  if (!addr.zip_code || addr.zip_code.length < 8) return;
-  addr.loading = true;
-  addr.error = '';
+// Funções para endereços
+const addAddress = () => {
+  newGuardian.addresses.push({ 
+    zip_code: '', 
+    street: '', 
+    number: '', 
+    complement: '', 
+    neighborhood: '', 
+    city: '', 
+    state: '', 
+    address_for: 'casa', 
+    is_primary: false, 
+    loading: false, 
+    error: '' 
+  })
+}
+
+const removeAddress = (idx) => {
+  if (newGuardian.addresses.length === 1) return
+  newGuardian.addresses.splice(idx, 1)
+  if (principalAddressIndex.value === idx) {
+    principalAddressIndex.value = 0
+  } else if (principalAddressIndex.value > idx) {
+    principalAddressIndex.value--
+  }
+}
+
+// Buscar CEP
+const buscarCep = async (idx) => {
+  const addr = newGuardian.addresses[idx]
+  if (!addr.zip_code || addr.zip_code.length < 8) return
+  
+  addr.loading = true
+  addr.error = ''
+  
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
-    const data = await res.json();
-    if (data.erro) throw new Error('CEP não encontrado');
-    addr.street = data.logradouro || '';
-    addr.neighborhood = data.bairro || '';
-    addr.city = data.localidade || '';
-    addr.state = data.uf || '';
+    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`)
+    const data = await res.json()
+    
+    if (data.erro) throw new Error('CEP não encontrado')
+    
+    addr.street = data.logradouro || ''
+    addr.neighborhood = data.bairro || ''
+    addr.city = data.localidade || ''
+    addr.state = data.uf || ''
   } catch (e) {
-    addr.error = 'CEP não encontrado';
-    addr.street = addr.neighborhood = addr.city = addr.state = '';
+    addr.error = 'CEP não encontrado'
+    addr.street = addr.neighborhood = addr.city = addr.state = ''
   } finally {
-    addr.loading = false;
+    addr.loading = false
   }
 }
 
-watch(() => newGuardian.addresses && newGuardian.addresses.length, len => {
-  if (principalAddressIndex.value >= len) principalAddressIndex.value = 0;
-});
-
-async function fetchGuardianByCpf(cpf) {
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(cpf)}`);
-  const results = await response.json();
-  return results && results.length ? results[0] : null;
-}
-
-watch(
-  () => page.props.flash.success,
-  (success) => {
-    if (success) {
-      emit('next', page.props.flash.guardian || selectedGuardian.value || { ...newGuardian });
-    }
+// Watchers para validação
+watch(() => newGuardian.contacts.length, (len) => {
+  if (principalContactIndex.value >= len) {
+    principalContactIndex.value = 0
   }
-);
-</script>
+})
+
+watch(() => newGuardian.addresses.length, (len) => {
+  if (principalAddressIndex.value >= len) {
+    principalAddressIndex.value = 0
+  }
+})
+</script> 

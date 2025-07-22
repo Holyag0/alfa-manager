@@ -24,9 +24,12 @@
     <div>
       <label class="block text-sm font-medium mb-1">Status</label>
       <select v-model="form.status" class="form-select w-full">
-        <option value="active">Ativo</option>
-        <option value="pending">Pendente</option>
-        <option value="cancelled">Cancelado</option>
+        <option value="ativo">Ativo</option>
+        <option value="pendente">Pendente</option>
+        <option value="cancelado">Cancelado</option>
+        <option value="concluido">Concluído</option>
+        <option value="aguardando_documentos">Aguardando Documentos</option>
+        <option value="aguardando_pagamento">Aguardando Pagamento</option>
       </select>
     </div>
     <div>

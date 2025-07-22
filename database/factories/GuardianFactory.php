@@ -16,7 +16,7 @@ class GuardianFactory extends Factory
             'rg' => $this->faker->numerify('#########'),
             'marital_status' => $this->faker->randomElement(['solteiro', 'casado', 'divorciado']),
             'status' => $this->faker->randomElement(['active', 'inactive']),
-            'guardian_type' => $this->faker->randomElement(['titular', 'financeiro', 'secundario']),
+            'guardian_type' => $this->faker->randomElement(['titular', 'suplente', 'financeiro', 'emergencia']),
             'occupation' => $this->faker->jobTitle(),
             'workplace' => $this->faker->company(),
             'birth_date' => $this->faker->date('Y-m-d', '-25 years'),

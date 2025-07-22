@@ -1,6 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-4xl mx-auto">
+  <div class="min-h-screen py-12 px-18 sm:px-6 lg:px-8">
+    <div class="max-w-4xl max-h-max mx-auto">
       <!-- Header -->
       <div class="text-center mb-8">
         <div class="flex justify-center mb-4">
@@ -20,7 +20,7 @@
       </div>
 
       <!-- Conteúdo dos Steps -->
-      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="p-2  rounded-2xl shadow-xl overflow-hidden">
         <div v-if="step === 1" class="transition-all duration-500 ease-in-out">
           <ResponsavelStep @next="handleResponsavel" />
         </div>

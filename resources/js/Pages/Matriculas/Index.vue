@@ -104,13 +104,12 @@
                   class="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-colors duration-200 appearance-none bg-white"
                 >
                   <option value="">Todos os status</option>
-                  <option value="active">
-                    <span class="flex items-center">
-                      Ativo
-                    </span>
-                  </option>
-                  <option value="pending">Pendente</option>
-                  <option value="cancelled">Cancelado</option>
+                  <option value="ativo">Ativo</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="cancelado">Cancelado</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="aguardando_documentos">Aguardando Documentos</option>
+                  <option value="aguardando_pagamento">Aguardando Pagamento</option>
                 </select>
                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -175,7 +174,7 @@
         
         <!-- Lista de Matrículas -->
         <div class="overflow-hidden">
-          <div class="px-6 py-4">
+          <div class="px-6 py-20">
             <ListEnrollments
               :enrollments="enrollments.data"
               @cancel="handleCancel"

@@ -26,10 +26,6 @@ class HandleInertiaRequests extends Middleware
             $permissions = $user->getAllPermissions()->pluck('name');
             // Recupera os papéis do usuário
             $roles = $user->roles->pluck('name');
-            
-           
-                
-
             // Organiza as informações do usuário para ser compartilhado com o frontend
             $authUser = [
                 'id'          => $user->id,
@@ -43,13 +39,22 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'auth' => [
-                'user'             => $authUser,
+                'user' => $authUser,
             ],
             'flash' => function () use ($request) {
-                return [
+                $flash = [
                     'success' => $request->session()->get('success'),
-                    'error'   => $request->session()->get('error'),
+                    'error' => $request->session()->get('error'),
                 ];
+                $guardian = $request->session()->get('guardian');
+                if (!is_null($guardian)) {
+                    $flash['guardian'] = $guardian;
+                }
+                $student = $request->session()->get('student');
+                if (!is_null($student)) {
+                    $flash['student'] = $student;
+                }
+                return $flash;
             },
         ]);
     }

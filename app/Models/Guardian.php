@@ -13,8 +13,6 @@ class Guardian extends Model
 
     protected $fillable = [
         'name',
-        'email',
-        'phone',
         'relationship', // Parentesco com o estudante
         'cpf',
         'rg',
@@ -47,5 +45,10 @@ class Guardian extends Model
     public function contacts()
     {
         return $this->hasMany(Contact::class);
+    }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class); // Matrículas que este responsável abriu
     }
 } 

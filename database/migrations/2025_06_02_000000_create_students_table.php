@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('rg')->nullable();
             $table->string('birth_certificate_number')->nullable();
             $table->text('notes')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

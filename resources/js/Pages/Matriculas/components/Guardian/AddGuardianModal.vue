@@ -1,135 +1,122 @@
 <template>
-  <div class="">
-    <!-- Header do Step -->
-    <div class="flex items-center mb-8">
-      <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4">
-        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div class="bg-white rounded-lg shadow-lg max-w-6xl w-full p-6 mx-4 max-h-[95vh] overflow-y-auto">
+      <h3 class="text-lg font-semibold mb-4">Adicionar Responsável</h3>
+      
+      <!-- Toggle entre buscar e criar -->
+      <div class="mb-6 flex bg-gray-100 rounded-lg p-1">
+        <button
+          @click="addMode = 'search'"
+          :class="[
+            addMode === 'search' 
+              ? 'bg-white text-blue-600 shadow-sm' 
+              : 'text-gray-500',
+            'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors'
+          ]"
+        >
+          Buscar Existente
+        </button>
+        <button
+          @click="addMode = 'create'"
+          :class="[
+            addMode === 'create' 
+              ? 'bg-white text-blue-600 shadow-sm' 
+              : 'text-gray-500',
+            'flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors'
+          ]"
+        >
+          Criar Novo
+        </button>
       </div>
-      <div>
-        <h2 class="text-2xl font-bold text-gray-900">Responsável</h2>
-        <p class="text-gray-600">Busque ou cadastre o responsável pelo aluno</p>
-      </div>
-    </div>
 
-    <!-- Busca de Responsável -->
-    <div class="mb-8">
-      <div class="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200">
-        <div class="flex items-center mb-4">
-          <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <label class="text-sm font-semibold text-gray-700">Buscar responsável existente</label>
-        </div>
-        
-        <div class="relative">
-          <input 
-            v-model="search" 
-            @input="onSearch" 
-            type="text" 
-            placeholder="Digite o nome ou CPF do responsável" 
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 pl-10"
-          />
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Modo buscar existente -->
+      <div v-if="addMode === 'search'">
+        <div class="bg-gray-50 rounded-xl p-6 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors duration-200">
+          <div class="flex items-center mb-4">
+            <svg class="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
+            <label class="text-sm font-semibold text-gray-700">Buscar responsável existente</label>
           </div>
-        </div>
-
-        <!-- Resultados da Busca -->
-        <div v-if="search && guardians.length" class="mt-4 bg-white rounded-lg shadow-md border border-gray-200 max-h-60 overflow-y-auto">
-          <div 
-            v-for="guardian in guardians" 
-            :key="guardian.id"
-            :class="[
-              'px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200 flex items-center',
-              selectedGuardian && selectedGuardian.id === guardian.id 
-                ? 'bg-blue-50 border-l-4 border-l-blue-500' 
-                : 'hover:bg-gray-50'
-            ]"
-            @click="selectGuardian(guardian)"
-          >
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <div class="font-semibold text-gray-900">{{ guardian.name }}</div>
-              <div class="text-sm text-gray-500">CPF: {{ guardian.cpf }}</div>
-            </div>
-            <div v-if="selectedGuardian && selectedGuardian.id === guardian.id" class="text-blue-600">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          
+          <div class="relative">
+            <input 
+              v-model="searchTerm" 
+              @input="searchGuardians" 
+              type="text" 
+              placeholder="Digite o nome ou CPF do responsável" 
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200 pl-10"
+            />
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
             </div>
           </div>
-        </div>
 
-        <!-- Estados da Busca -->
-        <div v-if="search && !guardians.length && !loading" class="mt-4 text-center py-4">
-          <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.563M15 9.34c-1.168-.91-2.544-1.34-4-1.34s-2.832.43-4 1.34"/>
-          </svg>
-          <p class="text-sm text-gray-500">Nenhum responsável encontrado</p>
-        </div>
-
-        <div v-if="loading" class="mt-4 flex items-center justify-center py-4">
-          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
-          <span class="text-sm text-blue-600">Buscando...</span>
-        </div>
-
-        <!-- Responsável Selecionado -->
-        <div v-if="selectedGuardian" class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div class="flex items-start">
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
-              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-              </svg>
-            </div>
-            <div class="flex-1">
-              <h4 class="font-semibold text-blue-900 mb-1">Responsável selecionado</h4>
-              <p class="text-sm text-blue-800">{{ selectedGuardian.name }}</p>
-              <p class="text-sm text-blue-700">CPF: {{ selectedGuardian.cpf }}</p>
-            </div>
-          </div>
-          <div class="mt-4 flex justify-end">
-            <button 
-              @click="confirmGuardian" 
-              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+          <!-- Resultados da Busca -->
+          <div v-if="searchTerm && searchResults.length" class="mt-4 bg-white rounded-lg shadow-md border border-gray-200 max-h-60 overflow-y-auto">
+            <div 
+              v-for="guardian in searchResults" 
+              :key="guardian.id"
+              :class="[
+                'px-4 py-3 cursor-pointer border-b border-gray-100 last:border-b-0 transition-all duration-200 flex items-center',
+                selectedGuardian && selectedGuardian.id === guardian.id 
+                  ? 'bg-blue-50 border-l-4 border-l-blue-500' 
+                  : 'hover:bg-gray-50'
+              ]"
+              @click="selectGuardian(guardian)"
             >
-              Continuar
-              <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-              </svg>
-            </button>
+              <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <div class="font-semibold text-gray-900">{{ guardian.name }}</div>
+                <div class="text-sm text-gray-500">CPF: {{ guardian.cpf }}</div>
+              </div>
+              <div v-if="selectedGuardian && selectedGuardian.id === guardian.id" class="text-blue-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Estados da Busca -->
+          <div v-if="searchTerm && !searchResults.length && !loading" class="mt-4 text-center py-4">
+            <svg class="mx-auto h-12 w-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.563M15 9.34c-1.168-.91-2.544-1.34-4-1.34s-2.832.43-4 1.34"/>
+            </svg>
+            <p class="text-sm text-gray-500">Nenhum responsável encontrado</p>
+          </div>
+
+          <div v-if="loading" class="mt-4 flex items-center justify-center py-4">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-2"></div>
+            <span class="text-sm text-blue-600">Buscando...</span>
+          </div>
+
+          <!-- Responsável Selecionado -->
+          <div v-if="selectedGuardian" class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div class="flex items-start">
+              <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3 mt-1">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div class="flex-1">
+                <h4 class="font-semibold text-blue-900 mb-1">Responsável selecionado</h4>
+                <p class="text-sm text-blue-800">{{ selectedGuardian.name }}</p>
+                <p class="text-sm text-blue-700">CPF: {{ selectedGuardian.cpf }}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Divider -->
-    <div class="relative mb-8">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-gray-300"></div>
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-4 bg-white text-gray-500 font-medium">ou</span>
-      </div>
-    </div>
-
-    <!-- Cadastro de Novo Responsável -->
-    <div class="bg-green-50 rounded-xl p-6 border-2 border-dashed border-green-300">
-      <div class="flex items-center mb-6">
-        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-        </svg>
-        <label class="text-sm font-semibold text-green-800">Cadastrar novo responsável</label>
-      </div>
-      
-      <form @submit.prevent="submitNewGuardian" class="space-y-6">
+      <!-- Modo criar novo -->
+      <div v-else class="space-y-6">
         <!-- Seção: Dados Pessoais -->
         <div class="bg-white rounded-xl p-6 border border-green-200 shadow-sm">
           <h4 class="flex items-center text-lg font-semibold text-gray-800 mb-6">
@@ -144,7 +131,7 @@
             <div class="lg:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-2">Nome completo *</label>
               <input 
-                v-model="newGuardian.name" 
+                v-model="newGuardianForm.name" 
                 type="text" 
                 placeholder="Nome completo do responsável" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
@@ -154,7 +141,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">CPF *</label>
               <input 
-                v-model="newGuardian.cpf" 
+                v-model="newGuardianForm.cpf" 
                 type="text" 
                 placeholder="000.000.000-00" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
@@ -164,7 +151,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">RG</label>
               <input 
-                v-model="newGuardian.rg" 
+                v-model="newGuardianForm.rg" 
                 type="text" 
                 placeholder="00.000.000-0" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
@@ -173,7 +160,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Data de Nascimento</label>
               <input 
-                v-model="newGuardian.birth_date" 
+                v-model="newGuardianForm.birth_date" 
                 type="date" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
               />
@@ -181,7 +168,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Gênero</label>
               <select 
-                v-model="newGuardian.gender" 
+                v-model="newGuardianForm.gender" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               >
                 <option value="">Selecione</option>
@@ -194,7 +181,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Estado Civil</label>
               <select 
-                v-model="newGuardian.marital_status" 
+                v-model="newGuardianForm.marital_status" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               >
                 <option value="">Selecione</option>
@@ -208,7 +195,7 @@
           </div>
         </div>
 
-        <!-- Seção: Endereços - MOVIDA PARA CÁ -->
+        <!-- Seção: Endereços -->
         <div class="bg-white rounded-xl p-6 border border-green-200 shadow-sm">
           <h4 class="flex items-center text-lg font-semibold text-gray-800 mb-6">
             <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
@@ -220,7 +207,7 @@
             Endereços
           </h4>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <template v-for="(address, idx) in newGuardian.addresses" :key="idx">
+            <template v-for="(address, idx) in newGuardianForm.addresses" :key="idx">
               <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 transition-all duration-200 hover:border-green-300 hover:bg-green-50/50">
                 <!-- Header do card com tipo e ações -->
                 <div class="flex items-center justify-between mb-4">
@@ -240,7 +227,7 @@
                     </button>
                   </div>
                   <button 
-                    v-if="newGuardian.addresses.length > 1" 
+                    v-if="newGuardianForm.addresses.length > 1" 
                     type="button" 
                     @click="removeAddress(idx)" 
                     class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
@@ -338,7 +325,7 @@
             Informações de Contato
           </h4>
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <template v-for="(contact, idx) in newGuardian.contacts" :key="idx">
+            <template v-for="(contact, idx) in newGuardianForm.contacts" :key="idx">
               <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 transition-all duration-200 hover:border-green-300 hover:bg-green-50/50">
                 <!-- Header do card -->
                 <div class="flex items-center justify-between mb-4">
@@ -357,7 +344,7 @@
                     </button>
                   </div>
                   <button 
-                    v-if="newGuardian.contacts.length > 1" 
+                    v-if="newGuardianForm.contacts.length > 1" 
                     type="button" 
                     @click="removeContact(idx)" 
                     class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
@@ -393,7 +380,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                     <select v-model="contact.label" class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 bg-white">
-                      <option value="pessoal">📱 Whastapp/Pessoal</option>
+                      <option value="pessoal">📱 WhatsApp/Pessoal</option>
                       <option value="fixo">📞 Fixo</option>
                       <option value="trabalho">💼 Trabalho</option>
                       <option value="emergencia">🚨 Emergência</option>
@@ -428,7 +415,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Responsável</label>
               <select 
-                v-model="newGuardian.guardian_type" 
+                v-model="newGuardianForm.guardian_type" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               >
                 <option value="titular">Titular</option>
@@ -440,7 +427,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Parentesco/Relacionamento</label>
               <select 
-                v-model="newGuardian.relationship" 
+                v-model="newGuardianForm.relationship" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
               >
                 <option value="">Selecione</option>
@@ -473,7 +460,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Profissão</label>
               <input 
-                v-model="newGuardian.occupation" 
+                v-model="newGuardianForm.occupation" 
                 type="text" 
                 placeholder="Ex: Engenheiro, Professor, etc." 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
@@ -482,7 +469,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Local de Trabalho</label>
               <input 
-                v-model="newGuardian.workplace" 
+                v-model="newGuardianForm.workplace" 
                 type="text" 
                 placeholder="Nome da empresa/instituição" 
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
@@ -504,75 +491,61 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
             <textarea 
-              v-model="newGuardian.notes" 
+              v-model="newGuardianForm.notes" 
               rows="4"
               placeholder="Informações adicionais relevantes sobre o responsável..." 
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200 resize-none" 
             ></textarea>
           </div>
         </div>
-        
-        <!-- Botão de Submit -->
-        <div class="flex justify-end pt-6 border-t border-green-200">
-          <button 
-            type="submit" 
-            class="inline-flex items-center px-8 py-4 border border-transparent text-base font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-          >
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-            </svg>
-            Cadastrar e Continuar
-          </button>
-        </div>
-      </form>
+      </div>
+
+      <!-- Botões do modal -->
+      <div class="flex justify-end space-x-2 mt-6 pt-6 border-t border-gray-200">
+        <button 
+          @click="$emit('close')"
+          class="px-6 py-3 text-gray-600 hover:text-gray-800 font-medium"
+          :disabled="loading"
+        >
+          Cancelar
+        </button>
+        <button 
+          @click="handleAdd"
+          :disabled="!canAdd || loading"
+          class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
+        >
+          {{ loading ? 'Adicionando...' : (addMode === 'create' ? 'Criar e Vincular' : 'Adicionar') }}
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import debounce from 'lodash/debounce';
+import { ref, reactive, computed, watch } from 'vue'
+import axios from 'axios'
+import { debounce } from 'lodash'
 
-const emit = defineEmits(['next']);
+const props = defineProps({
+  student: Object,
+  loading: Boolean
+})
 
-const guardians = ref([]);
-const search = ref('');
-const loading = ref(false);
-const selectedGuardian = ref(null);
+const emit = defineEmits(['close', 'add'])
 
-const page = usePage();
+// Estados
+const addMode = ref('search')
+const selectedGuardian = ref(null)
+const searchTerm = ref('')
+const searchResults = ref([])
+const loading = ref(false)
 
-const fetchGuardians = debounce(async () => {
-  if (!search.value) {
-    guardians.value = [];
-    selectedGuardian.value = null;
-    return;
-  }
-  loading.value = true;
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(search.value)}`);
-  guardians.value = await response.json();
-  loading.value = false;
-}, 400);
+const principalContactIndex = ref(0)
+const principalAddressIndex = ref(0)
 
-function onSearch() {
-  fetchGuardians();
-}
-
-function selectGuardian(guardian) {
-  selectedGuardian.value = guardian;
-}
-
-function confirmGuardian() {
-  if (selectedGuardian.value) {
-    emit('next', selectedGuardian.value);
-  }
-}
-
-const newGuardian = reactive({
+const newGuardianForm = reactive({
   name: '',
   cpf: '',
-  email: '',
   rg: '',
   birth_date: '',
   gender: '',
@@ -584,132 +557,182 @@ const newGuardian = reactive({
   notes: '',
   status: 'active',
   contacts: [
-    { type: 'phone', value: '', label: 'pessoal' }
+    { type: 'phone', value: '', label: 'pessoal', is_primary: true }
   ],
   addresses: [
-    { zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '', address_for: 'casa', is_primary: true, loading: false, error: '' }
+    { 
+      zip_code: '', 
+      street: '', 
+      number: '', 
+      complement: '', 
+      neighborhood: '', 
+      city: '', 
+      state: '', 
+      address_for: 'casa', 
+      is_primary: true, 
+      loading: false, 
+      error: '' 
+    }
   ]
-});
+})
 
-const principalContactIndex = ref(0);
-const principalAddressIndex = ref(0);
-
-function addContact() {
-  newGuardian.contacts.push({ type: 'phone', value: '', label: 'pessoal' });
-}
-
-function removeContact(idx) {
-  if (newGuardian.contacts.length === 1) return;
-  newGuardian.contacts.splice(idx, 1);
-  if (principalContactIndex.value === idx) {
-    principalContactIndex.value = 0;
-  } else if (principalContactIndex.value > idx) {
-    principalContactIndex.value--;
+// Buscar responsáveis não vinculados (com debounce) - mantém axios para autocomplete
+const searchGuardians = debounce(async () => {
+  if (searchTerm.value.length < 2) {
+    searchResults.value = []
+    return
   }
-}
-
-watch(
-  () => newGuardian.contacts.length,
-  (len) => {
-    if (principalContactIndex.value >= len) {
-      principalContactIndex.value = 0;
-    }
-  }
-);
-
-function submitNewGuardian() {
-  // Limpar payload antes de enviar
-  const addresses = (newGuardian.addresses || []).map(addr => ({
-    zip_code: addr.zip_code,
-    street: addr.street,
-    number: addr.number,
-    complement: addr.complement,
-    neighborhood: addr.neighborhood,
-    city: addr.city,
-    state: addr.state,
-    address_for: addr.address_for,
-    is_primary: addr.is_primary,
-  }));
-  const contacts = (newGuardian.contacts || []).map(contact => ({
-    type: contact.type,
-    value: contact.value,
-    label: contact.label,
-  }));
-  const payload = {
-    name: newGuardian.name,
-    cpf: newGuardian.cpf,
-    rg: newGuardian.rg,
-    birth_date: newGuardian.birth_date,
-    gender: newGuardian.gender,
-    marital_status: newGuardian.marital_status,
-    guardian_type: newGuardian.guardian_type,
-    relationship: newGuardian.relationship,
-    occupation: newGuardian.occupation,
-    workplace: newGuardian.workplace,
-    notes: newGuardian.notes,
-    status: newGuardian.status,
-    addresses,
-    contacts,
-  };
-  router.post(route('guardian.store'), payload, {
-    preserveState: true,
-    replace: true,
-    onError: (errors) => {
-      emit('next', { ...newGuardian, id: Date.now() });
-    }
-  });
-}
-
-function addAddress() {
-  if (!newGuardian.addresses) newGuardian.addresses = [];
-  newGuardian.addresses.push({ zip_code: '', street: '', number: '', complement: '', neighborhood: '', city: '', state: '', address_for: 'casa', is_primary: false, loading: false, error: '' });
-}
-
-function removeAddress(idx) {
-  if (!newGuardian.addresses || newGuardian.addresses.length === 1) return;
-  newGuardian.addresses.splice(idx, 1);
-  if (principalAddressIndex.value === idx) principalAddressIndex.value = 0;
-  else if (principalAddressIndex.value > idx) principalAddressIndex.value--;
-}
-
-async function buscarCep(idx) {
-  if (!newGuardian.addresses || !newGuardian.addresses[idx]) return;
-  const addr = newGuardian.addresses[idx];
-  if (!addr.zip_code || addr.zip_code.length < 8) return;
-  addr.loading = true;
-  addr.error = '';
+  
+  loading.value = true
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
-    const data = await res.json();
-    if (data.erro) throw new Error('CEP não encontrado');
-    addr.street = data.logradouro || '';
-    addr.neighborhood = data.bairro || '';
-    addr.city = data.localidade || '';
-    addr.state = data.uf || '';
-  } catch (e) {
-    addr.error = 'CEP não encontrado';
-    addr.street = addr.neighborhood = addr.city = addr.state = '';
+    const response = await axios.get(route('students.guardians.search-not-linked', props.student.id), {
+      params: { q: searchTerm.value }
+    })
+    searchResults.value = response.data
+  } catch (error) {
+    console.error('Erro na busca:', error)
+    searchResults.value = []
   } finally {
-    addr.loading = false;
+    loading.value = false
+  }
+}, 300)
+
+// Selecionar responsável da lista
+const selectGuardian = (guardian) => {
+  selectedGuardian.value = guardian
+  searchResults.value = []
+  searchTerm.value = guardian.name
+}
+
+// Computed para validar se pode adicionar
+const canAdd = computed(() => {
+  if (addMode.value === 'search') {
+    return selectedGuardian.value !== null
+  } else {
+    return newGuardianForm.name && newGuardianForm.cpf && 
+           newGuardianForm.contacts.some(c => c.value) &&
+           newGuardianForm.addresses.some(a => a.zip_code || a.street)
+  }
+})
+
+// Adicionar responsável
+const handleAdd = () => {
+  if (addMode.value === 'search') {
+    emit('add', {
+      mode: 'search',
+      guardian_id: selectedGuardian.value.id
+    })
+  } else {
+    // Preparar dados para envio
+    const addresses = newGuardianForm.addresses.map((addr, idx) => ({
+      zip_code: addr.zip_code,
+      street: addr.street,
+      number: addr.number,
+      complement: addr.complement,
+      neighborhood: addr.neighborhood,
+      city: addr.city,
+      state: addr.state,
+      address_for: addr.address_for,
+      is_primary: principalAddressIndex.value === idx,
+    }))
+    
+    const contacts = newGuardianForm.contacts.map((contact, idx) => ({
+      type: contact.type,
+      value: contact.value,
+      label: contact.label,
+      is_primary: principalContactIndex.value === idx,
+      contact_for: contact.label,
+    }))
+
+    emit('add', {
+      mode: 'create',
+      guardianData: {
+        ...newGuardianForm,
+        addresses,
+        contacts,
+      }
+    })
   }
 }
 
-watch(() => newGuardian.addresses && newGuardian.addresses.length, len => {
-  if (principalAddressIndex.value >= len) principalAddressIndex.value = 0;
-});
-
-async function fetchGuardianByCpf(cpf) {
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(cpf)}`);
-  const results = await response.json();
-  return results && results.length ? results[0] : null;
+// Funções para contatos
+const addContact = () => {
+  newGuardianForm.contacts.push({ type: 'phone', value: '', label: 'pessoal', is_primary: false })
 }
 
-watch(
-  () => page.props.flash.success,
-  (success) => {
-    if (success) {
-      emit('next', page.props.flash.guardian || selectedGuardian.value || { ...newGuardian });
-    }
+const removeContact = (idx) => {
+  if (newGuardianForm.contacts.length === 1) return
+  newGuardianForm.contacts.splice(idx, 1)
+  if (principalContactIndex.value === idx) {
+    principalContactIndex.value = 0
+  } else if (principalContactIndex.value > idx) {
+    principalContactIndex.value--
   }
-);
-</script>
+}
+
+// Funções para endereços
+const addAddress = () => {
+  newGuardianForm.addresses.push({ 
+    zip_code: '', 
+    street: '', 
+    number: '', 
+    complement: '', 
+    neighborhood: '', 
+    city: '', 
+    state: '', 
+    address_for: 'casa', 
+    is_primary: false, 
+    loading: false, 
+    error: '' 
+  })
+}
+
+const removeAddress = (idx) => {
+  if (newGuardianForm.addresses.length === 1) return
+  newGuardianForm.addresses.splice(idx, 1)
+  if (principalAddressIndex.value === idx) {
+    principalAddressIndex.value = 0
+  } else if (principalAddressIndex.value > idx) {
+    principalAddressIndex.value--
+  }
+}
+
+// Buscar CEP
+const buscarCep = async (idx) => {
+  const addr = newGuardianForm.addresses[idx]
+  if (!addr.zip_code || addr.zip_code.length < 8) return
+  
+  addr.loading = true
+  addr.error = ''
+  
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`)
+    const data = await res.json()
+    
+    if (data.erro) throw new Error('CEP não encontrado')
+    
+    addr.street = data.logradouro || ''
+    addr.neighborhood = data.bairro || ''
+    addr.city = data.localidade || ''
+    addr.state = data.uf || ''
+  } catch (e) {
+    addr.error = 'CEP não encontrado'
+    addr.street = addr.neighborhood = addr.city = addr.state = ''
+  } finally {
+    addr.loading = false
+  }
+}
+
+// Watchers para validação
+watch(() => newGuardianForm.contacts.length, (len) => {
+  if (principalContactIndex.value >= len) {
+    principalContactIndex.value = 0
+  }
+})
+
+watch(() => newGuardianForm.addresses.length, (len) => {
+  if (principalAddressIndex.value >= len) {
+    principalAddressIndex.value = 0
+  }
+})
+</script> 
