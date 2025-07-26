@@ -21,8 +21,10 @@ class EnrollmentFlowTest extends TestCase
     {
         parent::setUp();
         
-        // Create user with permissions
-        $this->user = User::factory()->create();
+        // Create user with permissions and authorization
+        $this->user = User::factory()->create([
+            'is_auth' => 1, // Usuário autorizado a acessar o sistema
+        ]);
         $role = Role::create(['name' => 'admin']);
         $this->user->assignRole($role);
     }
@@ -81,6 +83,7 @@ class EnrollmentFlowTest extends TestCase
             'occupation' => 'Professora',
             'addresses' => [
                 [
+                    'type' => 'residencial',
                     'zip_code' => '01234-567',
                     'street' => 'Rua das Flores',
                     'number' => '123',
@@ -132,8 +135,7 @@ class EnrollmentFlowTest extends TestCase
 
         // Check contacts were created
         $this->assertDatabaseHas('contacts', [
-            'contactable_id' => $guardian->id,
-            'contactable_type' => Guardian::class,
+            'guardian_id' => $guardian->id,
             'type' => 'email',
             'value' => 'maria@email.com',
             'is_primary' => true,
@@ -183,12 +185,12 @@ class EnrollmentFlowTest extends TestCase
 
         // Act
         $response = $this->actingAs($this->user)
-            ->get(route('matriculas.show', $enrollment->id));
+            ->get(route('matriculas.edit', $enrollment->id));
 
         // Assert
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->component('Matriculas/Show')
+            ->component('Matriculas/Edit')
             ->has('enrollment')
         );
     }
@@ -261,7 +263,7 @@ class EnrollmentFlowTest extends TestCase
 
         // Act
         $response = $this->actingAs($this->user)
-            ->get(route('matriculas.index', ['search' => 'Silva']));
+            ->get(route('matriculas.index', ['student' => 'Silva']));
 
         // Assert
         $response->assertOk();

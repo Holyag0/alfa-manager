@@ -14,6 +14,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use App\Services\ServiceStudent;
+use App\Services\ServiceGuardian;
 
 class EnrollmentController extends Controller
 {
@@ -64,10 +66,15 @@ class EnrollmentController extends Controller
 
     public function store(EnrollmentRequest $request)
     {
-        
-        $data = $request->validated();
-        $enrollment = $this->service->createEnrollment($data);
-        return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');
+        try {
+            $data = $request->validated();
+            $enrollment = $this->service->createEnrollment($data);
+            return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'enrollment' => $e->getMessage()
+            ]);
+        }
     }
 
     public function cancel(Request $request, $id)
@@ -89,6 +96,15 @@ class EnrollmentController extends Controller
         $data = $request->validated();
         $enrollment = $this->service->updateEnrollment($id, $data);
         return redirect()->route('matriculas.edit', $id)->with('success', 'Matrícula atualizada com sucesso!');
+    }
+
+
+
+    public function destroy($id)
+    {
+        $enrollment = Enrollment::findOrFail($id);
+        $enrollment->delete();
+        return redirect()->route('matriculas.index')->with('success', 'Matrícula excluída com sucesso!');
     }
 
     /**
@@ -133,39 +149,42 @@ class EnrollmentController extends Controller
      */
     public function wizardComplete(Request $request)
     {
-        $data = $request->all();
+        // Retrieve data from session instead of request
+        $studentData = session('enrollment_wizard.student');
+        $guardianData = session('enrollment_wizard.guardian');
+        $enrollmentData = session('enrollment_wizard.enrollment');
         
-        // Validar dados obrigatórios
-        $request->validate([
-            'student_id' => 'required|exists:students,id',
-            'guardian_id' => 'required|exists:guardians,id',
-            'classroom_id' => 'required|exists:classrooms,id',
-            'status' => 'required|string',
-            'enrollment_date' => 'required|date',
-        ]);
+        // Validate that all required data is present in session
+        if (!$studentData || !$guardianData || !$enrollmentData) {
+            return redirect()->back()->withErrors([
+                'wizard' => 'Por favor, complete todos os passos do wizard.'
+            ]);
+        }
         
         try {
-            // Buscar student e guardian já criados
-            $student = Student::findOrFail($data['student_id']);
-            $guardian = Guardian::findOrFail($data['guardian_id']);
+            // Create student using ServiceStudent
+            $studentService = app(ServiceStudent::class);
+            $student = $studentService->create($studentData);
             
-            // Vincular responsável ao aluno (se ainda não estiver vinculado)
-            if (!$student->guardians()->where('guardian_id', $guardian->id)->exists()) {
-                $student->guardians()->attach($guardian->id);
-            }
+            // Create guardian using ServiceGuardian
+            $guardianService = app(ServiceGuardian::class);
+            $guardian = $guardianService->create($guardianData);
             
-            // Criar a matrícula
-            $enrollment = Enrollment::create([
+            // Link guardian to student
+            $guardianService->attachToStudent($guardian->id, $student->id);
+            
+            // Create enrollment using EnrollmentService
+            $enrollment = $this->service->createEnrollment([
                 'student_id' => $student->id,
                 'guardian_id' => $guardian->id,
-                'classroom_id' => $data['classroom_id'],
-                'enrollment_date' => $data['enrollment_date'],
-                'status' => $data['status'],
-                'process' => $data['process'] ?? 'completa',
-                'notes' => $data['notes'] ?? null,
+                'classroom_id' => $enrollmentData['classroom_id'],
+                'enrollment_date' => $enrollmentData['enrollment_date'],
+                'status' => $enrollmentData['status'] ?? 'active',
+                'process' => $enrollmentData['process'] ?? 'completa',
+                'notes' => $enrollmentData['notes'] ?? null,
             ]);
             
-            // Limpar dados do wizard da sessão
+            // Clear wizard data from session
             session()->forget('enrollment_wizard');
             
             return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');

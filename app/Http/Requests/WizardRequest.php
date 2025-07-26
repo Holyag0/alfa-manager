@@ -64,7 +64,7 @@ class WizardRequest extends FormRequest
                 return [
                     'enrollment.classroom_id' => 'required|exists:classrooms,id',
                     'enrollment.enrollment_date' => 'required|date',
-                    'enrollment.status' => 'nullable|in:active,pending,cancelled,inactive',
+                    'enrollment.status' => 'required|in:active,pending,cancelled,inactive',
                     'enrollment.process' => 'nullable|in:reserva,aguardando_pagamento,aguardando_documentos,desistencia,transferencia,renovacao,completa',
                     'enrollment.notes' => 'nullable|string',
                 ];
