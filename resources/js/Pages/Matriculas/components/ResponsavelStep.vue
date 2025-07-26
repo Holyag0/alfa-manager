@@ -565,6 +565,14 @@
 import { ref, watch, reactive } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
 import debounce from 'lodash/debounce';
+import axios from 'axios'; // Import axios
+
+const props = defineProps({
+  student: {
+    type: Object,
+    default: null,
+  },
+});
 
 const emit = defineEmits(['next']);
 
@@ -584,9 +592,26 @@ const fetchGuardians = debounce(async () => {
     return;
   }
   loading.value = true;
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(search.value)}`);
-  guardians.value = await response.json();
-  loading.value = false;
+  try {
+    let response;
+    // Se props.student existe, buscar responsáveis não vinculados a este aluno
+    if (props.student) {
+      response = await axios.get(`/api/students/${props.student.id}/guardians/search-not-linked`, {
+        params: { q: search.value }
+      });
+    } else {
+      response = await axios.get('/api/guardians', {
+        params: { q: search.value }
+      });
+    }
+    
+    guardians.value = response.data;
+  } catch (error) {
+    console.error('Erro na busca:', error);
+    guardians.value = [];
+  } finally {
+    loading.value = false;
+  }
 }, 400);
 
 function onSearch() {
@@ -688,9 +713,12 @@ function submitNewGuardian() {
     addresses,
     contacts,
   };
+  
   router.post(route('guardian.store'), payload, {
     preserveState: true,
     replace: true,
+    onSuccess: (page) => {
+    },
     onError: (errors) => {
       errorMessage.value = 'Erro ao cadastrar o responsável. Verifique os dados e tente novamente.';
       // Scroll to top to show the error message
@@ -721,8 +749,8 @@ async function buscarCep(idx) {
   addr.loading = true;
   addr.error = '';
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
-    const data = await res.json();
+    const res = await axios.get(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
+    const data = res.data;
     if (data.erro) throw new Error('CEP não encontrado');
     addr.street = data.logradouro || '';
     addr.neighborhood = data.bairro || '';
@@ -741,8 +769,8 @@ watch(() => newGuardian.addresses && newGuardian.addresses.length, len => {
 });
 
 async function fetchGuardianByCpf(cpf) {
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(cpf)}`);
-  const results = await response.json();
+  const response = await axios.get(`/api/guardians?q=${encodeURIComponent(cpf)}`);
+  const results = response.data;
   return results && results.length ? results[0] : null;
 }
 

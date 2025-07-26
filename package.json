@@ -5,7 +5,15 @@
         "start": "npm run dev",
         "dev": "vite",
         "build": "vite build",
-        "stop": "npm run stop"
+        "stop": "npm run stop",
+        "test": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test",
+        "test:unit": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test --testsuite=Unit",
+        "test:feature": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test --testsuite=Feature",
+        "test:coverage": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test --coverage",
+        "test:parallel": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test --parallel",
+        "test:filter": "docker-compose -f docker-compose.test.yml exec alfa.test php artisan test --filter",
+        "test:setup": "docker-compose -f docker-compose.test.yml up -d && docker-compose -f docker-compose.test.yml exec alfa.test php artisan migrate:fresh --seed",
+        "test:down": "docker-compose -f docker-compose.test.yml down"
     },
     "devDependencies": {
         "@inertiajs/vue3": "^2.0",

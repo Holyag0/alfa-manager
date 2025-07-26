@@ -1,6 +1,5 @@
 <template>
   <div class="max-w-4xl mx-auto py-10">
-    <FlashMessenger />
     
     <!-- Header -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
@@ -141,8 +140,15 @@
                   Foto do Aluno
                 </label>
                 <div class="flex items-center space-x-4">
-                  <div class="w-24 h-32 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <div class="text-center">
+                  <div class="w-24 h-32 bg-gray-100 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 overflow-hidden">
+                    <div v-if="photoPreview || student.photo" class="w-full h-full">
+                      <img 
+                        :src="photoPreview || `/storage/${student.photo}`" 
+                        alt="Foto do aluno" 
+                        class="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div v-else class="text-center">
                       <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                       </svg>
@@ -151,11 +157,27 @@
                   </div>
                   <div class="flex-1">
                     <input 
+                      ref="photoInput"
                       type="file" 
                       accept="image/*" 
+                      @change="handlePhotoChange"
                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                     />
                     <p class="text-xs text-gray-500 mt-1">PNG, JPG até 2MB</p>
+                    <p v-if="errors.photo" class="mt-1 text-sm text-red-600">{{ errors.photo }}</p>
+                    
+                    <!-- Botão para remover foto -->
+                    <button 
+                      v-if="photoPreview || student.photo"
+                      type="button"
+                      @click="removePhoto"
+                      class="mt-2 inline-flex items-center px-3 py-1 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100"
+                    >
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                      Remover Foto
+                    </button>
                   </div>
                 </div>
               </div>
@@ -210,7 +232,6 @@
 import { reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
 import { ArrowLeftIcon, UserIcon, UsersIcon } from '@heroicons/vue/20/solid'
-import FlashMessenger from '@/Shared/FlashMessenger.vue'
 import StudentGuardians from './components/StudentGuardians.vue'
 
 const props = defineProps({
@@ -220,6 +241,8 @@ const props = defineProps({
 
 const processing = ref(false)
 const errors = ref({})
+const photoPreview = ref(null)
+const photoInput = ref(null)
 
 const tabs = [
   { name: 'Dados Pessoais', icon: UserIcon },
@@ -234,17 +257,47 @@ const form = reactive({
   cpf: props.student.cpf || '',
   rg: props.student.rg || '',
   birth_certificate_number: props.student.birth_certificate_number || '',
-  notes: props.student.notes || ''
+  notes: props.student.notes || '',
+  photo: null
 })
+
+const handlePhotoChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    form.photo = file
+    
+    // Criar preview da imagem
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      photoPreview.value = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const removePhoto = () => {
+  form.photo = 'DELETE' // Sinal para o backend remover a foto
+  photoPreview.value = null
+  
+  // Limpar o input file
+  if (photoInput.value) {
+    photoInput.value.value = ''
+  }
+}
 
 const updateStudent = () => {
   processing.value = true
   errors.value = {}
 
-  router.patch(route('students.update', props.student.id), form, {
+  router.post(route('students.update', props.student.id), {
+    ...form,
+    _method: 'PATCH'
+  }, {
+    forceFormData: true, // Força uso de FormData para upload
     preserveScroll: true,
     onSuccess: () => {
       // Success message será mostrada via flash
+      photoPreview.value = null // Limpa preview após sucesso
     },
     onError: (responseErrors) => {
       errors.value = responseErrors

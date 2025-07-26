@@ -64,7 +64,53 @@
                 </Popover>
 
                 <a href="#" class="text-sm/6 font-semibold text-gray-100">Features</a>
-                <a href="#" class="text-sm/6 font-semibold text-gray-100">Marketplace</a>
+                <Link :href="route('matriculas.index')" class="text-sm/6 font-semibold text-gray-100">Matrículas</Link>
+                
+                <!-- Módulo Comercial -->
+                <Popover>
+                    <PopoverButton class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
+                    transition ease-in-out delay-150 hover:text-sky-800 hover:translate-y-1 hover:scale-110 ">
+                        Comercial
+                        <ChevronDownIcon class="size-5 flex-none text-white " aria-hidden="true" />
+                    </PopoverButton>
+
+                    <transition enter-active-class="transition ease-out duration-200"
+                        enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0"
+                        leave-active-class="transition ease-in duration-150"
+                        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-1">
+                        <PopoverPanel class="absolute inset-x-0 top-0 -z-10 bg-sky-800 pt-14 shadow-lg rounded-md">
+                            <div class="mx-auto grid max-w-7xl grid-cols-4 gap-x-4 px-6 py-10 lg:px-8 xl:gap-x-8">
+                                <div v-for="item in comercialItems" :key="item.name"
+                                    class="group relative rounded-lg p-6 text-sm/6 hover:bg-white/5">
+                                    <div
+                                        class="flex size-11 items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white/5">
+                                        <component :is="item.icon"
+                                            class="size-6 text-gray-600 group-hover:text-green-500"
+                                            aria-hidden="true" />
+                                    </div>
+                                    <Link :href="item.href" class="mt-6 block font-semibold text-white">
+                                    {{ item.name }}
+                                    <span class="absolute inset-0" />
+                                    </Link>
+                                    <p class="mt-1 text-gray-100">{{ item.description }}</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/5 ">
+                                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                                    <div class="grid grid-cols-3 divide-x divide-gray-900/5 ">
+                                        <a v-for="item in comercialActions" :key="item.name" :href="item.href"
+                                            class="flex items-center justify-center gap-x-2.5 p-3 text-sm/6 font-semibold text-gray-100 hover:bg-white/5">
+                                            <component :is="item.icon" class="size-5 flex-none text-gray-400"
+                                                aria-hidden="true" />
+                                            {{ item.name }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </PopoverPanel>
+                    </transition>
+                </Popover>
+                
                 <a href="#" class="text-sm/6 font-semibold text-gray-100">Company</a>
             </PopoverGroup>
             <div class="lg:flex lg:flex-1 lg:justify-end">
@@ -120,9 +166,45 @@
     </header>
     <DisclosurePanel class="border-b border-gray-700 md:hidden">
         <div class="space-y-1 px-2 py-3 sm:px-3">
-            <DisclosureButton
-                :class="['bg-gray-900 text-white', 'text-gray-300 hover:bg-gray-700 hover:text-white', 'block rounded-md px-3 py-2 text-base font-medium']"
-                :aria-current="'page'">{{ item.name }}</DisclosureButton>
+            <!-- Menu Cadastro Mobile -->
+            <DisclosureButton class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                Cadastro
+            </DisclosureButton>
+            <div class="ml-4 space-y-1">
+                <Link :href="route('user.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Usuários
+                </Link>
+                <Link :href="route('roles.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Cargos
+                </Link>
+                <Link :href="route('permissions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Permissões
+                </Link>
+            </div>
+            
+            <!-- Menu Comercial Mobile -->
+            <DisclosureButton class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                Comercial
+            </DisclosureButton>
+            <div class="ml-4 space-y-1">
+                <Link :href="route('services.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Serviços
+                </Link>
+                <Link :href="route('packages.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Pacotes
+                </Link>
+                <Link :href="route('services.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Novo Serviço
+                </Link>
+                <Link :href="route('packages.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Novo Pacote
+                </Link>
+            </div>
+            
+            <!-- Outros Links Mobile -->
+            <Link :href="route('matriculas.index')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                Matrículas
+            </Link>
         </div>
         <div class="border-t border-gray-700 pb-3 pt-4">
             <div class="flex items-center px-5">
@@ -141,9 +223,12 @@
                 </button>
             </div>
             <div class="mt-3 space-y-1 px-2">
-                <DisclosureButton
-                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    {{ item.name}}</DisclosureButton>
+                <Link :href="route('profile.show')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Profile
+                </Link>
+                <button @click="logout" class="block w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                    Log Out
+                </button>
             </div>
         </div>
     </DisclosurePanel>
@@ -173,6 +258,13 @@ import {
     FingerPrintIcon,
     SquaresPlusIcon,
     XMarkIcon,
+    CogIcon,
+    CubeIcon,
+    CurrencyDollarIcon,
+    ShoppingCartIcon,
+    TagIcon,
+    ChartBarIcon,
+    BellIcon,
 } from '@heroicons/vue/24/outline'
 import { ChevronDownIcon, PhoneIcon, PlayCircleIcon, RectangleGroupIcon } from '@heroicons/vue/20/solid'
 import { Link,router  } from '@inertiajs/vue3';
@@ -219,6 +311,39 @@ const callsToAction = [
     { name: 'Watch demo', href: '#', icon: PlayCircleIcon },
     { name: 'Contact sales', href: '#', icon: PhoneIcon },
     { name: 'View all products', href: '#', icon: RectangleGroupIcon },
+]
+
+const comercialItems = [
+    {
+        name: 'Serviços',
+        description: 'Gerencie os serviços oferecidos pela escola, defina preços e categorias.',
+        href: route('services.index'),
+        icon: CogIcon,
+    },
+    {
+        name: 'Pacotes',
+        description: 'Crie pacotes combinando múltiplos serviços com preços especiais.',
+        href: route('packages.index'),
+        icon: CubeIcon,
+    },
+    {
+        name: 'Categorias',
+        description: 'Organize serviços e pacotes por categorias para melhor gestão.',
+        href: '#',
+        icon: TagIcon,
+    },
+    {
+        name: 'Relatórios',
+        description: 'Acompanhe vendas, faturamento e performance dos produtos.',
+        href: '#',
+        icon: ChartBarIcon,
+    },
+]
+
+const comercialActions = [
+    { name: 'Novo Serviço', href: route('services.create'), icon: CogIcon },
+    { name: 'Novo Pacote', href: route('packages.create'), icon: CubeIcon },
+    { name: 'Ver Todos', href: route('services.index'), icon: ShoppingCartIcon },
 ]
 
 const mobileMenuOpen = ref(false)

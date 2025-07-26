@@ -106,12 +106,39 @@
                 v-model="form.status" 
                 class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 appearance-none bg-white"
               >
-                <option value="ativo">✅ Ativo</option>
-                <option value="pendente">⏳ Pendente</option>
-                <option value="cancelado">❌ Cancelado</option>
-                <option value="concluido">🏁 Concluído</option>
-                <option value="aguardando_documentos">📄 Aguardando Documentos</option>
-                <option value="aguardando_pagamento">💸 Aguardando Pagamento</option>
+                <option value="active">✅ Ativo</option>
+                <option value="pending">⏳ Pendente</option>
+                <option value="cancelled">❌ Cancelado</option>
+                <option value="inactive">🔒 Inativo</option>
+              </select>
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Processo -->
+          <div>
+            <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Processo
+            </label>
+            <div class="relative">
+              <select 
+                v-model="form.process" 
+                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 appearance-none bg-white"
+              >
+                                 <option value="reserva">🎫 Reserva</option>
+                 <option value="aguardando_pagamento">💳 Aguardando Pagamento</option>
+                 <option value="aguardando_documentos">📄 Aguardando Documentos</option>
+                 <option value="completa">✅ Completa</option>
+                 <option value="renovacao">🔄 Renovação</option>
+                 <option value="desistencia">🚫 Desistência</option>
+                 <option value="transferencia">↗️ Transferência</option>
               </select>
               <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                 <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +213,8 @@ const form = ref({
   student_id: props.aluno.id,
   guardian_id: props.responsavel.id,
   classroom_id: '',
-  status: 'ativo',
+  status: 'active',
+  process: 'completa',
   enrollment_date: new Date().toISOString().split('T')[0],
   notes: ''
 });
@@ -198,7 +226,7 @@ onMounted(async () => {
 });
 
 function submitMatricula() {
-  router.post(route('matriculas.store'), form.value, {
+  router.post(route('matriculas.wizard.complete'), form.value, {
     preserveState: true,
     replace: true,
     onSuccess: () => {

@@ -17,7 +17,7 @@
           <td class="px-4 py-2">{{ enrollment.guardian?.name }}</td>
           <td class="px-4 py-2">{{ enrollment.classroom?.name }}</td>
           <td class="px-4 py-2">
-            <span :class="statusClass(enrollment.status)">{{ enrollment.status }}</span>
+            <span :class="statusClass(enrollment.status)">{{ statusLabel(enrollment.status) }}</span>
           </td>
           <td class="px-4 py-2">{{ enrollment.enrollment_date }}</td>
           <td class="px-4 py-2 text-center space-x-2">
@@ -34,20 +34,41 @@
     <!-- Modal de confirmação para cancelar -->
     <ConfirmationModal :show="showCancelModal" @cancel="showCancelModal = false" @confirm="confirmCancel">
       <template #title>Cancelar Matrícula</template>
-      <template #message>Tem certeza que deseja cancelar esta matrícula?</template>
+      <template #message>
+        <div class="space-y-2">
+          <p>{{ cancelModalMessage }}</p>
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
+            <p class="text-sm text-yellow-800">
+              <strong>Atenção:</strong> Esta ação não poderá ser desfeita.
+            </p>
+          </div>
+        </div>
+      </template>
     </ConfirmationModal>
     <!-- Modal de confirmação para trocar turma -->
     <ConfirmationModal :show="showChangeClassroomModal" @cancel="showChangeClassroomModal = false" @confirm="confirmChangeClassroom">
       <template #title>Trocar Turma</template>
       <template #message>
-        <div class="mb-2">Selecione a nova turma para esta matrícula:</div>
-        <select v-model="selectedNewClassroomId" class="form-select w-full mb-2">
-          <option value="">Selecione uma turma</option>
-          <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
-            {{ classroom.name }}
-          </option>
-        </select>
-        <div v-if="selectedNewClassroomId && selectedNewClassroomId == selectedEnrollment?.classroom_id" class="text-red-500 text-xs">Selecione uma turma diferente da atual.</div>
+        <div class="space-y-3">
+          <p v-if="selectedEnrollment">{{ changeClassroomModalMessage }}</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Selecione a nova turma:</label>
+            <select v-model="selectedNewClassroomId" class="form-select w-full border-gray-300 rounded-md shadow-sm">
+              <option value="">Selecione uma turma</option>
+              <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
+                {{ classroom.name }}
+              </option>
+            </select>
+          </div>
+          <div v-if="selectedNewClassroomId && selectedNewClassroomId == selectedEnrollment?.classroom_id" class="text-red-500 text-sm">
+            ⚠️ Selecione uma turma diferente da atual.
+          </div>
+          <div v-if="selectedNewClassroomId && selectedNewClassroomId != selectedEnrollment?.classroom_id" class="bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+            <p class="text-sm text-blue-800">
+              <strong>Confirmação:</strong> {{ finalChangeMessage }}
+            </p>
+          </div>
+        </div>
       </template>
     </ConfirmationModal>
   </div>
@@ -73,6 +94,30 @@ const showCancelModal = ref(false);
 const showChangeClassroomModal = ref(false);
 const selectedEnrollment = ref(null);
 const selectedNewClassroomId = ref('');
+
+// Computed properties para as mensagens dos modais
+const cancelModalMessage = computed(() => {
+  if (!selectedEnrollment.value) return '';
+  
+  const currentStatus = statusLabel(selectedEnrollment.value.status);
+  return `Tem certeza que deseja mudar o status de "${currentStatus}" para "Cancelado"?`;
+});
+
+const changeClassroomModalMessage = computed(() => {
+  if (!selectedEnrollment.value) return '';
+  
+  const currentClassroom = selectedEnrollment.value.classroom?.name || 'Não definida';
+  return `Turma atual: ${currentClassroom}`;
+});
+
+const finalChangeMessage = computed(() => {
+  if (!selectedEnrollment.value || !selectedNewClassroomId.value) return '';
+  
+  const currentClassroom = selectedEnrollment.value.classroom?.name || 'Não definida';
+  const newClassroom = classrooms.find(c => c.id == selectedNewClassroomId.value)?.name || 'Não encontrada';
+  
+  return `Trocar de "${currentClassroom}" para "${newClassroom}".`;
+});
 
 function openCancelModal(enrollment) {
   selectedEnrollment.value = enrollment;
@@ -120,6 +165,17 @@ function statusClass(status) {
     case 'pending': return 'text-yellow-600 font-semibold';
     case 'cancelled': return 'text-red-600 font-semibold';
     default: return '';
+  }
+}
+
+function statusLabel(status) {
+  switch (status) {
+    case 'active': return 'Ativo';
+    case 'pending': return 'Pendente';
+    case 'cancelled': return 'Cancelado';
+    case 'inactive': return 'Inativo';
+    case 'suspended': return 'Suspenso';
+    default: return status;
   }
 }
 </script> 

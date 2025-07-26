@@ -49,6 +49,10 @@ Route::middleware([
         ->group(function () {
             Route::post('{id}/cancelar', 'cancel')->name('cancelar');
             Route::post('{id}/trocar-turma', 'changeClassroom')->name('trocar-turma');
+            // Rotas do Wizard de Matrícula
+            Route::post('wizard/store', 'wizardStore')->name('wizard.store');
+            Route::post('wizard/complete', 'wizardComplete')->name('wizard.complete');
+            Route::post('wizard/reset', 'wizardReset')->name('wizard.reset');
         });
     
     // Rotas para gerenciar vínculos entre responsáveis e alunos
@@ -58,4 +62,32 @@ Route::middleware([
             Route::post('attach', 'attachToStudent')->name('attach');
             Route::delete('{guardian}', 'detachFromStudent')->name('detach');
         });
+    
+    // Rotas CRUD`s do módulo Comercial
+    Route::resource('services', App\Http\Controllers\Comercial\ServiceController::class);
+    Route::resource('packages', App\Http\Controllers\Comercial\PackageController::class);
+    
+    // Rotas adicionais do módulo Comercial
+    Route::prefix('comercial')->name('comercial.')->group(function () {
+        Route::get('/', function () {
+            return redirect()->route('services.index');
+        });
+        
+        // Rotas específicas para serviços
+        Route::prefix('services')->name('services.')->controller(App\Http\Controllers\Comercial\ServiceController::class)
+            ->group(function () {
+                Route::get('{service}/toggle-status', 'toggleStatus')->name('toggle-status');
+                Route::get('categories/list', 'getCategories')->name('categories.list');
+            });
+        
+        // Rotas específicas para pacotes
+        Route::prefix('packages')->name('packages.')->controller(App\Http\Controllers\Comercial\PackageController::class)
+            ->group(function () {
+                Route::get('{package}/toggle-status', 'toggleStatus')->name('toggle-status');
+                Route::get('{package}/services', 'getPackageServices')->name('services');
+                Route::post('{package}/services/{service}', 'addServiceToPackage')->name('add-service');
+                Route::delete('{package}/services/{service}', 'removeServiceFromPackage')->name('remove-service');
+                Route::get('categories/list', 'getCategories')->name('categories.list');
+            });
+    });
 });

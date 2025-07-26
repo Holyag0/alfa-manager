@@ -119,15 +119,21 @@
     <!-- Modal de Confirmação -->
     <ConfirmationModal
       :show="showModal"
-      :title="modalData.title"
-      :message="modalData.message"
-      :type="modalData.type"
-      :confirm-text="modalData.confirmText"
-      :processing="processing"
-      processing-text="Processando..."
       @confirm="handleConfirm"
       @cancel="closeModal"
-    />
+    >
+      <template #title>{{ modalData.title }}</template>
+      <template #message>
+        <div class="space-y-2">
+          <p>{{ modalData.message }}</p>
+          <div v-if="processing" class="bg-gray-50 border-l-4 border-gray-400 p-3 rounded">
+            <p class="text-sm text-gray-600">
+              <strong>Processando...</strong> Por favor, aguarde.
+            </p>
+          </div>
+        </div>
+      </template>
+    </ConfirmationModal>
   </div>
 </template>
 

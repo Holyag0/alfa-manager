@@ -1,7 +1,5 @@
 <template>
-  <div class="max-w-4xl mx-auto py-10">
-    <FlashMessenger />
-    
+  <div class="max-w-4xl mx-auto py-10">    
     <!-- Header com informações básicas -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
       <div class="flex items-center justify-between">
@@ -51,9 +49,17 @@
     </div>
 
     <!-- Conteúdo das Abas -->
-    <div>
-      <EditMatricula v-if="currentTab === 'Matrícula'" :enrollment="enrollment" :classrooms="classrooms" />
-      <EditFinanceiro v-else-if="currentTab === 'Financeiro'" :enrollment="enrollment" />
+    <div class="grid grid-cols-1 gap-8" :class="currentTab === 'Matrícula' ? 'lg:grid-cols-5' : 'lg:grid-cols-1'">
+      <!-- Conteúdo Principal -->
+      <div :class="currentTab === 'Matrícula' ? 'lg:col-span-3' : 'lg:col-span-1'">
+        <EditMatricula v-if="currentTab === 'Matrícula'" :enrollment="enrollment" :classrooms="classrooms" />
+        <EditFinanceiro v-else-if="currentTab === 'Financeiro'" :enrollment="enrollment" />
+      </div>
+      
+      <!-- Sidebar com Ações Rápidas - APENAS na aba Matrícula -->
+      <div v-if="currentTab === 'Matrícula'" class="lg:col-span-2">
+        <QuickActionsCard :enrollment="enrollment" />
+      </div>
     </div>
   </div>
 </template>
@@ -65,6 +71,7 @@ import { UserIcon, UsersIcon, CreditCardIcon, AcademicCapIcon } from '@heroicons
 import FlashMessenger from '@/Shared/FlashMessenger.vue';
 import EditMatricula from './components/EditMatricula.vue';
 import EditFinanceiro from './components/EditFinanceiro.vue';
+import QuickActionsCard from './components/QuickActionsCard.vue';
 
 const props = defineProps({
   enrollment: Object,

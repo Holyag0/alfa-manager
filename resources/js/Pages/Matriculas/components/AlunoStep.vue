@@ -575,7 +575,6 @@ function formatDate(dateString) {
   if (!dateString) return '';
   return new Date(dateString).toLocaleDateString('pt-BR');
 }
-
 watch(
   () => page.props.flash.success,
   (success) => {
@@ -584,7 +583,6 @@ watch(
     }
   }
 );
-
 // Limpar mensagem de erro quando o usuário começar a digitar
 watch([() => newStudent.value.name, () => newStudent.value.cpf], () => {
   if (errorMessage.value) {
