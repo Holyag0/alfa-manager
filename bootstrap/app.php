@@ -19,15 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
+        
+        // Configuração do middleware web para Laravel 12
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\CheckUserAuthorization::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-        ]);
-
-        // Registrar middleware global
-        $middleware->web(append: [
-            HandleInertiaRequests::class,
-            CheckUserAuthorization::class,
         ]);
 
         // Registrar middleware de permissões

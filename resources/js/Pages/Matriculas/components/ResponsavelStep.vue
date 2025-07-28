@@ -562,10 +562,10 @@
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import debounce from 'lodash/debounce';
-import axios from 'axios'; // Import axios
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { debounce } from 'lodash';
+import axios from 'axios';
 
 const props = defineProps({
   student: {
@@ -677,10 +677,18 @@ watch(
 );
 
 function submitNewGuardian() {
+  if (submitting.value) return;
   submitting.value = true;
   errorMessage.value = '';
-  
-  // Limpar payload antes de enviar
+
+  // Validar dados obrigatórios
+  if (!newGuardian.name || !newGuardian.cpf) {
+    errorMessage.value = 'Nome e CPF são obrigatórios.';
+    submitting.value = false;
+    return;
+  }
+
+  // Preparar dados para envio
   const addresses = (newGuardian.addresses || []).map(addr => ({
     zip_code: addr.zip_code,
     street: addr.street,
@@ -697,24 +705,23 @@ function submitNewGuardian() {
     value: contact.value,
     label: contact.label,
   }));
-  const payload = {
-    name: newGuardian.name,
-    cpf: newGuardian.cpf,
-    rg: newGuardian.rg,
-    birth_date: newGuardian.birth_date,
-    gender: newGuardian.gender,
-    marital_status: newGuardian.marital_status,
-    guardian_type: newGuardian.guardian_type,
-    relationship: newGuardian.relationship,
-    occupation: newGuardian.occupation,
-    workplace: newGuardian.workplace,
-    notes: newGuardian.notes,
-    status: newGuardian.status,
-    addresses,
-    contacts,
-  };
   
-  router.post(route('guardian.store'), payload, {
+  form.name = newGuardian.name;
+  form.cpf = newGuardian.cpf;
+  form.rg = newGuardian.rg;
+  form.birth_date = newGuardian.birth_date;
+  form.gender = newGuardian.gender;
+  form.marital_status = newGuardian.marital_status;
+  form.guardian_type = newGuardian.guardian_type;
+  form.relationship = newGuardian.relationship;
+  form.occupation = newGuardian.occupation;
+  form.workplace = newGuardian.workplace;
+  form.notes = newGuardian.notes;
+  form.status = newGuardian.status;
+  form.addresses = addresses;
+  form.contacts = contacts;
+  
+  form.post(route('guardian.store'), {
     preserveState: true,
     replace: true,
     onSuccess: (page) => {

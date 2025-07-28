@@ -444,8 +444,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { ref, reactive, computed, watch } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
 import debounce from 'lodash/debounce';
 
 const props = defineProps({
@@ -540,18 +540,37 @@ function removePhoto() {
   photoPreview.value = null;
 }
 
+const form = useForm({
+  name: '',
+  gender: '',
+  birth_date: '',
+  cpf: '', 
+  rg: '',
+  birth_certificate_number: '',
+  email: '', 
+  phone: '',
+  grade: '',
+  shift: '',
+  allergies: '',
+  medications: '',
+  notes: '',
+  photo: null
+});
+
 function submitNewStudent() {
   submitting.value = true;
   errorMessage.value = '';
   
-  const formData = new FormData();
+  // Preencher o form com os dados do newStudent
   Object.entries(newStudent.value).forEach(([key, value]) => {
-    formData.append(key, value ?? '');
+    form[key] = value ?? '';
   });
+  
   if (photoFile.value) {
-    formData.append('photo', photoFile.value);
+    form.photo = photoFile.value;
   }
-  router.post(route('students.store'), formData, {
+  
+  form.post(route('students.store'), {
     preserveState: true,
     replace: true,
     forceFormData: true,

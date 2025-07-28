@@ -76,7 +76,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 import ConfirmationModal from '@/Shared/ConfirmationModal.vue';
 
 const props = defineProps({
@@ -119,6 +119,11 @@ const finalChangeMessage = computed(() => {
   return `Trocar de "${currentClassroom}" para "${newClassroom}".`;
 });
 
+const cancelForm = useForm({});
+const changeClassroomForm = useForm({
+  classroom_id: ''
+});
+
 function openCancelModal(enrollment) {
   selectedEnrollment.value = enrollment;
   showCancelModal.value = true;
@@ -132,7 +137,7 @@ function openChangeClassroomModal(enrollment) {
 
 function confirmCancel() {
   if (selectedEnrollment.value) {
-    router.post(route('matriculas.cancelar', selectedEnrollment.value.id), {}, {
+    cancelForm.post(route('matriculas.cancelar', selectedEnrollment.value.id), {
       onFinish: () => {
         showCancelModal.value = false;
         selectedEnrollment.value = null;
@@ -147,9 +152,8 @@ function confirmChangeClassroom() {
     selectedNewClassroomId.value &&
     selectedNewClassroomId.value != selectedEnrollment.value.classroom_id
   ) {
-    router.post(route('matriculas.trocar-turma', selectedEnrollment.value.id), {
-      classroom_id: selectedNewClassroomId.value
-    }, {
+    changeClassroomForm.classroom_id = selectedNewClassroomId.value;
+    changeClassroomForm.post(route('matriculas.trocar-turma', selectedEnrollment.value.id), {
       onFinish: () => {
         showChangeClassroomModal.value = false;
         selectedEnrollment.value = null;

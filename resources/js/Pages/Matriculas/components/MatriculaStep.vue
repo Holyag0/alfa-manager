@@ -199,7 +199,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
   aluno: { type: Object, required: true },
@@ -209,7 +209,8 @@ const props = defineProps({
 const emit = defineEmits(['finish', 'back']);
 
 const classrooms = ref([]);
-const form = ref({
+
+const form = useForm({
   student_id: props.aluno.id,
   guardian_id: props.responsavel.id,
   classroom_id: '',
@@ -226,7 +227,7 @@ onMounted(async () => {
 });
 
 function submitMatricula() {
-  router.post(route('matriculas.wizard.complete'), form.value, {
+  form.post(route('matriculas.wizard.complete'), {
     preserveState: true,
     replace: true,
     onSuccess: () => {

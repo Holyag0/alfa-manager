@@ -1,7 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto py-10">
-    <FlashMessenger />
-    
+  <div class="max-w-6xl mx-auto py-10">    
     <!-- Header -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
       <div class="flex items-center justify-between">
