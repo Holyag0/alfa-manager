@@ -19,34 +19,36 @@ class ServiceGuardian
         
         $guardian = Guardian::create($guardianData);
         
-        // Se não foram fornecidos contatos, criar básicos a partir dos dados principais
-        if (empty($data['contacts']) && ($email || $phone)) {
-            if ($email) {
-                $guardian->contacts()->create([
-                    'type' => 'email',
-                    'value' => $email,
-                    'label' => 'pessoal',
-                    'is_primary' => true,
-                    'contact_for' => 'pessoal',
-                ]);
-            }
-            
-            if ($phone) {
-                $guardian->contacts()->create([
-                    'type' => 'phone',
-                    'value' => $phone,
-                    'label' => 'pessoal',
-                    'is_primary' => true,
-                    'contact_for' => 'pessoal',
-                ]);
-            }
+        // Criar contatos básicos a partir dos dados principais (email e phone)
+        if ($email) {
+            $guardian->contacts()->create([
+                'type' => 'email',
+                'value' => $email,
+                'label' => 'pessoal',
+                'is_primary' => true,
+                'contact_for' => 'pessoal',
+            ]);
+        }
+        
+        if ($phone) {
+            $guardian->contacts()->create([
+                'type' => 'phone',
+                'value' => $phone,
+                'label' => 'pessoal',
+                'is_primary' => true,
+                'contact_for' => 'pessoal',
+            ]);
         }
         
         // Endereços
         if (!empty($data['addresses']) && is_array($data['addresses'])) {
             foreach ($data['addresses'] as $address) {
                 if (!empty(array_filter($address))) {
-                    $guardian->addresses()->create($address);
+                    // Ensure required fields are present
+                    $addressData = array_merge([
+                        'type' => 'residencial', // Default type if not provided
+                    ], $address);
+                    $guardian->addresses()->create($addressData);
                 }
             }
         }
