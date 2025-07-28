@@ -16,6 +16,7 @@ class Enrollment extends Model
         'guardian_id',
         'classroom_id',
         'status',
+        'process',
         'enrollment_date',
         'notes',
     ];

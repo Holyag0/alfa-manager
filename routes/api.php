@@ -23,3 +23,6 @@ Route::get('guardians-autocomplete', [GuardianController::class, 'autocomplete']
 // Rotas de CRUD e autocomplete para Student
 Route::apiResource('students', StudentController::class);
 Route::get('students-autocomplete', [StudentController::class, 'autocomplete']);
+
+// Rota API para buscar guardians não vinculados a um aluno
+Route::get('students/{student}/guardians/search-not-linked', [GuardianController::class, 'searchNotLinked']);

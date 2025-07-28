@@ -7,6 +7,7 @@ use App\Http\Requests\GuardianRequest;
 use App\Models\Guardian;
 use App\Services\ServiceGuardian;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class GuardianController extends Controller
 {
@@ -21,6 +22,18 @@ class GuardianController extends Controller
     {
         $guardians = $this->service->search($request->input('q'));
         return response()->json($guardians);
+    }
+
+    public function edit($id)
+    {
+        $guardian = $this->service->find($id);
+        if (!$guardian) {
+            return redirect()->back()->withErrors(['error' => 'Responsável não encontrado']);
+        }
+        
+        return Inertia::render('Guardian/Edit', [
+            'guardian' => $guardian
+        ]);
     }
 
     public function store(GuardianRequest $request)
@@ -45,9 +58,12 @@ class GuardianController extends Controller
     public function update(GuardianRequest $request, $id)
     {
         $guardian = $this->service->find($id);
-        if (!$guardian) return response()->json(['error' => 'Not found'], 404);
+        if (!$guardian) {
+            return redirect()->back()->withErrors(['error' => 'Responsável não encontrado']);
+        }
+        
         $this->service->update($guardian, $request->validated());
-        return response()->json($guardian);
+        return redirect()->route('guardian.edit', $id)->with('success', 'Responsável atualizado com sucesso!');
     }
 
     public function destroy($id)
@@ -104,7 +120,7 @@ class GuardianController extends Controller
             $this->service->detachFromStudent($guardianId, $studentId);
             return redirect()->back()->with('success', 'Responsável desvinculado do aluno com sucesso!');
         // } catch (\Exception $e) {
-        //     return redirect()->back()->withErrors(['error' => $e->getMessage()]);
+        //     return redirect()->back()->withErrors(['error' => $e->getMessage());
         // }
     }
 } 

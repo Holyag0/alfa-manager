@@ -99,6 +99,13 @@ class EnrollmentService
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
+        if (!empty($filters['process'])) {
+            $query->where('process', $filters['process']);
+        }
+        
+        // Ordenar por ID desc (mais recentes primeiro)
+        $query->orderBy('id', 'desc');
+        
         return $query->paginate($perPage);
     }
 

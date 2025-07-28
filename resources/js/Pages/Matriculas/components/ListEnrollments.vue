@@ -20,7 +20,12 @@
         </div>
       </div>
       <div class="flex items-center gap-x-4">
-        <span :class="statusClass(enrollment.status)">{{ statusLabel(enrollment.status) }}</span>
+        <div class="flex flex-col items-end gap-y-1">
+          <span :class="statusClass(enrollment.status)">{{ statusLabel(enrollment.status) }}</span>
+          <span :class="processClass(enrollment.process)" class="text-xs px-2 py-1 rounded-full">
+            {{ processLabel(enrollment.process) }}
+          </span>
+        </div>
         <Menu as="div" class="relative ">
           <MenuButton class="relative block text-gray-500 hover:text-gray-900">
             <span class="absolute -inset-2.5" />
@@ -142,6 +147,34 @@ function closePhotoModal() {
   showPhotoModal.value = false;
   selectedStudent.value = null;
   loadingStudent.value = false;
+}
+
+// Função para estilizar o processo
+function processClass(process) {
+  switch (process) {
+    case 'reserva': return 'bg-purple-100 text-purple-800';
+    case 'aguardando_pagamento': return 'bg-yellow-100 text-yellow-800';
+    case 'aguardando_documentos': return 'bg-orange-100 text-orange-800';
+    case 'completa': return 'bg-green-100 text-green-800';
+    case 'renovacao': return 'bg-blue-100 text-blue-800';
+    case 'desistencia': return 'bg-red-100 text-red-800';
+    case 'transferencia': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+}
+
+// Função para label do processo
+function processLabel(process) {
+  switch (process) {
+    case 'reserva': return '🎫 Reserva';
+    case 'aguardando_pagamento': return '💳 Aguard. Pagamento';
+    case 'aguardando_documentos': return '📄 Aguard. Documentos';
+    case 'completa': return '✅ Completa';
+    case 'renovacao': return '🔄 Renovação';
+    case 'desistencia': return '🚫 Desistência';
+    case 'transferencia': return '↗️ Transferência';
+    default: return process || 'N/A';
+  }
 }
 function formatDate(dateString) {
   if (!dateString) return '';

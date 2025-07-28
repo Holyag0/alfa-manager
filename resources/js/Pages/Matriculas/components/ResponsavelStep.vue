@@ -562,9 +562,17 @@
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
-import debounce from 'lodash/debounce';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
+import { useForm, usePage } from '@inertiajs/vue3';
+import { debounce } from 'lodash';
+import axios from 'axios';
+
+const props = defineProps({
+  student: {
+    type: Object,
+    default: null,
+  },
+});
 
 const emit = defineEmits(['next']);
 
@@ -584,9 +592,26 @@ const fetchGuardians = debounce(async () => {
     return;
   }
   loading.value = true;
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(search.value)}`);
-  guardians.value = await response.json();
-  loading.value = false;
+  try {
+    let response;
+    // Se props.student existe, buscar responsáveis não vinculados a este aluno
+    if (props.student) {
+      response = await axios.get(`/api/students/${props.student.id}/guardians/search-not-linked`, {
+        params: { q: search.value }
+      });
+    } else {
+      response = await axios.get('/api/guardians', {
+        params: { q: search.value }
+      });
+    }
+    
+    guardians.value = response.data;
+  } catch (error) {
+    console.error('Erro na busca:', error);
+    guardians.value = [];
+  } finally {
+    loading.value = false;
+  }
 }, 400);
 
 function onSearch() {
@@ -652,10 +677,18 @@ watch(
 );
 
 function submitNewGuardian() {
+  if (submitting.value) return;
   submitting.value = true;
   errorMessage.value = '';
-  
-  // Limpar payload antes de enviar
+
+  // Validar dados obrigatórios
+  if (!newGuardian.name || !newGuardian.cpf) {
+    errorMessage.value = 'Nome e CPF são obrigatórios.';
+    submitting.value = false;
+    return;
+  }
+
+  // Preparar dados para envio
   const addresses = (newGuardian.addresses || []).map(addr => ({
     zip_code: addr.zip_code,
     street: addr.street,
@@ -672,25 +705,27 @@ function submitNewGuardian() {
     value: contact.value,
     label: contact.label,
   }));
-  const payload = {
-    name: newGuardian.name,
-    cpf: newGuardian.cpf,
-    rg: newGuardian.rg,
-    birth_date: newGuardian.birth_date,
-    gender: newGuardian.gender,
-    marital_status: newGuardian.marital_status,
-    guardian_type: newGuardian.guardian_type,
-    relationship: newGuardian.relationship,
-    occupation: newGuardian.occupation,
-    workplace: newGuardian.workplace,
-    notes: newGuardian.notes,
-    status: newGuardian.status,
-    addresses,
-    contacts,
-  };
-  router.post(route('guardian.store'), payload, {
+  
+  form.name = newGuardian.name;
+  form.cpf = newGuardian.cpf;
+  form.rg = newGuardian.rg;
+  form.birth_date = newGuardian.birth_date;
+  form.gender = newGuardian.gender;
+  form.marital_status = newGuardian.marital_status;
+  form.guardian_type = newGuardian.guardian_type;
+  form.relationship = newGuardian.relationship;
+  form.occupation = newGuardian.occupation;
+  form.workplace = newGuardian.workplace;
+  form.notes = newGuardian.notes;
+  form.status = newGuardian.status;
+  form.addresses = addresses;
+  form.contacts = contacts;
+  
+  form.post(route('guardian.store'), {
     preserveState: true,
     replace: true,
+    onSuccess: (page) => {
+    },
     onError: (errors) => {
       errorMessage.value = 'Erro ao cadastrar o responsável. Verifique os dados e tente novamente.';
       // Scroll to top to show the error message
@@ -721,8 +756,8 @@ async function buscarCep(idx) {
   addr.loading = true;
   addr.error = '';
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
-    const data = await res.json();
+    const res = await axios.get(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
+    const data = res.data;
     if (data.erro) throw new Error('CEP não encontrado');
     addr.street = data.logradouro || '';
     addr.neighborhood = data.bairro || '';
@@ -741,8 +776,8 @@ watch(() => newGuardian.addresses && newGuardian.addresses.length, len => {
 });
 
 async function fetchGuardianByCpf(cpf) {
-  const response = await fetch(`/api/guardians?q=${encodeURIComponent(cpf)}`);
-  const results = await response.json();
+  const response = await axios.get(`/api/guardians?q=${encodeURIComponent(cpf)}`);
+  const results = response.data;
   return results && results.length ? results[0] : null;
 }
 
