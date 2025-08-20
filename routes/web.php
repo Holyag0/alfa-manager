@@ -26,6 +26,14 @@ Route::middleware([
     Route::resource('matriculas', App\Http\Controllers\Matriculas\EnrollmentController::class);
     Route::resource('roles', App\Http\Controllers\Cadastros\RoleController::class);
     Route::resource('permissions', App\Http\Controllers\Cadastros\PermissionController::class);
+    Route::resource('categories', App\Http\Controllers\Cadastros\CategoryController::class);
+    
+    // Rotas adicionais para categorias
+    Route::prefix('categories')->name('categories.')->controller(App\Http\Controllers\Cadastros\CategoryController::class)
+        ->group(function () {
+            Route::get('{category}/toggle-status', 'toggleStatus')->name('toggle-status');
+        });
+    
     //rotas adicionais 
     Route::prefix('usuario')->controller(App\Http\Controllers\Cadastros\UserController::class)
         ->group(function () {

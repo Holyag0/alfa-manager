@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Comercial;
 
 use App\Http\Controllers\Controller;
 use App\Services\ServiceService;
-use Illuminate\Http\Request;
+use App\Http\Requests\ServiceRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 
@@ -20,12 +20,12 @@ class ServiceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
         try {
-            $filters = $request->only(['name', 'category', 'status']);
+            $filters = request()->only(['name', 'category', 'status']);
             $services = $this->serviceService->search($filters);
-            $categories = $this->serviceService->getCategories();
+            $categories = $this->serviceService->getCategoryNames();
 
             return Inertia::render('Comercial/Services/Index', [
                 'services' => $services,
@@ -58,18 +58,10 @@ class ServiceController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(ServiceRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'price' => 'required|numeric|min:0',
-                'category' => 'required|string|max:255',
-                'status' => 'required|in:active,inactive',
-                'description' => 'nullable|string'
-            ]);
-
-            $this->serviceService->create($validated);
+            $this->serviceService->create($request->validated());
 
             return redirect()->route('services.index')
                 ->with('success', 'Serviço criado com sucesso!');
@@ -130,7 +122,7 @@ class ServiceController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(ServiceRequest $request, $id)
     {
         try {
             $service = $this->serviceService->find($id);
@@ -140,15 +132,7 @@ class ServiceController extends Controller
                     ->with('error', 'Serviço não encontrado.');
             }
 
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'price' => 'required|numeric|min:0',
-                'category' => 'required|string|max:255',
-                'status' => 'required|in:active,inactive',
-                'description' => 'nullable|string'
-            ]);
-
-            $this->serviceService->update($service, $validated);
+            $this->serviceService->update($id, $request->validated());
 
             return redirect()->route('services.index')
                 ->with('success', 'Serviço atualizado com sucesso!');

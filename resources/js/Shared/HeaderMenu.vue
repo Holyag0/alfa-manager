@@ -329,7 +329,7 @@ const comercialItems = [
     {
         name: 'Categorias',
         description: 'Organize serviços e pacotes por categorias para melhor gestão.',
-        href: '#',
+        href: route('categories.index'),
         icon: TagIcon,
     },
     {
@@ -343,6 +343,7 @@ const comercialItems = [
 const comercialActions = [
     { name: 'Novo Serviço', href: route('services.create'), icon: CogIcon },
     { name: 'Novo Pacote', href: route('packages.create'), icon: CubeIcon },
+    { name: 'Nova Categoria', href: route('categories.create'), icon: TagIcon },
     { name: 'Ver Todos', href: route('services.index'), icon: ShoppingCartIcon },
 ]
 

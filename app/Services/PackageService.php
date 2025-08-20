@@ -75,8 +75,9 @@ class PackageService
     /**
      * Atualizar um pacote
      */
-    public function update(Package $package, array $data): Package
+    public function update(int $id, array $data): Package
     {
+        $package = $this->package->findOrFail($id);
         $package->update($data);
         
         // Atualizar serviços vinculados se fornecidos
@@ -100,11 +101,21 @@ class PackageService
      */
     public function getCategories(): Collection
     {
-        return $this->package->distinct()
-            ->pluck('category')
-            ->filter()
-            ->sort()
-            ->values();
+        return \App\Models\Category::active()
+            ->forPackages()
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Listar nomes das categorias para filtros
+     */
+    public function getCategoryNames(): Collection
+    {
+        return \App\Models\Category::active()
+            ->forPackages()
+            ->orderBy('name')
+            ->pluck('name');
     }
 
     /**

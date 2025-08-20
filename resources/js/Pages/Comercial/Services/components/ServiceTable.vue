@@ -51,30 +51,65 @@
                 {{ service.status === 'active' ? 'Ativo' : 'Inativo' }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-              <div class="flex space-x-2">
-                <Link
-                  :href="route('services.show', service.id)"
-                  class="text-indigo-600 hover:text-indigo-900 flex items-center"
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <Menu as="div" class="relative">
+                <MenuButton class="relative block text-gray-500 hover:text-gray-900 transition-colors duration-200">
+                  <span class="absolute -inset-2.5" />
+                  <span class="sr-only">Abrir opções</span>
+                  <EllipsisVerticalIcon class="size-5" aria-hidden="true" />
+                </MenuButton>
+                <transition 
+                  enter-active-class="transition ease-out duration-100" 
+                  enter-from-class="transform opacity-0 scale-95" 
+                  enter-to-class="transform opacity-100 scale-100" 
+                  leave-active-class="transition ease-in duration-75" 
+                  leave-from-class="transform opacity-100 scale-100" 
+                  leave-to-class="transform opacity-0 scale-95"
                 >
-                  <EyeIcon class="w-4 h-4 mr-1" />
-                  Ver
-                </Link>
-                <Link
-                  :href="route('services.edit', service.id)"
-                  class="text-blue-600 hover:text-blue-900 flex items-center"
-                >
-                  <PencilIcon class="w-4 h-4 mr-1" />
-                  Editar
-                </Link>
-                <button
-                  @click="$emit('delete', service)"
-                  class="text-red-600 hover:text-red-900 flex items-center"
-                >
-                  <TrashIcon class="w-4 h-4 mr-1" />
-                  Excluir
-                </button>
-              </div>
+                  <MenuItems class="absolute right-0 mt-2 w-40 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none z-10">
+                    <MenuItem v-slot="{ active }">
+                      <Link
+                        :href="route('services.show', service.id)"
+                        :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-gray-900']"
+                      >
+                        <div class="flex items-center">
+                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                          </svg>
+                          Ver
+                        </div>
+                      </Link>
+                    </MenuItem>
+                    <MenuItem v-slot="{ active }">
+                      <Link
+                        :href="route('services.edit', service.id)"
+                        :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-gray-900']"
+                      >
+                        <div class="flex items-center">
+                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                          </svg>
+                          Editar
+                        </div>
+                      </Link>
+                    </MenuItem>
+                    <MenuItem v-slot="{ active }">
+                      <button
+                        @click="deleteService(service)"
+                        :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-red-600 w-full text-left']"
+                      >
+                        <div class="flex items-center">
+                          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                          </svg>
+                          Excluir
+                        </div>
+                      </button>
+                    </MenuItem>
+                  </MenuItems>
+                </transition>
+              </Menu>
             </td>
           </tr>
         </tbody>
@@ -96,7 +131,8 @@
 
 <script setup>
 import { Link } from '@inertiajs/vue3'
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/vue/20/solid'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
+import { EllipsisVerticalIcon } from '@heroicons/vue/20/solid'
 
 defineProps({
   services: {
@@ -105,5 +141,9 @@ defineProps({
   }
 })
 
-defineEmits(['delete'])
+const emit = defineEmits(['delete'])
+
+const deleteService = (service) => {
+  emit('delete', service)
+}
 </script> 

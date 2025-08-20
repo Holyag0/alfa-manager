@@ -66,8 +66,9 @@ class ServiceService
     /**
      * Atualizar um serviço
      */
-    public function update(Service $service, array $data): Service
+    public function update(int $id, array $data): Service
     {
+        $service = $this->service->findOrFail($id);
         $service->update($data);
         return $service->fresh();
     }
@@ -85,11 +86,21 @@ class ServiceService
      */
     public function getCategories(): Collection
     {
-        return $this->service->distinct()
-            ->pluck('category')
-            ->filter()
-            ->sort()
-            ->values();
+        return \App\Models\Category::active()
+            ->forServices()
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Listar nomes das categorias para filtros
+     */
+    public function getCategoryNames(): Collection
+    {
+        return \App\Models\Category::active()
+            ->forServices()
+            ->orderBy('name')
+            ->pluck('name');
     }
 
     /**
@@ -99,7 +110,7 @@ class ServiceService
     {
         return $this->service->active()
             ->orderBy('name')
-            ->get(['id', 'name', 'price', 'category']);
+            ->get();
     }
 
     /**

@@ -1,8 +1,10 @@
 <template>
   <form @submit.prevent="submit" class="p-6">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Coluna Esquerda - Informações Básicas -->
       <div class="space-y-6">
+        <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2">Informações Básicas</h3>
+        
         <!-- Nome -->
         <div>
           <InputLabel for="name" value="Nome do Pacote" />
@@ -15,23 +17,6 @@
             autofocus
           />
           <InputError :message="form.errors.name" class="mt-2" />
-        </div>
-
-        <!-- Categoria -->
-        <div>
-          <InputLabel for="category" value="Categoria" />
-          <TextInput
-            id="category"
-            v-model="form.category"
-            type="text"
-            class="mt-1 block w-full"
-            required
-            list="categories"
-          />
-          <datalist id="categories">
-            <option v-for="category in categories" :key="category" :value="category" />
-          </datalist>
-          <InputError :message="form.errors.category" class="mt-2" />
         </div>
 
         <!-- Preço -->
@@ -79,18 +64,40 @@
         </div>
       </div>
 
-      <!-- Coluna Direita - Seleção de Serviços -->
+      <!-- Coluna Direita - Categorias e Serviços -->
       <div class="space-y-6">
-        <ServiceSelector
-          :services="services"
-          v-model:selected-service-ids="form.services"
-          v-model:package-price="form.price"
-        />
+        <!-- Categoria -->
+        <div>
+          <h3 class="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4">Categoria e Serviços</h3>
+          
+          <InputLabel for="category" value="Categoria" />
+          <select
+            id="category"
+            v-model="form.category"
+            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+            required
+          >
+            <option value="">Selecione uma categoria</option>
+            <option v-for="category in categories" :key="category.id" :value="category.name">
+              {{ category.name }}
+            </option>
+          </select>
+          <InputError :message="form.errors.category" class="mt-2" />
+        </div>
+
+        <!-- Seleção de Serviços -->
+        <div>
+          <ServiceSelector
+            :services="services"
+            v-model:selected-service-ids="form.services"
+            v-model:package-price="form.price"
+          />
+        </div>
       </div>
     </div>
 
     <!-- Botões -->
-    <div class="flex items-center justify-end mt-6 pt-6 border-t border-gray-200">
+    <div class="flex items-center justify-end mt-8 pt-6 border-t border-gray-200">
       <Link
         :href="cancelUrl"
         class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -98,9 +105,9 @@
         Cancelar
       </Link>
       <PrimaryButton
-        class="ml-4"
         :class="{ 'opacity-25': form.processing }"
         :disabled="form.processing"
+        class="ml-4"
       >
         {{ submitButtonText }}
       </PrimaryButton>
@@ -109,7 +116,7 @@
 </template>
 
 <script setup>
-import { useForm, Link } from '@inertiajs/vue3'
+import { Link, useForm } from '@inertiajs/vue3'
 import InputLabel from '@/Components/InputLabel.vue'
 import TextInput from '@/Components/TextInput.vue'
 import InputError from '@/Components/InputError.vue'
@@ -119,7 +126,14 @@ import ServiceSelector from './ServiceSelector.vue'
 const props = defineProps({
   package: {
     type: Object,
-    default: () => ({})
+    default: () => ({
+      name: '',
+      category: '',
+      price: '',
+      status: '',
+      description: '',
+      services: []
+    })
   },
   categories: {
     type: Array,
@@ -139,20 +153,20 @@ const props = defineProps({
   },
   submitButtonText: {
     type: String,
-    default: 'Salvar'
+    default: 'Criar Pacote'
   },
   cancelUrl: {
     type: String,
-    default: '/comercial/packages'
+    default: '/packages'
   }
 })
 
 const form = useForm({
-  name: props.package.name || '',
-  category: props.package.category || '',
-  price: props.package.price || '',
-  status: props.package.status || '',
-  description: props.package.description || '',
+  name: props.package.name,
+  category: props.package.category,
+  price: props.package.price,
+  status: props.package.status,
+  description: props.package.description,
   services: props.package.services?.map(s => s.id) || []
 })
 

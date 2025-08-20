@@ -62,22 +62,16 @@
     <!-- Modal de Confirmação de Exclusão -->
     <ConfirmationModal
       :show="showDeleteModal"
-      @close="showDeleteModal = false"
+      @cancel="showDeleteModal = false"
+      @confirm="deleteService"
     >
       <template #title>
-        Confirmar Exclusão
+        Excluir Serviço
       </template>
       <template #message>
         Tem certeza que deseja excluir o serviço "{{ serviceToDelete?.name }}"?
-        Esta ação não pode ser desfeita.
-      </template>
-      <template #footer>
-        <SecondaryButton @click="showDeleteModal = false">
-          Cancelar
-        </SecondaryButton>
-        <DangerButton @click="deleteService" class="ml-3">
-          Excluir
-        </DangerButton>
+        <br><br>
+        <span class="text-sm text-red-600 font-medium">⚠️ Esta ação não pode ser desfeita!</span>
       </template>
     </ConfirmationModal>
   
@@ -130,11 +124,10 @@ const confirmDelete = (service) => {
 }
 
 const deleteService = () => {
-  router.delete(route('services.destroy', serviceToDelete.value.id), {
-    onSuccess: () => {
-      showDeleteModal.value = false
-      serviceToDelete.value = null
-    }
-  })
+  if (serviceToDelete.value) {
+    router.delete(route('services.destroy', serviceToDelete.value.id))
+    showDeleteModal.value = false
+    serviceToDelete.value = null
+  }
 }
 </script> 

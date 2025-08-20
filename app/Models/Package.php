@@ -18,7 +18,7 @@ class Package extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price' => 'float',
         'status' => 'string',
     ];
 
@@ -66,7 +66,8 @@ class Package extends Model
      */
     public function getTotalServicesValueAttribute()
     {
-        return $this->services->sum('price');
+        $total = $this->services->sum('price');
+        return 'R$ ' . number_format($total, 2, ',', '.');
     }
 
     /**
@@ -74,7 +75,8 @@ class Package extends Model
      */
     public function getHasDiscountAttribute()
     {
-        return $this->price < $this->total_services_value;
+        $totalServices = $this->services->sum('price');
+        return $this->price < $totalServices;
     }
 
     /**
@@ -82,8 +84,9 @@ class Package extends Model
      */
     public function getDiscountPercentageAttribute()
     {
-        if ($this->total_services_value > 0) {
-            $discount = (($this->total_services_value - $this->price) / $this->total_services_value) * 100;
+        $totalServices = $this->services->sum('price');
+        if ($totalServices > 0) {
+            $discount = (($totalServices - $this->price) / $totalServices) * 100;
             return round($discount, 2);
         }
         return 0;
