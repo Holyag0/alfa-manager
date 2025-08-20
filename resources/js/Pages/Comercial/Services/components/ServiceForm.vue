@@ -18,17 +18,17 @@
       <!-- Categoria -->
       <div>
         <InputLabel for="category" value="Categoria" />
-        <TextInput
+        <select
           id="category"
           v-model="form.category"
-          type="text"
-          class="mt-1 block w-full"
+          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
           required
-          list="categories"
-        />
-        <datalist id="categories">
-          <option v-for="category in categories" :key="category" :value="category" />
-        </datalist>
+        >
+          <option value="">Selecione uma categoria</option>
+          <option v-for="category in categories" :key="category.id" :value="category.name">
+            {{ category.name }}
+          </option>
+        </select>
         <InputError :message="form.errors.category" class="mt-2" />
       </div>
 

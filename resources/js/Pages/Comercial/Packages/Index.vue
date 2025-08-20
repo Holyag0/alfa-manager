@@ -59,22 +59,16 @@
     <!-- Modal de Confirmação de Exclusão -->
     <ConfirmationModal
       :show="showDeleteModal"
-      @close="showDeleteModal = false"
+      @cancel="showDeleteModal = false"
+      @confirm="deletePackage"
     >
       <template #title>
-        Confirmar Exclusão
+        Excluir Pacote
       </template>
       <template #message>
         Tem certeza que deseja excluir o pacote "{{ packageToDelete?.name }}"?
-        Esta ação não pode ser desfeita.
-      </template>
-      <template #footer>
-        <SecondaryButton @click="showDeleteModal = false">
-          Cancelar
-        </SecondaryButton>
-        <DangerButton @click="deletePackage" class="ml-3">
-          Excluir
-        </DangerButton>
+        <br><br>
+        <span class="text-sm text-red-600 font-medium">⚠️ Esta ação não pode ser desfeita!</span>
       </template>
     </ConfirmationModal>
 </template>
@@ -126,11 +120,10 @@ const confirmDelete = (packageItem) => {
 }
 
 const deletePackage = () => {
-  router.delete(route('packages.destroy', packageToDelete.value.id), {
-    onSuccess: () => {
-      showDeleteModal.value = false
-      packageToDelete.value = null
-    }
-  })
+  if (packageToDelete.value) {
+    router.delete(route('packages.destroy', packageToDelete.value.id))
+    showDeleteModal.value = false
+    packageToDelete.value = null
+  }
 }
 </script> 

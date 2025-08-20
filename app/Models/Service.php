@@ -19,12 +19,13 @@ class Service extends Model
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
+        'price' => 'float',
         'status' => 'string',
     ];
 
     protected $appends = [
-        'formatted_price'
+        'formatted_price',
+        'category_color'
     ];
 
     /**
@@ -33,6 +34,14 @@ class Service extends Model
     public function packages()
     {
         return $this->belongsToMany(Package::class);
+    }
+
+    /**
+     * Relacionamento com categoria
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category', 'name');
     }
 
     /**
@@ -57,5 +66,14 @@ class Service extends Model
     public function getFormattedPriceAttribute()
     {
         return 'R$ ' . number_format($this->price, 2, ',', '.');
+    }
+
+    /**
+     * Accessor para obter a cor da categoria
+     */
+    public function getCategoryColorAttribute()
+    {
+        $category = \App\Models\Category::where('name', $this->category)->first();
+        return $category ? $category->color : '#3B82F6';
     }
 }

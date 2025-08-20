@@ -9,14 +9,13 @@
               <div class="flex-shrink-0">
                 <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
                   </svg>
                 </div>
               </div>
               <div class="ml-4">
-                <h1 class="text-2xl font-bold text-sky-700">Detalhes do Serviço</h1>
-                <strong class="text-sm text-gray-500">Visualize as informações do serviço</strong>
+                <h1 class="text-2xl font-bold text-sky-700">Detalhes da Categoria</h1>
+                <strong class="text-sm text-gray-500">Visualize as informações da categoria</strong>
               </div>
             </div>
           </div>
@@ -30,16 +29,16 @@
         <div class="p-6">
           <!-- Cabeçalho -->
           <div class="flex justify-between items-center mb-6">
-            <h3 class="text-lg font-medium text-gray-900">{{ service.name }}</h3>
+            <h3 class="text-lg font-medium text-gray-900">{{ category.name }}</h3>
             <div class="flex space-x-2">
               <Link
-                :href="route('services.edit', service.id)"
+                :href="route('categories.edit', category.id)"
                 class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
               >
                 Editar
               </Link>
               <Link
-                :href="route('services.index')"
+                :href="route('categories.index')"
                 class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
               >
                 Voltar
@@ -47,26 +46,22 @@
             </div>
           </div>
 
-          <!-- Informações do Serviço -->
+          <!-- Informações da Categoria -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Informações Básicas</h4>
               <dl class="mt-4 space-y-4">
                 <div>
                   <dt class="text-sm font-medium text-gray-500">Nome</dt>
-                  <dd class="mt-1 text-sm text-gray-900">{{ service.name }}</dd>
+                  <dd class="mt-1 text-sm text-gray-900">{{ category.name }}</dd>
                 </div>
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Categoria</dt>
+                  <dt class="text-sm font-medium text-gray-500">Tipo</dt>
                   <dd class="mt-1">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {{ service.category }}
+                      {{ getTypeLabel(category.type) }}
                     </span>
                   </dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500">Preço</dt>
-                  <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ service.formatted_price }}</dd>
                 </div>
                 <div>
                   <dt class="text-sm font-medium text-gray-500">Status</dt>
@@ -74,24 +69,55 @@
                     <span
                       :class="[
                         'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                        service.status === 'active'
+                        category.is_active
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       ]"
                     >
-                      {{ service.status === 'active' ? 'Ativo' : 'Inativo' }}
+                      {{ category.is_active ? 'Ativo' : 'Inativo' }}
                     </span>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Cor</dt>
+                  <dd class="mt-1">
+                    <div class="flex items-center">
+                      <div
+                        class="w-8 h-8 rounded-full border border-gray-300"
+                        :style="{ backgroundColor: category.formatted_color }"
+                      ></div>
+                      <span class="ml-2 text-sm text-gray-900">{{ category.formatted_color }}</span>
+                    </div>
                   </dd>
                 </div>
               </dl>
             </div>
 
-            <div v-if="service.description">
+            <div v-if="category.description">
               <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Descrição</h4>
               <div class="mt-4">
-                <p class="text-sm text-gray-900">{{ service.description }}</p>
+                <p class="text-sm text-gray-900">{{ category.description }}</p>
               </div>
             </div>
+          </div>
+
+          <!-- Estatísticas -->
+          <div class="mt-8 p-4 bg-gray-50 rounded-lg">
+            <h4 class="text-sm font-medium text-gray-700 mb-4">Estatísticas</h4>
+            <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Total de serviços</dt>
+                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ category.services_count || 0 }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Total de pacotes</dt>
+                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ category.packages_count || 0 }}</dd>
+              </div>
+              <div>
+                <dt class="text-sm font-medium text-gray-500">Total de itens</dt>
+                <dd class="mt-1 text-sm text-gray-900 font-semibold">{{ (category.services_count || 0) + (category.packages_count || 0) }}</dd>
+              </div>
+            </dl>
           </div>
 
           <!-- Informações Adicionais -->
@@ -100,15 +126,15 @@
             <dl class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <dt class="text-sm font-medium text-gray-500">ID</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ service.id }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ category.id }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Criado em</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ formatDate(service.created_at) }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ formatDate(category.created_at) }}</dd>
               </div>
               <div>
                 <dt class="text-sm font-medium text-gray-500">Atualizado em</dt>
-                <dd class="mt-1 text-sm text-gray-900">{{ formatDate(service.updated_at) }}</dd>
+                <dd class="mt-1 text-sm text-gray-900">{{ formatDate(category.updated_at) }}</dd>
               </div>
             </dl>
           </div>
@@ -122,8 +148,17 @@
 import { Link } from '@inertiajs/vue3'
 
 const props = defineProps({
-  service: Object
+  category: Object
 })
+
+const getTypeLabel = (type) => {
+  const types = {
+    'service': 'Apenas Serviços',
+    'package': 'Apenas Pacotes',
+    'both': 'Serviços e Pacotes'
+  }
+  return types[type] || type
+}
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
@@ -135,4 +170,4 @@ const formatDate = (dateString) => {
     minute: '2-digit'
   })
 }
-</script> 
+</script>

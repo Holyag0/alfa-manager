@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Comercial;
 use App\Http\Controllers\Controller;
 use App\Services\PackageService;
 use App\Services\ServiceService;
-use Illuminate\Http\Request;
+use App\Http\Requests\PackageRequest;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 
@@ -23,12 +23,12 @@ class PackageController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index()
     {
         try {
-            $filters = $request->only(['name', 'category', 'status']);
+            $filters = request()->only(['name', 'category', 'status']);
             $packages = $this->packageService->search($filters);
-            $categories = $this->packageService->getCategories();
+            $categories = $this->packageService->getCategoryNames();
 
             return Inertia::render('Comercial/Packages/Index', [
                 'packages' => $packages,
@@ -63,20 +63,10 @@ class PackageController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(PackageRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'price' => 'required|numeric|min:0',
-                'category' => 'required|string|max:255',
-                'status' => 'required|in:active,inactive',
-                'description' => 'nullable|string',
-                'services' => 'nullable|array',
-                'services.*' => 'exists:services,id'
-            ]);
-
-            $this->packageService->create($validated);
+            $this->packageService->create($request->validated());
 
             return redirect()->route('packages.index')
                 ->with('success', 'Pacote criado com sucesso!');
@@ -139,7 +129,7 @@ class PackageController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, $id)
+    public function update(PackageRequest $request, $id)
     {
         try {
             $package = $this->packageService->find($id);
@@ -149,17 +139,7 @@ class PackageController extends Controller
                     ->with('error', 'Pacote não encontrado.');
             }
 
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'price' => 'required|numeric|min:0',
-                'category' => 'required|string|max:255',
-                'status' => 'required|in:active,inactive',
-                'description' => 'nullable|string',
-                'services' => 'nullable|array',
-                'services.*' => 'exists:services,id'
-            ]);
-
-            $this->packageService->update($package, $validated);
+            $this->packageService->update($id, $request->validated());
 
             return redirect()->route('packages.index')
                 ->with('success', 'Pacote atualizado com sucesso!');
