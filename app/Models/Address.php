@@ -13,7 +13,6 @@ class Address extends Model
 
     protected $fillable = [
         'guardian_id',
-        'type',
         'street',
         'number',
         'complement',

@@ -15,6 +15,7 @@ class Contact extends Model
         'guardian_id',
         'type',
         'value',
+        'label',
         'is_primary',
         'contact_for',
     ];

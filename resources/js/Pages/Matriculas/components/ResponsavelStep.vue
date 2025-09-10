@@ -165,23 +165,35 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-2">Nome completo *</label>
-              <input 
-                v-model="newGuardian.name" 
-                type="text" 
-                placeholder="Nome completo do responsável" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
-                required 
-              />
+                              <input 
+                  v-model="newGuardian.name" 
+                  type="text" 
+                  placeholder="Nome completo do responsável" 
+                  :class="[
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-colors duration-200',
+                    form.errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                  ]"
+                  required 
+                />
+                <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">
+                  {{ form.errors.name }}
+                </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">CPF *</label>
-              <input 
-                v-model="newGuardian.cpf" 
-                type="text" 
-                placeholder="000.000.000-00" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
-                required 
-              />
+                              <input 
+                  v-model="newGuardian.cpf" 
+                  type="text" 
+                  placeholder="000.000.000-00" 
+                  :class="[
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-colors duration-200',
+                    form.errors.cpf ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                  ]"
+                  required 
+                />
+                <div v-if="form.errors.cpf" class="mt-1 text-sm text-red-600">
+                  {{ form.errors.cpf }}
+                </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">RG</label>
@@ -576,6 +588,24 @@ const props = defineProps({
 
 const emit = defineEmits(['next']);
 
+const form = useForm({
+  name: '',
+  cpf: '',
+  email: '',
+  rg: '',
+  birth_date: '',
+  gender: '',
+  marital_status: '',
+  guardian_type: '',
+  relationship: '',
+  occupation: '',
+  workplace: '',
+  notes: '',
+  status: '',
+  addresses: [],
+  contacts: []
+});
+
 const guardians = ref([]);
 const search = ref('');
 const loading = ref(false);
@@ -605,10 +635,11 @@ const fetchGuardians = debounce(async () => {
       });
     }
     
-    guardians.value = response.data;
+    guardians.value = response.data || [];
   } catch (error) {
     console.error('Erro na busca:', error);
     guardians.value = [];
+    errorMessage.value = 'Erro ao buscar responsáveis. Tente novamente.';
   } finally {
     loading.value = false;
   }
@@ -689,7 +720,7 @@ function submitNewGuardian() {
   }
 
   // Preparar dados para envio
-  const addresses = (newGuardian.addresses || []).map(addr => ({
+  const addresses = (newGuardian.addresses || []).map((addr, index) => ({
     zip_code: addr.zip_code,
     street: addr.street,
     number: addr.number,
@@ -698,12 +729,13 @@ function submitNewGuardian() {
     city: addr.city,
     state: addr.state,
     address_for: addr.address_for,
-    is_primary: addr.is_primary,
+    is_primary: principalAddressIndex.value === index, // Usar o índice correto
   }));
-  const contacts = (newGuardian.contacts || []).map(contact => ({
+  const contacts = (newGuardian.contacts || []).map((contact, index) => ({
     type: contact.type,
     value: contact.value,
     label: contact.label,
+    is_primary: principalContactIndex.value === index, // Usar o índice correto
   }));
   
   form.name = newGuardian.name;
@@ -721,13 +753,41 @@ function submitNewGuardian() {
   form.addresses = addresses;
   form.contacts = contacts;
   
+  // Debug: mostrar dados que estão sendo enviados
+  console.log('Dados sendo enviados:', {
+    name: form.name,
+    cpf: form.cpf,
+    addresses: form.addresses,
+    contacts: form.contacts
+  });
+  
   form.post(route('guardian.store'), {
     preserveState: true,
     replace: true,
     onSuccess: (page) => {
+      console.log('Sucesso ao cadastrar responsável:', page);
     },
     onError: (errors) => {
-      errorMessage.value = 'Erro ao cadastrar o responsável. Verifique os dados e tente novamente.';
+      console.error('Erros de validação:', errors);
+      
+      // Mostrar erros específicos
+      if (errors && Object.keys(errors).length > 0) {
+        const errorMessages = [];
+        
+        // Processar erros de campos específicos
+        Object.keys(errors).forEach(field => {
+          if (Array.isArray(errors[field])) {
+            errorMessages.push(...errors[field]);
+          } else {
+            errorMessages.push(errors[field]);
+          }
+        });
+        
+        errorMessage.value = errorMessages.join(' | ');
+      } else {
+        errorMessage.value = 'Erro ao cadastrar o responsável. Verifique os dados e tente novamente.';
+      }
+      
       // Scroll to top to show the error message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -756,8 +816,9 @@ async function buscarCep(idx) {
   addr.loading = true;
   addr.error = '';
   try {
-    const res = await axios.get(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
-    const data = res.data;
+    // Usar fetch ao invés de axios para evitar problemas de CORS
+    const res = await fetch(`https://viacep.com.br/ws/${addr.zip_code.replace(/\D/g, '')}/json/`);
+    const data = await res.json();
     if (data.erro) throw new Error('CEP não encontrado');
     addr.street = data.logradouro || '';
     addr.neighborhood = data.bairro || '';

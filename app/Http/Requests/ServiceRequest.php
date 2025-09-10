@@ -28,6 +28,10 @@ class ServiceRequest extends FormRequest
             'category' => 'required|string|max:255',
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string|max:1000',
+            'is_classroom_linked' => 'boolean',
+            'selected_classrooms' => 'required_if:is_classroom_linked,true|array',
+            'selected_classrooms.*' => 'exists:classrooms,id',
+            'classroom_linking_notes' => 'nullable|string|max:500',
         ];
     }
 
@@ -50,6 +54,9 @@ class ServiceRequest extends FormRequest
             'status.required' => 'O status do serviço é obrigatório.',
             'status.in' => 'O status deve ser ativo ou inativo.',
             'description.max' => 'A descrição não pode ter mais de 1000 caracteres.',
+            'selected_classrooms.required_if' => 'É necessário selecionar pelo menos uma turma quando o serviço é vinculado.',
+            'selected_classrooms.*.exists' => 'Uma das turmas selecionadas não existe.',
+            'classroom_linking_notes.max' => 'As notas de vinculação não podem ter mais de 500 caracteres.',
         ];
     }
 
@@ -66,6 +73,21 @@ class ServiceRequest extends FormRequest
             'category' => 'categoria',
             'status' => 'status',
             'description' => 'descrição',
+            'is_classroom_linked' => 'vinculação com turmas',
+            'selected_classrooms' => 'turmas selecionadas',
+            'classroom_linking_notes' => 'notas de vinculação',
         ];
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->input('is_classroom_linked') && empty($this->input('selected_classrooms'))) {
+                $validator->errors()->add('selected_classrooms', 'É necessário selecionar pelo menos uma turma quando o serviço é vinculado.');
+            }
+        });
     }
 }

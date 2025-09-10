@@ -41,6 +41,7 @@ class EnrollmentService
                 'guardian_id'     => $data['guardian_id'],
                 'classroom_id'    => $data['classroom_id'],
                 'status'          => $data['status'] ?? 'active',
+                'process'         => $data['process'] ?? 'completa',
                 'enrollment_date' => $data['enrollment_date'] ?? now(),
                 'notes'           => $data['notes'] ?? null,
             ]);

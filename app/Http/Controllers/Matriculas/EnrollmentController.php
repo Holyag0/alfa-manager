@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use App\Services\ServiceStudent;
 use App\Services\ServiceGuardian;
+use App\Services\EnrollmentFinanceService;
 
 class EnrollmentController extends Controller
 {
@@ -40,11 +41,14 @@ class EnrollmentController extends Controller
 
     public function create()
     {
+        // Limpar dados antigos do wizard ao iniciar nova matrícula
+        session()->forget('enrollment_wizard');
+        
         $classrooms = Classroom::all();
         $wizardData = [
-            'student' => session('enrollment_wizard.student'),
-            'guardian' => session('enrollment_wizard.guardian'),
-            'enrollment' => session('enrollment_wizard.enrollment'),
+            'student' => null,
+            'guardian' => null,
+            'enrollment' => null,
         ];
         
         return Inertia::render('Matriculas/Wizard', [
@@ -118,10 +122,12 @@ class EnrollmentController extends Controller
         switch ($step) {
             case 'aluno':
                 session(['enrollment_wizard.student' => $validatedData['student']]);
+                session(['enrollment_wizard.last_activity' => now()]);
                 break;
                 
             case 'responsavel':
                 session(['enrollment_wizard.guardian' => $validatedData['guardian']]);
+                session(['enrollment_wizard.last_activity' => now()]);
                 break;
                 
             case 'matricula':
@@ -138,6 +144,7 @@ class EnrollmentController extends Controller
                 }
                 
                 session(['enrollment_wizard.enrollment' => $validatedData['enrollment']]);
+                session(['enrollment_wizard.last_activity' => now()]);
                 break;
         }
         
@@ -147,14 +154,20 @@ class EnrollmentController extends Controller
     /**
      * Complete the wizard and create all records
      */
-    public function wizardComplete(Request $request)
+    public function wizardComplete(WizardRequest $request)
     {
-        // Retrieve data from session instead of request
+        // Get validated data from request
+        $validatedData = $request->validated();
+        
+        // Log para debug
+        \Log::info('WizardComplete chamado com dados:', $validatedData);
+        
+        // Retrieve data from session
         $studentData = session('enrollment_wizard.student');
         $guardianData = session('enrollment_wizard.guardian');
-        $enrollmentData = session('enrollment_wizard.enrollment');
+        $enrollmentData = $validatedData; // Use data from request for enrollment
         
-        // Validate that all required data is present in session
+        // Validate that all required data is present
         if (!$studentData || !$guardianData || !$enrollmentData) {
             return redirect()->back()->withErrors([
                 'wizard' => 'Por favor, complete todos os passos do wizard.'
@@ -162,15 +175,18 @@ class EnrollmentController extends Controller
         }
         
         try {
-            // Create student using ServiceStudent
-            $studentService = app(ServiceStudent::class);
-            $student = $studentService->create($studentData);
+            // Get existing student and guardian from IDs
+            $student = \App\Models\Student::find($validatedData['student_id']);
+            $guardian = \App\Models\Guardian::find($validatedData['guardian_id']);
             
-            // Create guardian using ServiceGuardian
+            if (!$student || !$guardian) {
+                return redirect()->back()->withErrors([
+                    'wizard' => 'Aluno ou responsável não encontrado.'
+                ]);
+            }
+            
+            // Link guardian to student if not already linked
             $guardianService = app(ServiceGuardian::class);
-            $guardian = $guardianService->create($guardianData);
-            
-            // Link guardian to student
             $guardianService->attachToStudent($guardian->id, $student->id);
             
             // Create enrollment using EnrollmentService
@@ -184,10 +200,27 @@ class EnrollmentController extends Controller
                 'notes' => $enrollmentData['notes'] ?? null,
             ]);
             
+            // Criar fatura automática baseada no processo da matrícula
+            try {
+                $enrollmentFinanceService = app(EnrollmentFinanceService::class);
+                $invoice = $enrollmentFinanceService->createAutomaticInvoice($enrollment);
+                
+                $successMessage = 'Matrícula criada com sucesso!';
+                if ($invoice) {
+                    $serviceName = $invoice->description;
+                    $amount = 'R$ ' . number_format($invoice->amount, 2, ',', '.');
+                    $successMessage .= " Fatura automática criada: {$serviceName} - {$amount}";
+                }
+            } catch (\Exception $e) {
+                // Se não conseguir criar fatura automática, apenas logar o erro
+                Log::warning('Erro ao criar fatura automática: ' . $e->getMessage());
+                $successMessage = 'Matrícula criada com sucesso! (Fatura será criada manualmente)';
+            }
+            
             // Clear wizard data from session
             session()->forget('enrollment_wizard');
             
-            return redirect()->route('matriculas.index')->with('success', 'Matrícula criada com sucesso!');
+            return redirect()->route('matriculas.index')->with('success', $successMessage);
             
         } catch (\Exception $e) {
             return redirect()->back()->withErrors([

@@ -26,7 +26,7 @@ class WizardRequest extends FormRequest
                 return [
                     'student.name' => 'required|string|max:255',
                     'student.birth_date' => 'required|date',
-                    'student.cpf' => 'required|string|size:11',
+                    'student.cpf' => 'nullable|string|size:11',
                     'student.rg' => 'nullable|string|max:20',
                     'student.birth_certificate_number' => 'nullable|string|max:50',
                     'student.notes' => 'nullable|string',
@@ -36,14 +36,13 @@ class WizardRequest extends FormRequest
                 return [
                     'guardian.name' => 'required|string|max:255',
                     'guardian.cpf' => 'required|string|size:11',
-                    'guardian.email' => 'required|email|max:255',
+                    'guardian.email' => 'nullable|email|max:255',
                     'guardian.phone' => 'nullable|string|max:20',
-                    'guardian.guardian_type' => 'required|in:titular,suplente',
-                    'guardian.relationship' => 'required|string|max:50',
+                    'guardian.guardian_type' => 'nullable|in:titular,suplente',
+                    'guardian.relationship' => 'nullable|string|max:50',
                     'guardian.occupation' => 'nullable|string|max:100',
                     'guardian.workplace' => 'nullable|string|max:100',
                     'guardian.addresses' => 'nullable|array',
-                    'guardian.addresses.*.type' => 'nullable|string|max:50',
                     'guardian.addresses.*.zip_code' => 'nullable|string|max:10',
                     'guardian.addresses.*.street' => 'nullable|string|max:255',
                     'guardian.addresses.*.number' => 'nullable|string|max:20',
@@ -62,11 +61,13 @@ class WizardRequest extends FormRequest
                 
             case 'matricula':
                 return [
-                    'enrollment.classroom_id' => 'required|exists:classrooms,id',
-                    'enrollment.enrollment_date' => 'required|date',
-                    'enrollment.status' => 'required|in:active,pending,cancelled,inactive',
-                    'enrollment.process' => 'nullable|in:reserva,aguardando_pagamento,aguardando_documentos,desistencia,transferencia,renovacao,completa',
-                    'enrollment.notes' => 'nullable|string',
+                    'student_id' => 'required|exists:students,id',
+                    'guardian_id' => 'required|exists:guardians,id',
+                    'classroom_id' => 'required|exists:classrooms,id',
+                    'enrollment_date' => 'required|date',
+                    'status' => 'required|in:active,pending,cancelled,inactive',
+                    'process' => 'required|in:reserva,aguardando_pagamento,aguardando_documentos,desistencia,transferencia,renovacao,completa',
+                    'notes' => 'nullable|string',
                 ];
                 
             default:

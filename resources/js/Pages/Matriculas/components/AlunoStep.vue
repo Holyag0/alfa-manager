@@ -192,32 +192,50 @@
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-2">Nome completo *</label>
-              <input 
-                v-model="newStudent.name" 
-                type="text" 
-                placeholder="Nome completo do aluno" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
-                required 
-              />
+                              <input 
+                  v-model="newStudent.name" 
+                  type="text" 
+                  placeholder="Nome completo do aluno" 
+                  :class="[
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-colors duration-200',
+                    form.errors.name ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                  ]"
+                  required 
+                />
+                <div v-if="form.errors.name" class="mt-1 text-sm text-red-600">
+                  {{ form.errors.name }}
+                </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Data de Nascimento *</label>
-              <input 
-                v-model="newStudent.birth_date" 
-                type="date" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
-                required 
-              />
+                              <input 
+                  v-model="newStudent.birth_date" 
+                  type="date" 
+                  :class="[
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-colors duration-200',
+                    form.errors.birth_date ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                  ]"
+                  required 
+                />
+                <div v-if="form.errors.birth_date" class="mt-1 text-sm text-red-600">
+                  {{ form.errors.birth_date }}
+                </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">CPF *</label>
-              <input 
-                v-model="newStudent.cpf" 
-                type="text" 
-                placeholder="000.000.000-00" 
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200" 
-                required 
-              />
+                              <input 
+                  v-model="newStudent.cpf" 
+                  type="text" 
+                  placeholder="000.000.000-00" 
+                  :class="[
+                    'w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 transition-colors duration-200',
+                    form.errors.cpf ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-green-500'
+                  ]"
+                  required 
+                />
+                <div v-if="form.errors.cpf" class="mt-1 text-sm text-red-600">
+                  {{ form.errors.cpf }}
+                </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">RG</label>

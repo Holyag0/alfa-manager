@@ -75,11 +75,14 @@
               Turma *
             </label>
             <div class="relative">
-              <select 
-                v-model="form.classroom_id" 
-                class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 appearance-none bg-white" 
-                required
-              >
+                             <select 
+                 v-model="form.classroom_id" 
+                 :class="[
+                   'w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 transition-colors duration-200 appearance-none bg-white',
+                   form.errors.classroom_id ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-purple-500'
+                 ]"
+                 required
+               >
                 <option value="">Selecione uma turma</option>
                 <option v-for="classroom in classrooms" :key="classroom.id" :value="classroom.id">
                   {{ classroom.name }}
@@ -90,6 +93,9 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                 </svg>
               </div>
+            </div>
+            <div v-if="form.errors.classroom_id" class="mt-1 text-sm text-red-600">
+              {{ form.errors.classroom_id }}
             </div>
           </div>
 
@@ -159,8 +165,14 @@
             <input 
               type="date" 
               v-model="form.enrollment_date" 
-              class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200" 
+              :class="[
+                'w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 transition-colors duration-200',
+                form.errors.enrollment_date ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-purple-500'
+              ]"
             />
+            <div v-if="form.errors.enrollment_date" class="mt-1 text-sm text-red-600">
+              {{ form.errors.enrollment_date }}
+            </div>
           </div>
         </div>
 
@@ -211,6 +223,7 @@ const emit = defineEmits(['finish', 'back']);
 const classrooms = ref([]);
 
 const form = useForm({
+  step: 'matricula', // Adicionar o step para a validação
   student_id: props.aluno.id,
   guardian_id: props.responsavel.id,
   classroom_id: '',
