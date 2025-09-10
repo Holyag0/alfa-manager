@@ -30,6 +30,7 @@
         <ServiceForm
           :service="service"
           :categories="categories"
+          :classrooms="classrooms"
           :submit-url="route('services.update', service.id)"
           submit-method="put"
           submit-button-text="Atualizar Serviço"
@@ -46,6 +47,7 @@ import ServiceForm from './components/ServiceForm.vue'
 
 defineProps({
   service: Object,
-  categories: Array
+  categories: Array,
+  classrooms: Array
 })
 </script> 

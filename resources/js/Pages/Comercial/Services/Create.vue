@@ -29,6 +29,7 @@
       <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
         <ServiceForm
           :categories="categories"
+          :classrooms="classrooms"
           :submit-url="route('services.store')"
           submit-method="post"
           submit-button-text="Criar Serviço"
@@ -44,6 +45,7 @@
 import ServiceForm from './components/ServiceForm.vue'
 
 defineProps({
-  categories: Array
+  categories: Array,
+  classrooms: Array
 })
 </script> 

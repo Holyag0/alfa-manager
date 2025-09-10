@@ -15,9 +15,7 @@ class GuardianRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:60',
-            'email' => 'nullable|email|max:100',
-            'phone' => 'nullable|string|max:20',
-            'cpf' => 'nullable|string|max:20',
+            'cpf' => 'required|string|max:20', // CPF é obrigatório
             'rg' => 'nullable|string|max:20',
             'relationship' => 'nullable|string|max:50',
             'marital_status' => 'nullable|string|max:50',
@@ -38,27 +36,36 @@ class GuardianRequest extends FormRequest
             'addresses.*.state' => 'nullable|string|max:10',
             'addresses.*.address_for' => 'nullable|string|max:20',
             'addresses.*.is_primary' => 'nullable|boolean',
-            'contacts' => 'nullable|array',
-            'contacts.*.type' => 'nullable|string|max:20',
-            'contacts.*.value' => 'nullable|string|max:100',
+            'contacts' => 'required|array|min:1',
+            'contacts.*.type' => 'required|string|max:20',
+            'contacts.*.value' => 'required|string|max:100',
             'contacts.*.label' => 'nullable|string|max:30',
+            'contacts.*.is_primary' => 'nullable|boolean',
         ];
     }
 
-    /*
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Garantir que pelo menos um contato seja fornecido (email, phone direto ou via contacts array)
-            $hasEmail = !empty($this->email);
-            $hasPhone = !empty($this->phone);
+            // Garantir que pelo menos um contato seja fornecido via contacts array
             $hasContacts = !empty($this->contacts) && is_array($this->contacts) && 
                           collect($this->contacts)->some(fn($c) => !empty($c['value']));
             
-            if (!$hasEmail && !$hasPhone && !$hasContacts) {
+            if (!$hasContacts) {
                 $validator->errors()->add('contacts', 'É necessário fornecer pelo menos um meio de contato (email ou telefone).');
+            }
+            
+            // Validar se os contatos têm os campos obrigatórios
+            if (!empty($this->contacts) && is_array($this->contacts)) {
+                foreach ($this->contacts as $index => $contact) {
+                    if (empty($contact['type'])) {
+                        $validator->errors()->add("contacts.{$index}.type", 'O tipo do contato é obrigatório.');
+                    }
+                    if (empty($contact['value'])) {
+                        $validator->errors()->add("contacts.{$index}.value", 'O valor do contato é obrigatório.');
+                    }
+                }
             }
         });
     }
-    */
 } 

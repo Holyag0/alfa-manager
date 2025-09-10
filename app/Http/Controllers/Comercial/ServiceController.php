@@ -45,9 +45,11 @@ class ServiceController extends Controller
     {
         try {
             $categories = $this->serviceService->getCategories();
+            $classrooms = \App\Models\Classroom::active()->orderBy('name')->get();
 
             return Inertia::render('Comercial/Services/Create', [
-                'categories' => $categories
+                'categories' => $categories,
+                'classrooms' => $classrooms
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao carregar formulário de criação: ' . $e->getMessage());
@@ -61,7 +63,30 @@ class ServiceController extends Controller
     public function store(ServiceRequest $request)
     {
         try {
-            $this->serviceService->create($request->validated());
+            $validatedData = $request->validated();
+            
+            // Remover selected_classrooms dos dados do serviço
+            $selectedClassrooms = $validatedData['selected_classrooms'] ?? [];
+            unset($validatedData['selected_classrooms']);
+            
+            // Criar o serviço
+            $service = $this->serviceService->create($validatedData);
+            
+            // Se vinculado a turmas, criar ClassroomServices
+            if ($request->is_classroom_linked && !empty($selectedClassrooms)) {
+                foreach ($selectedClassrooms as $classroomId) {
+                    $classroom = \App\Models\Classroom::find($classroomId);
+                    if ($classroom) {
+                        \App\Models\ClassroomService::create([
+                            'classroom_id' => $classroomId,
+                            'service_id' => $service->id,
+                            'price' => $service->price, // Preço base
+                            'description' => $service->name . ' - ' . $classroom->name,
+                            'is_active' => true
+                        ]);
+                    }
+                }
+            }
 
             return redirect()->route('services.index')
                 ->with('success', 'Serviço criado com sucesso!');
@@ -86,8 +111,33 @@ class ServiceController extends Controller
                     ->with('error', 'Serviço não encontrado.');
             }
 
+            // Carregar turmas vinculadas se o serviço for vinculado
+            $serviceData = $service->toArray();
+            
+            if ($service->isClassroomLinked()) {
+                $classroomServices = $service->classroomServices()
+                    ->with('classroom')
+                    ->get()
+                    ->map(function ($cs) {
+                        return [
+                            'id' => $cs->id,
+                            'classroom' => [
+                                'id' => $cs->classroom->id,
+                                'name' => $cs->classroom->name
+                            ],
+                            'price' => $cs->price,
+                            'formatted_price' => $cs->formatted_price,
+                            'description' => $cs->description,
+                            'full_description' => $cs->full_description,
+                            'is_active' => $cs->is_active
+                        ];
+                    });
+                
+                $serviceData['classroom_services'] = $classroomServices;
+            }
+
             return Inertia::render('Comercial/Services/Show', [
-                'service' => $service
+                'service' => $serviceData
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao exibir serviço: ' . $e->getMessage());
@@ -103,15 +153,22 @@ class ServiceController extends Controller
         try {
             $service = $this->serviceService->find($id);
             $categories = $this->serviceService->getCategories();
+            $classrooms = \App\Models\Classroom::active()->orderBy('name')->get();
 
             if (!$service) {
                 return redirect()->route('services.index')
                     ->with('error', 'Serviço não encontrado.');
             }
 
+            // Carregar turmas selecionadas para este serviço
+            $selectedClassrooms = $service->classroomServices()->pluck('classroom_id')->toArray();
+
             return Inertia::render('Comercial/Services/Edit', [
-                'service' => $service,
-                'categories' => $categories
+                'service' => array_merge($service->toArray(), [
+                    'selected_classrooms' => $selectedClassrooms
+                ]),
+                'categories' => $categories,
+                'classrooms' => $classrooms
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao carregar formulário de edição: ' . $e->getMessage());
@@ -132,7 +189,39 @@ class ServiceController extends Controller
                     ->with('error', 'Serviço não encontrado.');
             }
 
-            $this->serviceService->update($id, $request->validated());
+            $validatedData = $request->validated();
+            
+            // Remover selected_classrooms dos dados do serviço
+            $selectedClassrooms = $validatedData['selected_classrooms'] ?? [];
+            unset($validatedData['selected_classrooms']);
+            
+            // Atualizar o serviço
+            $this->serviceService->update($id, $validatedData);
+            
+            // Atualizar vinculações com turmas
+            if ($request->is_classroom_linked) {
+                // Remover vinculações existentes
+                $service->classroomServices()->delete();
+                
+                // Criar novas vinculações
+                if (!empty($selectedClassrooms)) {
+                    foreach ($selectedClassrooms as $classroomId) {
+                        $classroom = \App\Models\Classroom::find($classroomId);
+                        if ($classroom) {
+                            \App\Models\ClassroomService::create([
+                                'classroom_id' => $classroomId,
+                                'service_id' => $service->id,
+                                'price' => $service->price, // Preço base
+                                'description' => $service->name . ' - ' . $classroom->name,
+                                'is_active' => true
+                            ]);
+                        }
+                    }
+                }
+            } else {
+                // Se não é vinculado, remover todas as vinculações
+                $service->classroomServices()->delete();
+            }
 
             return redirect()->route('services.index')
                 ->with('success', 'Serviço atualizado com sucesso!');
@@ -181,7 +270,7 @@ class ServiceController extends Controller
             }
 
             $newStatus = $service->status === 'active' ? 'inactive' : 'active';
-            $this->serviceService->update($service, ['status' => $newStatus]);
+            $this->serviceService->update($service->id, ['status' => $newStatus]);
 
             return redirect()->back()
                 ->with('success', 'Status do serviço alterado com sucesso!');
@@ -202,6 +291,20 @@ class ServiceController extends Controller
         } catch (\Exception $e) {
             Log::error('Erro ao buscar categorias: ' . $e->getMessage());
             return response()->json(['error' => 'Erro ao buscar categorias'], 500);
+        }
+    }
+
+    /**
+     * Get services list for API
+     */
+    public function getServicesApi()
+    {
+        try {
+            $services = $this->serviceService->getActiveServices();
+            return response()->json($services);
+        } catch (\Exception $e) {
+            Log::error('Erro ao buscar serviços: ' . $e->getMessage());
+            return response()->json(['error' => 'Erro ao buscar serviços'], 500);
         }
     }
 }

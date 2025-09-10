@@ -38,14 +38,21 @@ class GuardianController extends Controller
 
     public function store(GuardianRequest $request)
     {
-        $data = $request->validated();
-        $guardian = $this->service->create($data);
-        $guardian = $this->service->find($guardian->id);
+        try {
+            $data = $request->validated();
+            $guardian = $this->service->create($data);
+            $guardian = $this->service->find($guardian->id);
 
-        return redirect()->back()->with([
-            'success' => 'Responsável cadastrado com sucesso!',
-            'guardian' => $guardian ? $guardian->toArray() : null
-        ]);
+            return redirect()->back()->with([
+                'success' => 'Responsável cadastrado com sucesso!',
+                'guardian' => $guardian ? $guardian->toArray() : null
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao cadastrar responsável: ' . $e->getMessage());
+            return redirect()->back()->withErrors([
+                'error' => 'Erro interno: ' . $e->getMessage()
+            ]);
+        }
     }
 
     public function show($id)

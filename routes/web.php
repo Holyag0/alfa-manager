@@ -86,6 +86,7 @@ Route::middleware([
             ->group(function () {
                 Route::get('{service}/toggle-status', 'toggleStatus')->name('toggle-status');
                 Route::get('categories/list', 'getCategories')->name('categories.list');
+                Route::get('api', 'getServicesApi')->name('api');
             });
         
         // Rotas específicas para pacotes

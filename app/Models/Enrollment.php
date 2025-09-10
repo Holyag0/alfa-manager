@@ -35,4 +35,28 @@ class Enrollment extends Model
     {
         return $this->belongsTo(Classroom::class);
     }
+
+    /**
+     * Relacionamento com finanças da matrícula
+     */
+    public function finance()
+    {
+        return $this->hasOne(EnrollmentFinance::class);
+    }
+
+    /**
+     * Relacionamento com faturas da matrícula
+     */
+    public function invoices()
+    {
+        return $this->hasMany(EnrollmentInvoice::class);
+    }
+
+    /**
+     * Relacionamento com pagamentos da matrícula
+     */
+    public function payments()
+    {
+        return $this->hasMany(EnrollmentPayment::class);
+    }
 } 

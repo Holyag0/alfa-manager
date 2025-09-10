@@ -26,3 +26,10 @@ Route::get('students-autocomplete', [StudentController::class, 'autocomplete']);
 
 // Rota API para buscar guardians não vinculados a um aluno
 Route::get('students/{student}/guardians/search-not-linked', [GuardianController::class, 'searchNotLinked']);
+
+// Rotas para finanças de matrícula
+Route::get('enrollments/{enrollment}/financial-summary', function ($enrollment) {
+    $enrollment = \App\Models\Enrollment::findOrFail($enrollment);
+    $financeService = new \App\Services\EnrollmentFinanceService();
+    return $financeService->getFinancialSummary($enrollment);
+});

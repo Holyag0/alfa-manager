@@ -10,59 +10,44 @@ class ServiceGuardian
 {
     public function create(array $data)
     {
-        // Separar email e phone dos dados principais
-        $email = $data['email'] ?? null;
-        $phone = $data['phone'] ?? null;
-        
-        // Remover email e phone dos dados do guardian
-        $guardianData = collect($data)->except(['email', 'phone', 'addresses', 'contacts'])->toArray();
-        
-        $guardian = Guardian::create($guardianData);
-        
-        // Criar contatos básicos a partir dos dados principais (email e phone)
-        if ($email) {
-            $guardian->contacts()->create([
-                'type' => 'email',
-                'value' => $email,
-                'label' => 'pessoal',
-                'is_primary' => true,
-                'contact_for' => 'pessoal',
-            ]);
-        }
-        
-        if ($phone) {
-            $guardian->contacts()->create([
-                'type' => 'phone',
-                'value' => $phone,
-                'label' => 'pessoal',
-                'is_primary' => true,
-                'contact_for' => 'pessoal',
-            ]);
-        }
-        
-        // Endereços
-        if (!empty($data['addresses']) && is_array($data['addresses'])) {
-            foreach ($data['addresses'] as $address) {
-                if (!empty(array_filter($address))) {
-                    // Ensure required fields are present
-                    $addressData = array_merge([
-                        'type' => 'residencial', // Default type if not provided
-                    ], $address);
-                    $guardian->addresses()->create($addressData);
+        try {
+            // Remover addresses e contacts dos dados do guardian
+            $guardianData = collect($data)->except(['addresses', 'contacts'])->toArray();
+            
+            $guardian = Guardian::create($guardianData);
+            
+            // Endereços
+            if (!empty($data['addresses']) && is_array($data['addresses'])) {
+                foreach ($data['addresses'] as $address) {
+                    if (!empty(array_filter($address))) {
+                        // Ensure required fields are present
+                        $addressData = array_merge([
+                            'is_primary' => false, // Default value
+                        ], $address);
+                        $guardian->addresses()->create($addressData);
+                    }
                 }
             }
-        }
 
-        // Contatos adicionais (se fornecidos)
-        if (!empty($data['contacts']) && is_array($data['contacts'])) {
-            foreach ($data['contacts'] as $contact) {
-                if (!empty(array_filter($contact))) {
-                    $guardian->contacts()->create($contact);
+            // Contatos
+            if (!empty($data['contacts']) && is_array($data['contacts'])) {
+                foreach ($data['contacts'] as $contact) {
+                    if (!empty(array_filter($contact))) {
+                        // Ensure required fields are present
+                        $contactData = array_merge([
+                            'is_primary' => false, // Default value
+                            'contact_for' => 'pessoal', // Default value
+                        ], $contact);
+                        $guardian->contacts()->create($contactData);
+                    }
                 }
             }
-        }
 
-        return $guardian;
+            return $guardian;
+        } catch (\Exception $e) {
+            \Log::error('Erro no ServiceGuardian::create: ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public function update(Guardian $guardian, array $data): Guardian

@@ -83,13 +83,73 @@
                     </span>
                   </dd>
                 </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Tipo de Vinculação</dt>
+                  <dd class="mt-1">
+                    <span
+                      :class="[
+                        'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        service.is_classroom_linked
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-gray-100 text-gray-800'
+                      ]"
+                    >
+                      {{ service.is_classroom_linked ? 'Vinculado a Turmas' : 'Serviço Global' }}
+                    </span>
+                  </dd>
+                </div>
               </dl>
             </div>
 
-            <div v-if="service.description">
-              <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wide">Descrição</h4>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 uppercase tracking-wide">
+                {{ service.is_classroom_linked ? 'Turmas Vinculadas' : 'Descrição' }}
+              </h4>
               <div class="mt-4">
-                <p class="text-sm text-gray-900">{{ service.description }}</p>
+                <!-- Turmas Vinculadas -->
+                <div v-if="service.is_classroom_linked && service.classroom_services && service.classroom_services.length > 0">
+                  <div class="space-y-3">
+                    <div v-for="classroomService in service.classroom_services" :key="classroomService.id" 
+                         class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                      <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                          <h5 class="font-medium text-gray-900">{{ classroomService.classroom.name }}</h5>
+                          <p class="text-sm text-gray-600 mt-1">{{ classroomService.description }}</p>
+                        </div>
+                        <div class="text-right">
+                          <span class="text-lg font-semibold text-green-600">
+                            {{ classroomService.formatted_price }}
+                          </span>
+                          <div class="text-xs text-gray-500 mt-1">
+                            {{ classroomService.is_active ? 'Ativo' : 'Inativo' }}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Notas de Vinculação -->
+                  <div v-if="service.classroom_linking_notes" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h5 class="text-sm font-medium text-blue-900 mb-1">Notas sobre Vinculação:</h5>
+                    <p class="text-sm text-blue-700">{{ service.classroom_linking_notes }}</p>
+                  </div>
+                </div>
+                
+                <!-- Descrição para Serviços Globais -->
+                <div v-else-if="service.description">
+                  <p class="text-sm text-gray-900">{{ service.description }}</p>
+                </div>
+                
+                <!-- Mensagem quando não há turmas vinculadas -->
+                <div v-else-if="service.is_classroom_linked && (!service.classroom_services || service.classroom_services.length === 0)" 
+                     class="text-sm text-gray-500 italic">
+                  Nenhuma turma vinculada a este serviço.
+                </div>
+                
+                <!-- Mensagem quando não há descrição -->
+                <div v-else class="text-sm text-gray-500 italic">
+                  Nenhuma descrição disponível.
+                </div>
               </div>
             </div>
           </div>

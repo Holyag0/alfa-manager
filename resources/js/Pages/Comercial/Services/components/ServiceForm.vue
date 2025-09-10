@@ -75,6 +75,99 @@
         />
         <InputError :message="form.errors.description" class="mt-2" />
       </div>
+
+      <!-- Vinculação com Turmas -->
+      <div class="md:col-span-2">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 class="text-lg font-medium text-blue-900 mb-3">Vinculação com Turmas</h3>
+          
+          <div class="space-y-4">
+            <!-- Opção de Vinculação -->
+            <div class="flex items-center">
+              <input
+                id="is_classroom_linked"
+                v-model="form.is_classroom_linked"
+                type="checkbox"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label for="is_classroom_linked" class="ml-2 block text-sm text-blue-900">
+                Este serviço deve ter preços diferentes por turma
+              </label>
+            </div>
+
+            <!-- Explicação -->
+            <div class="text-sm text-blue-700">
+              <p v-if="form.is_classroom_linked">
+                <strong>Vinculado a Turmas:</strong> Selecione as turmas que terão preços específicos para este serviço.
+              </p>
+              <p v-else>
+                <strong>Serviço Global:</strong> Este serviço terá o mesmo preço para todas as turmas.
+              </p>
+            </div>
+
+            <!-- Seleção de Turmas (aparece quando vinculado) -->
+            <div v-if="form.is_classroom_linked" class="space-y-4">
+              <div class="border-t border-blue-200 pt-4">
+                <h4 class="font-medium text-blue-800 mb-3">Selecionar Turmas:</h4>
+                
+                <!-- Seleção Rápida -->
+                <div class="flex gap-3 mb-4">
+                  <button 
+                    type="button" 
+                    @click="selectAllClassrooms" 
+                    class="text-sm px-3 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+                  >
+                    Selecionar Todas
+                  </button>
+                  <button 
+                    type="button" 
+                    @click="deselectAllClassrooms" 
+                    class="text-sm px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                  >
+                    Desmarcar Todas
+                  </button>
+                </div>
+                
+                <!-- Lista de Turmas -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-48 overflow-y-auto border border-gray-200 rounded-md p-3 bg-white">
+                  <div v-for="classroom in classrooms" :key="classroom.id" class="flex items-center">
+                    <input
+                      v-model="form.selected_classrooms"
+                      :value="classroom.id"
+                      type="checkbox"
+                      class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label class="ml-2 text-sm text-gray-700 cursor-pointer">
+                      {{ classroom.name }}
+                    </label>
+                  </div>
+                </div>
+                
+                <!-- Contador -->
+                <div class="text-sm text-blue-600 mt-2">
+                  {{ form.selected_classrooms.length }} turma(s) selecionada(s)
+                </div>
+                
+                <!-- Erro de validação -->
+                <InputError :message="form.errors.selected_classrooms" class="mt-2" />
+              </div>
+            </div>
+
+            <!-- Notas de Vinculação -->
+            <div v-if="form.is_classroom_linked">
+              <InputLabel for="classroom_linking_notes" value="Notas sobre Vinculação (Opcional)" />
+              <textarea
+                id="classroom_linking_notes"
+                v-model="form.classroom_linking_notes"
+                rows="2"
+                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                placeholder="Ex: Preços diferenciados por série, turmas especiais..."
+              />
+              <InputError :message="form.errors.classroom_linking_notes" class="mt-2" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Botões -->
@@ -112,6 +205,10 @@ const props = defineProps({
     type: Array,
     default: () => []
   },
+  classrooms: {
+    type: Array,
+    default: () => []
+  },
   submitUrl: {
     type: String,
     required: true
@@ -135,8 +232,20 @@ const form = useForm({
   category: props.service.category || '',
   price: props.service.price || '',
   status: props.service.status || '',
-  description: props.service.description || ''
+  description: props.service.description || '',
+  is_classroom_linked: props.service.is_classroom_linked || false,
+  selected_classrooms: props.service.selected_classrooms || [],
+  classroom_linking_notes: props.service.classroom_linking_notes || ''
 })
+
+// Métodos para seleção de turmas
+const selectAllClassrooms = () => {
+  form.selected_classrooms = props.classrooms.map(classroom => classroom.id)
+}
+
+const deselectAllClassrooms = () => {
+  form.selected_classrooms = []
+}
 
 const submit = () => {
   if (props.submitMethod === 'put') {
