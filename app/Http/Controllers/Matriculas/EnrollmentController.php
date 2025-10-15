@@ -174,20 +174,8 @@ class EnrollmentController extends Controller
         // Log para debug
         \Log::info('WizardComplete chamado com dados:', $validatedData);
         
-        // Retrieve data from session
-        $studentData = session('enrollment_wizard.student');
-        $guardianData = session('enrollment_wizard.guardian');
-        $enrollmentData = $validatedData; // Use data from request for enrollment
-        
-        // Validate that all required data is present
-        if (!$studentData || !$guardianData || !$enrollmentData) {
-            return redirect()->back()->withErrors([
-                'wizard' => 'Por favor, complete todos os passos do wizard.'
-            ]);
-        }
-        
         try {
-            // Get existing student and guardian from IDs
+            // Get existing student and guardian from IDs (dados já foram cadastrados nos steps anteriores)
             $student = \App\Models\Student::find($validatedData['student_id']);
             $guardian = \App\Models\Guardian::find($validatedData['guardian_id']);
             
@@ -205,11 +193,11 @@ class EnrollmentController extends Controller
             $enrollment = $this->service->createEnrollment([
                 'student_id' => $student->id,
                 'guardian_id' => $guardian->id,
-                'classroom_id' => $enrollmentData['classroom_id'],
-                'enrollment_date' => $enrollmentData['enrollment_date'],
-                'status' => $enrollmentData['status'] ?? 'active',
-                'process' => $enrollmentData['process'] ?? 'completa',
-                'notes' => $enrollmentData['notes'] ?? null,
+                'classroom_id' => $validatedData['classroom_id'],
+                'enrollment_date' => $validatedData['enrollment_date'],
+                'status' => $validatedData['status'] ?? 'active',
+                'process' => $validatedData['process'] ?? 'completa',
+                'notes' => $validatedData['notes'] ?? null,
             ]);
             
             // Criar fatura automática baseada no processo da matrícula

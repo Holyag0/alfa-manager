@@ -20,11 +20,31 @@ class ServiceGuardian
             if (!empty($data['addresses']) && is_array($data['addresses'])) {
                 foreach ($data['addresses'] as $address) {
                     if (!empty(array_filter($address))) {
-                        // Ensure required fields are present
+                        // Ensure required fields are present and handle null values
                         $addressData = array_merge([
                             'is_primary' => false, // Default value
+                            'type' => 'residencial', // Default value for required field
+                            'number' => '', // Default value for required field
+                            'street' => '', // Default value for required field
+                            'neighborhood' => '', // Default value for required field
+                            'city' => '', // Default value for required field
+                            'state' => '', // Default value for required field
+                            'zip_code' => '', // Default value for required field
                         ], $address);
-                        $guardian->addresses()->create($addressData);
+                        
+                        // Convert null values to empty strings for required fields
+                        $addressData['number'] = $addressData['number'] ?? '';
+                        $addressData['street'] = $addressData['street'] ?? '';
+                        $addressData['neighborhood'] = $addressData['neighborhood'] ?? '';
+                        $addressData['city'] = $addressData['city'] ?? '';
+                        $addressData['state'] = $addressData['state'] ?? '';
+                        $addressData['zip_code'] = $addressData['zip_code'] ?? '';
+                        $addressData['type'] = $addressData['type'] ?? 'residencial';
+                        
+                        // Only create address if we have at least zip_code
+                        if (!empty($addressData['zip_code'])) {
+                            $guardian->addresses()->create($addressData);
+                        }
                     }
                 }
             }
@@ -33,12 +53,18 @@ class ServiceGuardian
             if (!empty($data['contacts']) && is_array($data['contacts'])) {
                 foreach ($data['contacts'] as $contact) {
                     if (!empty(array_filter($contact))) {
-                        // Ensure required fields are present
+                        // Ensure required fields are present and handle null values
                         $contactData = array_merge([
                             'is_primary' => false, // Default value
                             'contact_for' => 'pessoal', // Default value
+                            'type' => 'phone', // Default value for required field
+                            'value' => '', // Default value for required field
                         ], $contact);
-                        $guardian->contacts()->create($contactData);
+                        
+                        // Only create contact if we have a value
+                        if (!empty($contactData['value'])) {
+                            $guardian->contacts()->create($contactData);
+                        }
                     }
                 }
             }
