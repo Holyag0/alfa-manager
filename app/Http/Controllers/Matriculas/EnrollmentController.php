@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Matriculas;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EnrollmentRequest;
 use App\Http\Requests\WizardRequest;
+use App\Http\Requests\EnrollmentWizardRequest;
 use App\Services\EnrollmentService;
 use App\Models\Enrollment;
 use App\Models\Student;
@@ -154,7 +155,7 @@ class EnrollmentController extends Controller
     /**
      * Complete the wizard and create all records
      */
-    public function wizardComplete(WizardRequest $request)
+    public function wizardComplete(EnrollmentWizardRequest $request)
     {
         // Get validated data from request
         $validatedData = $request->validated();

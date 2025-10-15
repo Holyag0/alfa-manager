@@ -17,6 +17,12 @@ class EnrollmentService
     public function createEnrollment(array $data)
     {
         return DB::transaction(function () use ($data) {
+            // Validar dados obrigatórios antes de qualquer operação
+            $this->validateEnrollmentData($data);
+
+            // Lock pessimista na turma para evitar race condition
+            $classroom = Classroom::lockForUpdate()->findOrFail($data['classroom_id']);
+            
             // Verifica se já existe matrícula ativa para o aluno na turma
             $exists = Enrollment::where('student_id', $data['student_id'])
                 ->where('classroom_id', $data['classroom_id'])
@@ -26,8 +32,7 @@ class EnrollmentService
                 throw new Exception('Student is already enrolled in this classroom.');
             }
 
-            // Verifica se há vagas na turma
-            $classroom = Classroom::findOrFail($data['classroom_id']);
+            // Verifica se há vagas na turma APÓS o lock
             $enrolledCount = Enrollment::where('classroom_id', $classroom->id)
                 ->where('status', '!=', 'cancelled')
                 ->count();
@@ -36,7 +41,7 @@ class EnrollmentService
             }
 
             // Cria a matrícula
-            return Enrollment::create([
+            $enrollment = Enrollment::create([
                 'student_id'      => $data['student_id'],
                 'guardian_id'     => $data['guardian_id'],
                 'classroom_id'    => $data['classroom_id'],
@@ -45,6 +50,18 @@ class EnrollmentService
                 'enrollment_date' => $data['enrollment_date'] ?? now(),
                 'notes'           => $data['notes'] ?? null,
             ]);
+
+            // Log da criação para auditoria
+            \Log::info('Enrollment created', [
+                'enrollment_id' => $enrollment->id,
+                'student_id' => $data['student_id'],
+                'guardian_id' => $data['guardian_id'],
+                'classroom_id' => $data['classroom_id'],
+                'vacancies_used' => $enrolledCount + 1,
+                'total_vacancies' => $classroom->vacancies,
+            ]);
+
+            return $enrollment;
         });
     }
     /**
@@ -65,17 +82,47 @@ class EnrollmentService
      */
     public function changeClassroom($enrollmentId, $newClassroomId)
     {
-        $enrollment = Enrollment::findOrFail($enrollmentId);
-        $classroom = Classroom::findOrFail($newClassroomId);
-        $enrolledCount = Enrollment::where('classroom_id', $classroom->id)
-            ->where('status', '!=', 'cancelled')
-            ->count();
-        if ($enrolledCount >= $classroom->vacancies) {
-            throw new Exception('No vacancies available in the new classroom.');
-        }
-        $enrollment->classroom_id = $newClassroomId;
-        $enrollment->save();
-        return $enrollment;
+        return DB::transaction(function () use ($enrollmentId, $newClassroomId) {
+            $enrollment = Enrollment::findOrFail($enrollmentId);
+            
+            // Verificar se a nova turma é diferente da atual
+            if ($enrollment->classroom_id == $newClassroomId) {
+                throw new Exception('Student is already enrolled in this classroom.');
+            }
+            
+            // Lock pessimista na nova turma para evitar race condition
+            $classroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
+            
+            // Verificar se há vagas na nova turma
+            $enrolledCount = Enrollment::where('classroom_id', $classroom->id)
+                ->where('status', '!=', 'cancelled')
+                ->count();
+            if ($enrolledCount >= $classroom->vacancies) {
+                throw new Exception('No vacancies available in the new classroom.');
+            }
+            
+            // Verificar se o aluno já está matriculado na nova turma
+            $alreadyEnrolled = Enrollment::where('student_id', $enrollment->student_id)
+                ->where('classroom_id', $newClassroomId)
+                ->where('status', '!=', 'cancelled')
+                ->exists();
+            if ($alreadyEnrolled) {
+                throw new Exception('Student is already enrolled in the target classroom.');
+            }
+            
+            $enrollment->classroom_id = $newClassroomId;
+            $enrollment->save();
+            
+            // Log da mudança para auditoria
+            \Log::info('Enrollment classroom changed', [
+                'enrollment_id' => $enrollment->id,
+                'student_id' => $enrollment->student_id,
+                'old_classroom_id' => $enrollment->classroom_id,
+                'new_classroom_id' => $newClassroomId,
+            ]);
+            
+            return $enrollment;
+        });
     }
     /**
      * Consulta matrículas por filtros, com paginação.
@@ -118,5 +165,50 @@ class EnrollmentService
         $enrollment = Enrollment::findOrFail($id);
         $enrollment->update($data);
         return $enrollment;
+    }
+
+    /**
+     * Valida os dados obrigatórios para criação de matrícula.
+     */
+    private function validateEnrollmentData(array $data)
+    {
+        // Validar campos obrigatórios
+        $requiredFields = ['student_id', 'guardian_id', 'classroom_id'];
+        foreach ($requiredFields as $field) {
+            if (empty($data[$field])) {
+                throw new Exception("Field '{$field}' is required.");
+            }
+        }
+
+        // Validar se o aluno existe
+        if (!Student::find($data['student_id'])) {
+            throw new Exception('Student not found.');
+        }
+
+        // Validar se o responsável existe
+        if (!Guardian::find($data['guardian_id'])) {
+            throw new Exception('Guardian not found.');
+        }
+
+        // Validar se a turma existe
+        if (!Classroom::find($data['classroom_id'])) {
+            throw new Exception('Classroom not found.');
+        }
+
+        // Validar formato da data se fornecida
+        if (isset($data['enrollment_date']) && !strtotime($data['enrollment_date'])) {
+            throw new Exception('Invalid enrollment date format.');
+        }
+
+        // Validar status se fornecido
+        if (isset($data['status']) && !in_array($data['status'], ['active', 'pending', 'cancelled', 'inactive'])) {
+            throw new Exception('Invalid status value.');
+        }
+
+        // Validar processo se fornecido
+        $validProcesses = ['reserva', 'aguardando_pagamento', 'aguardando_documentos', 'desistencia', 'transferencia', 'renovacao', 'completa'];
+        if (isset($data['process']) && !in_array($data['process'], $validProcesses)) {
+            throw new Exception('Invalid process value.');
+        }
     }
 } 
