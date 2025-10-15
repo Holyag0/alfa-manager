@@ -58,6 +58,17 @@ class EnrollmentController extends Controller
         ]);
     }
 
+    /**
+     * Show simple wizard for enrollment
+     */
+    public function createSimple()
+    {
+        // Limpar dados antigos do wizard ao iniciar nova matrícula
+        session()->forget('enrollment_wizard');
+        
+        return Inertia::render('Matriculas/SimpleWizard');
+    }
+
     public function edit($id)
     {
         $enrollment = Enrollment::with(['student', 'guardian', 'classroom'])->findOrFail($id);
