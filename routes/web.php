@@ -61,6 +61,8 @@ Route::middleware([
             Route::post('wizard/store', 'wizardStore')->name('wizard.store');
             Route::post('wizard/complete', 'wizardComplete')->name('wizard.complete');
             Route::post('wizard/reset', 'wizardReset')->name('wizard.reset');
+            // Rota do Wizard Simplificado
+            Route::get('create-simple', 'createSimple')->name('create-simple');
         });
     
     // Rotas para gerenciar vínculos entre responsáveis e alunos

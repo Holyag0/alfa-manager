@@ -15,6 +15,7 @@ Route::get('/user', function (Request $request) {
 Route::get('guardians', [GuardianApiController::class, 'index']);
 Route::get('students', [StudentApiController::class, 'index']);
 Route::get('classrooms', [ClassroomApiController::class, 'index']);
+Route::get('classrooms/{classroom}/enrollments', [ClassroomApiController::class, 'getEnrollments']);
 
 // Rotas de CRUD e autocomplete para Guardian
 Route::apiResource('guardians', GuardianController::class);
