@@ -10,18 +10,18 @@
       </div>
       
       <div class="p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Total em Aberto -->
           <div class="bg-red-50 border border-red-200 rounded-lg p-4">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
                 </svg>
               </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-red-600">Total em Aberto</p>
-                <p class="text-2xl font-bold text-red-900">{{ financialSummary.summary.total_due_formatted }}</p>
+              <div class="ml-3 min-w-0 flex-1">
+                <p class="text-xs font-medium text-red-600 truncate">Total em Aberto</p>
+                <p class="text-lg font-bold text-red-900 truncate">{{ financialSummary.summary.total_due_formatted }}</p>
               </div>
             </div>
           </div>
@@ -30,13 +30,13 @@
           <div class="bg-green-50 border border-green-200 rounded-lg p-4">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-green-600">Total Pago</p>
-                <p class="text-2xl font-bold text-green-900">{{ financialSummary.summary.total_payments_formatted }}</p>
+              <div class="ml-3 min-w-0 flex-1">
+                <p class="text-xs font-medium text-green-600 truncate">Total Pago</p>
+                <p class="text-lg font-bold text-green-900 truncate">{{ financialSummary.summary.total_payments_formatted }}</p>
               </div>
             </div>
           </div>
@@ -45,13 +45,13 @@
           <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
               </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-yellow-600">Faturas Pendentes</p>
-                <p class="text-2xl font-bold text-yellow-900">{{ financialSummary.summary.pending_invoices }}</p>
+              <div class="ml-3 min-w-0 flex-1">
+                <p class="text-xs font-medium text-yellow-600 truncate">Faturas Pendentes</p>
+                <p class="text-lg font-bold text-yellow-900 truncate">{{ financialSummary.summary.pending_invoices }}</p>
               </div>
             </div>
           </div>
@@ -60,13 +60,13 @@
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-center">
               <div class="flex-shrink-0">
-                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                 </svg>
               </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-blue-600">Status</p>
-                <p class="text-lg font-bold text-blue-900">{{ financialSummary.summary.payment_status_label }}</p>
+              <div class="ml-3 min-w-0 flex-1">
+                <p class="text-xs font-medium text-blue-600 truncate">Status</p>
+                <p class="text-lg font-bold text-blue-900 truncate">{{ financialSummary.summary.payment_status_label }}</p>
               </div>
             </div>
           </div>
@@ -74,222 +74,241 @@
       </div>
     </div>
 
-    <!-- Faturas Recentes -->
-    <div v-if="financialSummary && financialSummary.recent_invoices.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">Faturas Recentes</h3>
-          <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver todas
-          </button>
-        </div>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vencimento</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="invoice in financialSummary.recent_invoices" :key="invoice.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {{ invoice.invoice_number }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ invoice.description }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                {{ invoice.formatted_amount }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(invoice.due_date) }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="getStatusClass(invoice.status)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
-                  {{ invoice.status_label }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <!-- Tabela de faturas removida conforme solicitado -->
 
-    <!-- Pagamentos Recentes -->
-    <div v-if="financialSummary && financialSummary.recent_payments.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
-          <button class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-            Ver todos
-          </button>
-        </div>
-      </div>
-      
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="payment in financialSummary.recent_payments" :key="payment.id" class="hover:bg-gray-50">
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {{ payment.payment_number }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {{ payment.description }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                {{ payment.formatted_amount }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ payment.method_label }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ formatDate(payment.payment_date) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Seleção de Serviços -->
+    <!-- Botão para Adicionar Serviços -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-        <h3 class="text-lg font-semibold text-gray-900">Adicionar Serviços</h3>
-        <p class="text-sm text-gray-600">Escolha serviços adicionais para esta matrícula</p>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Serviços da Matrícula</h3>
+            <p class="text-sm text-gray-600">Gerencie os serviços adicionais desta matrícula</p>
+          </div>
+          <div class="flex space-x-3">
+            <button
+              @click="openPaymentModal"
+              :disabled="enrollmentServices.filter(s => s.status === 'pending').length === 0"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+              Registrar Pagamento
+            </button>
+            <button
+              @click="openAddServicesModal"
+              class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+              Adicionar Serviços
+          </button>
+          </div>
+        </div>
       </div>
       
       <div class="p-6">
-        <!-- Filtros -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-            <input
-              v-model="serviceFilters.search"
-              type="text"
-              placeholder="Nome do serviço..."
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-            <select
-              v-model="serviceFilters.category"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        <!-- Serviços Selecionados -->
+        <div v-if="cartServices.length > 0" class="mb-6">
+          <h4 class="text-lg font-medium text-gray-900 mb-4">Serviços Selecionados</h4>
+          <div class="space-y-3">
+            <div
+              v-for="service in cartServices"
+              :key="service.id"
+              class="flex items-center justify-between p-4 border border-blue-200 rounded-lg bg-blue-50"
             >
-              <option value="">Todas as categorias</option>
-              <option v-for="category in availableCategories" :key="category" :value="category">
-                {{ category }}
-              </option>
-            </select>
+              <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                  <div class="w-4 h-4 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-900">{{ service.name }}</label>
+                    <p class="text-sm text-gray-500">{{ service.description || 'Sem descrição' }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span class="text-lg font-semibold text-blue-600">{{ service.formatted_price }}</span>
+                <button
+                  @click="removeFromCart(service.id)"
+                  class="text-red-600 hover:text-red-800 p-1"
+                  title="Remover do carrinho"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <select
-              v-model="serviceFilters.status"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Todos os status</option>
-              <option value="active">Ativo</option>
-              <option value="inactive">Inativo</option>
-            </select>
+          
+          <!-- Total do Carrinho e Botão de Pagamento -->
+          <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="text-lg font-semibold text-gray-900">Total: {{ getFormattedCartTotal() }}</span>
+                <p class="text-sm text-gray-500">{{ cartServices.length }} serviço(s) selecionado(s)</p>
+              </div>
+              <div class="flex space-x-3">
+                <button
+                  @click="clearCart"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Limpar
+                </button>
+                <button
+                  @click="processPayment"
+                  class="px-6 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                  </svg>
+                  Finalizar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Lista de Serviços -->
-        <div class="space-y-3 max-h-64 overflow-y-auto">
-          <div
-            v-for="service in filteredServices"
-            :key="service.id"
-            class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <div class="flex-1">
-              <div class="flex items-center space-x-3">
-                <input
-                  :id="'service-' + service.id"
-                  v-model="selectedServices"
-                  :value="service.id"
-                  type="checkbox"
-                  class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <div>
-                  <label :for="'service-' + service.id" class="text-sm font-medium text-gray-900 cursor-pointer">
-                    {{ service.name }}
-                  </label>
-                  <p class="text-sm text-gray-500">{{ service.description || 'Sem descrição' }}</p>
+        <!-- Lista de serviços já adicionados (contratados) -->
+        <div v-if="enrollmentServices.length > 0" class="mb-6">
+          <h4 class="text-lg font-medium text-gray-900 mb-4">Serviços Contratados</h4>
+          <div class="space-y-3">
+            <div
+              v-for="service in enrollmentServices"
+              :key="service.id"
+              @click="openServicePaymentModal(service)"
+              class="flex items-center justify-between p-4 border border-gray-200 rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100 hover:scale-105 transition-all duration-200"
+            >
+              <div class="flex-1">
+                <div class="flex items-center space-x-3">
+                  <div class="w-4 h-4 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-900">{{ service.name }}</label>
+                    <p class="text-sm text-gray-500">{{ service.description || 'Sem descrição' }}</p>
+                  </div>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-lg font-semibold text-gray-900">{{ service.formatted_amount }}</span>
+                <div class="flex items-center space-x-2 mt-1">
+                  <span
+                    :class="[
+                      'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
+                      service.status === 'paid' ? 'bg-green-100 text-green-800' : 
+                      service.status === 'refunded' ? 'bg-red-100 text-red-800' : 
+                      'bg-yellow-100 text-yellow-800'
+                    ]"
+                  >
+                    {{ service.status_label }}
+                </span>
+                  <!-- Botões de ação -->
+                  <div class="flex items-center space-x-1">
+                    <!-- Botão para reativar serviço estornado -->
+                    <button
+                      v-if="service.status === 'refunded'"
+                      @click="reactivateService(service.id)"
+                      class="text-blue-600 hover:text-blue-800 p-1"
+                      title="Reativar serviço"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                      </svg>
+                    </button>
+                    <!-- Botão para remover serviço (apenas se não estiver pago ou estornado) -->
+                    <button
+                      v-if="service.status !== 'paid' && service.status !== 'refunded'"
+                      @click="removeService(service.id)"
+                      class="text-red-600 hover:text-red-800 p-1"
+                      title="Remover serviço"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="text-right">
-              <span class="text-lg font-semibold text-green-600">{{ service.formatted_price }}</span>
-              <div class="flex items-center space-x-2 mt-1">
-                <span
-                  :class="[
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                    service.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  ]"
-                >
-                  {{ service.status === 'active' ? 'Ativo' : 'Inativo' }}
-                </span>
-                <span
-                  :class="[
-                    'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium',
-                    service.is_classroom_linked ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                  ]"
-                >
-                  {{ service.is_classroom_linked ? 'Vinculado' : 'Global' }}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- Botões de Ação -->
-        <div class="mt-6 flex justify-end space-x-3">
-          <button
-            @click="clearServiceSelection"
-            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Limpar Seleção
-          </button>
-          <button
-            @click="addSelectedServices"
-            :disabled="selectedServices.length === 0 || addingServices"
-            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {{ addingServices ? 'Adicionando...' : `Adicionar ${selectedServices.length} Serviço(s)` }}
-          </button>
+        <!-- Estado vazio quando não há serviços -->
+        <div v-if="cartServices.length === 0 && enrollmentServices.length === 0" class="text-center py-8">
+          <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+          </svg>
+          <h3 class="mt-2 text-sm font-medium text-gray-900">Nenhum serviço adicionado</h3>
+          <p class="mt-1 text-sm text-gray-500">Clique em "Adicionar Serviços" para começar.</p>
         </div>
       </div>
     </div>
 
-    <!-- Estado vazio -->
-    <div v-if="!financialSummary" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-      <svg class="mx-auto h-12 w-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
-      </svg>
-      <h3 class="mt-4 text-lg font-medium text-yellow-800">Nenhuma informação financeira</h3>
-      <p class="mt-2 text-yellow-700">Esta matrícula ainda não possui registros financeiros.</p>
+    <!-- Estado vazio removido - resumo financeiro sempre funcional -->
+
+    <!-- Informação sobre como visualizar detalhes -->
+    <div v-if="financialSummary && financialSummary.recent_payments.length > 0" class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+      <div class="flex items-center">
+        <svg class="w-5 h-5 text-blue-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <div>
+          <p class="text-sm font-medium text-blue-800">💡 Dica</p>
+          <p class="text-sm text-blue-700">Clique em qualquer serviço na seção "Serviços Contratados" para ver os detalhes do pagamento.</p>
+        </div>
+      </div>
     </div>
+
+    <!-- Modal para Adicionar Serviços -->
+    <AddServicesModal 
+      :show="showAddServicesModal" 
+      :enrollment="enrollment"
+      @close="closeAddServicesModal"
+      @services-added="handleServicesAdded"
+    />
+
+    <!-- Modal para Registrar Pagamento -->
+    <PaymentModal 
+      :show="showPaymentModal" 
+      :enrollment="enrollment"
+      :selected-invoices="selectedInvoicesForPayment"
+      @close="closePaymentModal"
+      @payment-processed="handlePaymentProcessed"
+    />
+
+    <!-- Modal para Detalhes do Pagamento -->
+    <PaymentDetailsModal 
+      :show="showPaymentDetailsModal" 
+      :payment="selectedPayment"
+      @close="closePaymentDetailsModal"
+      @request-refund="handleRefundRequest"
+      @request-delete-service="handleDeleteServiceRequest"
+    />
+
+    <!-- Modal para Estorno de Pagamento -->
+    <RefundPaymentModal 
+      :show="showRefundModal" 
+      :payment="paymentToRefund"
+      @close="closeRefundModal"
+      @refund-success="handleRefundSuccess"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import AddServicesModal from './AddServicesModal.vue'
+import PaymentModal from './PaymentModal.vue'
+import PaymentDetailsModal from './PaymentDetailsModal.vue'
+import RefundPaymentModal from './RefundPaymentModal.vue'
 
 const props = defineProps({ 
   enrollment: Object 
@@ -298,15 +317,22 @@ const props = defineProps({
 const financialSummary = ref(null)
 const loading = ref(false)
 
-// Variáveis para seleção de serviços
-const services = ref([])
-const selectedServices = ref([])
-const addingServices = ref(false)
-const serviceFilters = ref({
-  search: '',
-  category: '',
-  status: ''
-})
+// Variáveis para o modal de serviços
+const showAddServicesModal = ref(false)
+const cartServices = ref([]) // Carrinho de serviços (sem criar faturas ainda)
+const enrollmentServices = ref([]) // Serviços já pagos/adicionados
+
+// Variáveis para o modal de pagamento
+const showPaymentModal = ref(false)
+const selectedInvoicesForPayment = ref([])
+
+// Variáveis para o modal de detalhes do pagamento
+const showPaymentDetailsModal = ref(false)
+const selectedPayment = ref(null)
+
+// Variáveis para o modal de estorno
+const showRefundModal = ref(false)
+const paymentToRefund = ref(null)
 
 // Computed properties para formatação
 const formatDate = (dateString) => {
@@ -341,13 +367,48 @@ const loadFinancialData = async () => {
       
       // Adicionar formatação aos valores
       if (financialSummary.value?.summary) {
-        financialSummary.value.summary.total_due_formatted = `R$ ${financialSummary.value.summary.total_due.toFixed(2).replace('.', ',')}`
-        financialSummary.value.summary.total_payments_formatted = `R$ ${financialSummary.value.summary.total_payments.toFixed(2).replace('.', ',')}`
+        // Garantir que os valores são números antes de formatar
+        const totalDue = Number(financialSummary.value.summary.total_due) || 0
+        const totalPayments = Number(financialSummary.value.summary.total_payments) || 0
+        
+        financialSummary.value.summary.total_due_formatted = `R$ ${totalDue.toFixed(2).replace('.', ',')}`
+        financialSummary.value.summary.total_payments_formatted = `R$ ${totalPayments.toFixed(2).replace('.', ',')}`
         financialSummary.value.summary.payment_status_label = getPaymentStatusLabel(financialSummary.value.summary.payment_status)
+      }
+    } else {
+      // Se não há dados financeiros, criar um resumo básico
+      financialSummary.value = {
+        summary: {
+          total_due: 0,
+          total_payments: 0,
+          pending_invoices: 0,
+          overdue_invoices: 0,
+          payment_status: 'pending',
+          total_due_formatted: 'R$ 0,00',
+          total_payments_formatted: 'R$ 0,00',
+          payment_status_label: 'Pendente'
+        },
+        recent_invoices: [],
+        recent_payments: []
       }
     }
   } catch (error) {
     console.error('Erro ao carregar dados financeiros:', error)
+    // Criar resumo básico em caso de erro
+    financialSummary.value = {
+      summary: {
+        total_due: 0,
+        total_payments: 0,
+        pending_invoices: 0,
+        overdue_invoices: 0,
+        payment_status: 'pending',
+        total_due_formatted: 'R$ 0,00',
+        total_payments_formatted: 'R$ 0,00',
+        payment_status_label: 'Pendente'
+      },
+      recent_invoices: [],
+      recent_payments: []
+    }
   } finally {
     loading.value = false
   }
@@ -363,76 +424,274 @@ const getPaymentStatusLabel = (status) => {
   return labels[status] || status
 }
 
-// Computed properties para serviços
-const availableCategories = computed(() => {
-  const categories = [...new Set(services.value.map(service => service.category))]
-  return categories.sort()
-})
+// Métodos para o modal de serviços
+const openAddServicesModal = () => {
+  showAddServicesModal.value = true
+}
 
-const filteredServices = computed(() => {
-  return services.value.filter(service => {
-    const matchesSearch = !serviceFilters.value.search || 
-      service.name.toLowerCase().includes(serviceFilters.value.search.toLowerCase()) ||
-      (service.description && service.description.toLowerCase().includes(serviceFilters.value.search.toLowerCase()))
-    
-    const matchesCategory = !serviceFilters.value.category || 
-      service.category === serviceFilters.value.category
-    
-    const matchesStatus = !serviceFilters.value.status || 
-      service.status === serviceFilters.value.status
-    
-    return matchesSearch && matchesCategory && matchesStatus
-  })
-})
+const closeAddServicesModal = () => {
+  showAddServicesModal.value = false
+}
 
-// Carregar serviços disponíveis
-const loadServices = async () => {
+const handleServicesAdded = async (selectedServicesData) => {
   try {
-    const response = await fetch('/comercial/services/api')
-    if (response.ok) {
-      const data = await response.json()
-      services.value = data.data || data
-    }
+    console.log('Serviços adicionados ao carrinho:', selectedServicesData)
+    
+    // Adicionar serviços ao carrinho (sem criar faturas ainda)
+    cartServices.value = [...cartServices.value, ...selectedServicesData]
+    
   } catch (error) {
-    console.error('Erro ao carregar serviços:', error)
+    console.error('Erro ao adicionar serviços ao carrinho:', error)
   }
 }
 
-// Limpar seleção de serviços
-const clearServiceSelection = () => {
-  selectedServices.value = []
+// Funções para gerenciar o carrinho
+const removeFromCart = (serviceId) => {
+  cartServices.value = cartServices.value.filter(service => service.id !== serviceId)
 }
 
-// Adicionar serviços selecionados
-const addSelectedServices = async () => {
-  if (selectedServices.value.length === 0) return
+const clearCart = () => {
+  cartServices.value = []
+}
+
+const getCartTotal = () => {
+  return cartServices.value.reduce((total, service) => total + service.price, 0)
+}
+
+const getFormattedCartTotal = () => {
+  const total = getCartTotal()
+  return `R$ ${total.toFixed(2).replace('.', ',')}`
+}
+
+// Processar pagamento (criar faturas)
+const processPayment = async () => {
+  if (cartServices.value.length === 0) {
+    alert('Carrinho vazio!')
+    return
+  }
   
-  addingServices.value = true
   try {
-    // Aqui você implementaria a lógica para adicionar os serviços à matrícula
-    // Por exemplo, criar faturas para cada serviço selecionado
+    // Criar faturas para os serviços do carrinho
+    const serviceIds = cartServices.value.map(service => service.id)
     
-    console.log('Serviços selecionados:', selectedServices.value)
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/add-services`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      },
+      body: JSON.stringify({
+        service_ids: serviceIds
+      })
+    })
     
-    // Recarregar dados financeiros após adicionar serviços
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Erro ao criar faturas')
+    }
+    
+    const result = await response.json()
+    console.log('Faturas criadas:', result)
+    
+    // Limpar carrinho
+    clearCart()
+    
+    // Recarregar dados financeiros
     await loadFinancialData()
+    await loadEnrollmentServices()
     
-    // Limpar seleção
-    clearServiceSelection()
-    
-    // Mostrar mensagem de sucesso
-    alert(`${selectedServices.value.length} serviço(s) adicionado(s) com sucesso!`)
+    alert('Faturas criadas com sucesso! Agora você pode registrar o pagamento.')
     
   } catch (error) {
-    console.error('Erro ao adicionar serviços:', error)
-    alert('Erro ao adicionar serviços. Tente novamente.')
-  } finally {
-    addingServices.value = false
+    console.error('Erro ao criar faturas:', error)
+    alert(`Erro ao criar faturas: ${error.message}`)
+  }
+}
+
+// Funções para o modal de pagamento
+const openPaymentModal = () => {
+  // Buscar faturas pendentes para pagamento
+  const pendingInvoices = enrollmentServices.value.filter(service => service.status === 'pending')
+  
+  if (pendingInvoices.length === 0) {
+    alert('Não há faturas pendentes para pagamento.')
+    return
+  }
+  
+  selectedInvoicesForPayment.value = pendingInvoices
+  showPaymentModal.value = true
+}
+
+const closePaymentModal = () => {
+  showPaymentModal.value = false
+  selectedInvoicesForPayment.value = []
+}
+
+const handlePaymentProcessed = async () => {
+  // Recarregar dados após pagamento
+  await loadFinancialData()
+  await loadEnrollmentServices()
+}
+
+// Funções para o modal de detalhes do pagamento
+const openPaymentDetailsModal = (payment) => {
+  selectedPayment.value = payment
+  showPaymentDetailsModal.value = true
+}
+
+const closePaymentDetailsModal = () => {
+  showPaymentDetailsModal.value = false
+  selectedPayment.value = null
+}
+
+
+// Função para lidar com solicitação de estorno
+const handleRefundRequest = (payment) => {
+  // Fechar modal de detalhes
+  closePaymentDetailsModal()
+  
+  // Abrir modal de estorno
+  paymentToRefund.value = payment
+  showRefundModal.value = true
+}
+
+// Função para fechar modal de estorno
+const closeRefundModal = () => {
+  showRefundModal.value = false
+  paymentToRefund.value = null
+}
+
+// Função para lidar com estorno bem-sucedido
+const handleRefundSuccess = async (result) => {
+  console.log('Pagamento estornado:', result)
+  
+  // Recarregar dados financeiros
+  await loadFinancialData()
+  await loadEnrollmentServices()
+}
+
+// Função para reativar serviço estornado
+const reactivateService = async (serviceId) => {
+  if (!confirm('Tem certeza que deseja reativar este serviço? Ele voltará ao status "Pendente" e poderá ser pago normalmente.')) {
+    return
+  }
+
+  try {
+    const response = await axios.post(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/reactivate`)
+    
+    if (response.data.message) {
+      // Mostrar mensagem de sucesso
+      alert(response.data.message)
+      
+      // Recarregar dados
+      await loadFinancialData()
+      await loadEnrollmentServices()
+    }
+  } catch (error) {
+    console.error('Erro ao reativar serviço:', error)
+    alert('Erro ao reativar serviço: ' + (error.response?.data?.error || error.message))
+  }
+}
+
+// Função para lidar com solicitação de deleção de serviço
+const handleDeleteServiceRequest = (payment) => {
+  // Fechar modal de detalhes
+  closePaymentDetailsModal()
+  
+  // Confirmar deleção
+  if (!confirm('Tem certeza que deseja deletar este serviço estornado? Esta ação não pode ser desfeita e removerá permanentemente o serviço e seus pagamentos.')) {
+    return
+  }
+
+  // Executar deleção
+  deleteService(payment.invoice_id)
+}
+
+// Função para deletar serviço estornado
+const deleteService = async (serviceId) => {
+  try {
+    const response = await axios.delete(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/delete`)
+    
+    if (response.data.message) {
+      // Mostrar mensagem de sucesso
+      alert(response.data.message)
+      
+      // Recarregar dados
+      await loadFinancialData()
+      await loadEnrollmentServices()
+    }
+  } catch (error) {
+    console.error('Erro ao deletar serviço:', error)
+    alert('Erro ao deletar serviço: ' + (error.response?.data?.error || error.message))
+  }
+}
+
+// Função para abrir modal de detalhes do pagamento do serviço
+const openServicePaymentModal = async (service) => {
+  // Buscar pagamentos relacionados ao serviço
+  const payment = financialSummary.value.recent_payments.find(p => p.invoice_id === service.id)
+  
+  if (payment) {
+    selectedPayment.value = payment
+    showPaymentDetailsModal.value = true
+  } else {
+    // Se não há pagamento, mostrar mensagem informativa
+    alert('Este serviço ainda não possui pagamentos registrados.')
+  }
+}
+
+// Carregar serviços já adicionados à matrícula
+const loadEnrollmentServices = async () => {
+  if (!props.enrollment?.id) return
+  
+  try {
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services`)
+    if (response.ok) {
+      const data = await response.json()
+      enrollmentServices.value = data
+    }
+  } catch (error) {
+    console.error('Erro ao carregar serviços da matrícula:', error)
+  }
+}
+
+// Remover serviço da matrícula
+const removeService = async (invoiceId) => {
+  if (!confirm('Tem certeza que deseja remover este serviço? Esta ação não pode ser desfeita.')) {
+    return
+  }
+  
+  try {
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services/${invoiceId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || 'Erro ao remover serviço')
+    }
+    
+    const result = await response.json()
+    console.log('Serviço removido:', result)
+    
+    // Recarregar dados
+    await loadFinancialData()
+    await loadEnrollmentServices()
+    
+    alert('Serviço removido com sucesso!')
+    
+  } catch (error) {
+    console.error('Erro ao remover serviço:', error)
+    alert(`Erro ao remover serviço: ${error.message}`)
   }
 }
 
 onMounted(() => {
   loadFinancialData()
-  loadServices()
+  loadEnrollmentServices()
 })
 </script> 
