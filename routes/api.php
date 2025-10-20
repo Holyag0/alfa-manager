@@ -268,3 +268,15 @@ Route::post('enrollments/{enrollment}/register-payment', function ($enrollment, 
         return response()->json(['error' => $e->getMessage()], 500);
     }
 });
+
+// Rotas para gestão de irmãos
+Route::middleware(['auth:sanctum'])->group(function () {
+    // Grupos de irmãos
+    Route::apiResource('sibling-groups', \App\Http\Controllers\Api\SiblingGroupController::class);
+    
+    // Irmãos de responsáveis
+    Route::get('guardians/{guardian}/siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'index']);
+    Route::post('guardians/{guardian}/siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'store']);
+    Route::delete('guardians/{guardian}/siblings/{sibling}', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'destroy']);
+    Route::get('guardians/{guardian}/has-active-siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'hasActiveSiblings']);
+});

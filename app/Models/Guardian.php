@@ -24,6 +24,7 @@ class Guardian extends Model
         'birth_date',
         'gender',
         'notes',
+        'sibling_group_id', // Grupo de irmãos
     ];
 
     // Exemplo de método estático para buscar responsáveis por nome
@@ -51,5 +52,61 @@ class Guardian extends Model
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class); // Matrículas que este responsável abriu
+    }
+
+    /**
+     * Relacionamento com grupo de irmãos
+     */
+    public function siblingGroup()
+    {
+        return $this->belongsTo(SiblingGroup::class);
+    }
+
+    /**
+     * Verificar se tem irmãos no mesmo grupo
+     */
+    public function hasSiblings()
+    {
+        return $this->sibling_group_id && $this->siblingGroup;
+    }
+
+    /**
+     * Obter irmãos do mesmo grupo
+     */
+    public function getSiblings()
+    {
+        if (!$this->sibling_group_id) {
+            return collect();
+        }
+
+        return Guardian::where('sibling_group_id', $this->sibling_group_id)
+            ->where('id', '!=', $this->id)
+            ->get();
+    }
+
+    /**
+     * Obter irmãos matriculados
+     */
+    public function getActiveSiblings()
+    {
+        if (!$this->sibling_group_id) {
+            return collect();
+        }
+
+        return Guardian::where('sibling_group_id', $this->sibling_group_id)
+            ->where('id', '!=', $this->id)
+            ->whereHas('students.enrollments', function ($query) {
+                $query->where('status', 'active');
+            })
+            ->with('students.enrollments.classroom')
+            ->get();
+    }
+
+    /**
+     * Verificar se tem irmãos matriculados
+     */
+    public function hasActiveSiblings()
+    {
+        return $this->getActiveSiblings()->count() > 0;
     }
 } 
