@@ -20,4 +20,10 @@ class StudentApiController extends Controller
         }
         return $query->limit(10)->get();
     }
+
+    public function show($id)
+    {
+        $student = Student::with(['guardians', 'enrollments.classroom'])->findOrFail($id);
+        return response()->json($student);
+    }
 } 

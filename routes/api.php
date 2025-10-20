@@ -21,6 +21,7 @@ Route::get('guardians-autocomplete', [GuardianController::class, 'autocomplete']
 
 // Rotas API para Student (usadas pelo frontend)  
 Route::get('students', [StudentApiController::class, 'index']);
+Route::get('students/{student}', [StudentApiController::class, 'show']);
 Route::get('students-autocomplete', [StudentController::class, 'autocomplete']);
 
 // Rota API para buscar guardians não vinculados a um aluno

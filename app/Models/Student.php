@@ -34,4 +34,9 @@ class Student extends Model
         return $this->belongsToMany(Guardian::class, 'guardian_student')
             ->withTimestamps();
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 } 
