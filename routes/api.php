@@ -12,17 +12,15 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('guardians', [GuardianApiController::class, 'index']);
-Route::get('students', [StudentApiController::class, 'index']);
 Route::get('classrooms', [ClassroomApiController::class, 'index']);
 Route::get('classrooms/{classroom}/enrollments', [ClassroomApiController::class, 'getEnrollments']);
 
-// Rotas de CRUD e autocomplete para Guardian
-Route::apiResource('guardians', GuardianController::class);
+// Rotas API para Guardian (usadas pelo frontend)
+Route::get('guardians', [GuardianApiController::class, 'index']);
 Route::get('guardians-autocomplete', [GuardianController::class, 'autocomplete']);
 
-// Rotas de CRUD e autocomplete para Student
-Route::apiResource('students', StudentController::class);
+// Rotas API para Student (usadas pelo frontend)  
+Route::get('students', [StudentApiController::class, 'index']);
 Route::get('students-autocomplete', [StudentController::class, 'autocomplete']);
 
 // Rota API para buscar guardians não vinculados a um aluno
@@ -175,7 +173,7 @@ Route::post('enrollments/{enrollment}/services/{invoice}/reactivate', function (
 });
 
 // Rota para deletar serviço estornado
-Route::delete('enrollments/{enrollment}/services/{invoice}/delete', function ($enrollment, $invoice) {
+Route::delete('enrollments/{enrollment}/services/{invoice}/permanent-delete', function ($enrollment, $invoice) {
     $enrollment = \App\Models\Enrollment::findOrFail($enrollment);
     $invoice = \App\Models\EnrollmentInvoice::findOrFail($invoice);
     

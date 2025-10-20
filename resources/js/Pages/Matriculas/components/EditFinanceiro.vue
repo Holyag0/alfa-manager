@@ -610,7 +610,7 @@ const handleDeleteServiceRequest = (payment) => {
 // Função para deletar serviço estornado
 const deleteService = async (serviceId) => {
   try {
-    const response = await axios.delete(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/delete`)
+    const response = await axios.delete(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/permanent-delete`)
     
     if (response.data.message) {
       // Mostrar mensagem de sucesso
