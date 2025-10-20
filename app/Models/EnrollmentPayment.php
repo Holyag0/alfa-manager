@@ -16,6 +16,10 @@ class EnrollmentPayment extends Model
         'type',
         'description',
         'amount',
+        'original_amount',
+        'discount_amount',
+        'interest_amount',
+        'fine_amount',
         'method',
         'payment_date',
         'reference',
@@ -25,6 +29,10 @@ class EnrollmentPayment extends Model
 
     protected $casts = [
         'amount' => 'float',
+        'original_amount' => 'float',
+        'discount_amount' => 'float',
+        'interest_amount' => 'float',
+        'fine_amount' => 'float',
         'payment_date' => 'date',
         'type' => 'string',
         'method' => 'string',
@@ -33,6 +41,9 @@ class EnrollmentPayment extends Model
 
     protected $appends = [
         'formatted_amount',
+        'formatted_original_amount',
+        'formatted_interest_amount',
+        'formatted_discount_amount',
         'type_label',
         'method_label',
         'status_label'
@@ -95,6 +106,31 @@ class EnrollmentPayment extends Model
     }
 
     /**
+     * Accessor para valor original formatado
+     */
+    public function getFormattedOriginalAmountAttribute()
+    {
+        $amount = $this->original_amount ?? $this->amount;
+        return 'R$ ' . number_format($amount, 2, ',', '.');
+    }
+
+    /**
+     * Accessor para juros formatado
+     */
+    public function getFormattedInterestAmountAttribute()
+    {
+        return 'R$ ' . number_format($this->interest_amount ?? 0, 2, ',', '.');
+    }
+
+    /**
+     * Accessor para desconto formatado
+     */
+    public function getFormattedDiscountAmountAttribute()
+    {
+        return 'R$ ' . number_format($this->discount_amount ?? 0, 2, ',', '.');
+    }
+
+    /**
      * Accessor para label do tipo
      */
     public function getTypeLabelAttribute()
@@ -136,7 +172,7 @@ class EnrollmentPayment extends Model
             'pending' => 'Pendente',
             'confirmed' => 'Confirmado',
             'cancelled' => 'Cancelado',
-            'refunded' => 'Reembolsado'
+            'refunded' => 'Estornado'
         ];
 
         return $labels[$this->status] ?? $this->status;
@@ -183,5 +219,35 @@ class EnrollmentPayment extends Model
         if ($this->enrollment->finance) {
             $this->enrollment->finance->calculateTotalDue();
         }
+    }
+
+    /**
+     * Estornar pagamento
+     */
+    public function refund($reason = null)
+    {
+        $this->status = 'refunded';
+        if ($reason) {
+            $this->notes = ($this->notes ? $this->notes . ' | ' : '') . 'Estorno: ' . $reason;
+        }
+        $this->save();
+
+        // Se há uma fatura associada, marcar como estornada
+        if ($this->invoice) {
+            $this->invoice->status = 'refunded';
+            $this->invoice->paid_date = null;
+            $this->invoice->save();
+        }
+
+        // Recalcular totais da matrícula
+        $this->enrollment->recalculateFinancials();
+    }
+
+    /**
+     * Verificar se o pagamento pode ser estornado
+     */
+    public function canBeRefunded()
+    {
+        return $this->status === 'confirmed';
     }
 }

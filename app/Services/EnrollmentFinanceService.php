@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Enrollment;
-use App\Models\EnrollmentFinance;
 use App\Models\EnrollmentInvoice;
 use App\Models\EnrollmentPayment;
 use App\Models\Service;
@@ -13,29 +12,7 @@ use Exception;
 
 class EnrollmentFinanceService
 {
-    /**
-     * Criar registro financeiro para uma matrícula
-     */
-    public function createFinanceRecord(Enrollment $enrollment, array $data = [])
-    {
-        return DB::transaction(function () use ($enrollment, $data) {
-            // Verificar se já existe registro financeiro
-            if ($enrollment->finance) {
-                throw new Exception('Registro financeiro já existe para esta matrícula.');
-            }
-
-            return EnrollmentFinance::create([
-                'enrollment_id' => $enrollment->id,
-                'monthly_fee' => $data['monthly_fee'] ?? 0,
-                'reservation_fee' => $data['reservation_fee'] ?? 0,
-                'total_paid' => 0,
-                'total_due' => 0,
-                'next_due_date' => $data['next_due_date'] ?? null,
-                'payment_status' => 'pending',
-                'notes' => $data['notes'] ?? null
-            ]);
-        });
-    }
+    // Método createFinanceRecord removido - não é mais necessário
 
     /**
      * Criar fatura de reserva
@@ -54,13 +31,7 @@ class EnrollmentFinanceService
             $invoiceAmount = $amount ?? $reservationService->getPriceForClassroom($enrollment->classroom_id);
             $invoiceDescription = $reservationService->getDescriptionForClassroom($enrollment->classroom_id);
             
-            // Criar registro financeiro se não existir
-            if (!$enrollment->finance) {
-                $this->createFinanceRecord($enrollment, [
-                    'reservation_fee' => $invoiceAmount,
-                    'next_due_date' => $dueDate ?? now()->addDays(7)
-                ]);
-            }
+            // Não é mais necessário criar registro financeiro
 
             // Criar fatura de reserva
             $invoice = EnrollmentInvoice::create([
@@ -74,11 +45,7 @@ class EnrollmentFinanceService
                 'notes' => 'Fatura gerada automaticamente para reserva de vaga'
             ]);
 
-            // Atualizar registro financeiro
-            if ($enrollment->finance) {
-                $enrollment->finance->reservation_fee = $invoiceAmount;
-                $enrollment->finance->calculateTotalDue();
-            }
+            // Não é mais necessário atualizar registro financeiro
 
             return $invoice;
         });
@@ -126,11 +93,7 @@ class EnrollmentFinanceService
                 'notes' => "Mensalidade referente a {$month}/{$year}"
             ]);
 
-            // Atualizar registro financeiro
-            if ($enrollment->finance) {
-                $enrollment->finance->monthly_fee = $invoiceAmount;
-                $enrollment->finance->calculateTotalDue();
-            }
+            // Não é mais necessário atualizar registro financeiro
 
             return $invoice;
         });
@@ -142,6 +105,10 @@ class EnrollmentFinanceService
     public function registerPayment(Enrollment $enrollment, array $data)
     {
         return DB::transaction(function () use ($enrollment, $data) {
+            // Calcular valor original (base do serviço sem juros/desconto)
+            // Se o amount é o valor final pago, então: original = amount - juros + desconto
+            $originalAmount = $data['amount'] - ($data['interest_amount'] ?? 0) + ($data['discount_amount'] ?? 0);
+            
             // Criar pagamento
             $payment = EnrollmentPayment::create([
                 'enrollment_id' => $enrollment->id,
@@ -149,7 +116,10 @@ class EnrollmentFinanceService
                 'payment_number' => EnrollmentPayment::generatePaymentNumber(),
                 'type' => $data['type'] ?? 'other',
                 'description' => $data['description'],
-                'amount' => $data['amount'],
+                'amount' => $data['amount'], // Valor final pago
+                'original_amount' => $originalAmount, // Valor base do serviço
+                'discount_amount' => $data['discount_amount'] ?? 0,
+                'interest_amount' => $data['interest_amount'] ?? 0,
                 'method' => $data['method'],
                 'payment_date' => $data['payment_date'] ?? now(),
                 'reference' => $data['reference'] ?? null,
@@ -163,9 +133,7 @@ class EnrollmentFinanceService
                     $payment->invoice->markAsPaid($payment->payment_date);
                 }
 
-                if ($enrollment->finance) {
-                    $enrollment->finance->calculateTotalDue();
-                }
+                // Não é mais necessário atualizar registro financeiro
             }
 
             return $payment;
@@ -209,14 +177,7 @@ class EnrollmentFinanceService
             $invoiceAmount = $selectedClassroomService->price;
             $invoiceDescription = $selectedClassroomService->description;
             
-            // 6. Criar registro financeiro se não existir
-            if (!$enrollment->finance) {
-                $this->createFinanceRecord($enrollment, [
-                    'reservation_fee' => $enrollment->process === 'reserva' ? $invoiceAmount : 0,
-                    'monthly_fee' => $enrollment->process !== 'reserva' ? $invoiceAmount : 0,
-                    'next_due_date' => $enrollment->process === 'reserva' ? now()->addDays(7) : now()->addMonth()->day(10)
-                ]);
-            }
+            // 6. Não é mais necessário criar registro financeiro
             
             // 7. Criar fatura
             $invoice = EnrollmentInvoice::create([
@@ -230,15 +191,7 @@ class EnrollmentFinanceService
                 'notes' => "Fatura automática - " . ($selectedService->name ?? 'Serviço') . " ({$targetCategory})"
             ]);
             
-            // 8. Atualizar registro financeiro
-            if ($enrollment->finance) {
-                if ($enrollment->process === 'reserva') {
-                    $enrollment->finance->reservation_fee = $invoiceAmount;
-                } else {
-                    $enrollment->finance->monthly_fee = $invoiceAmount;
-                }
-                $enrollment->finance->calculateTotalDue();
-            }
+            // 8. Não é mais necessário atualizar registro financeiro
             
             return $invoice;
         });
@@ -290,7 +243,7 @@ class EnrollmentFinanceService
             }
 
             return [
-                'enrollment' => $enrollment->fresh(['finance', 'invoices', 'payments']),
+                'enrollment' => $enrollment->fresh(['invoices', 'payments']),
                 'invoice' => $invoice
             ];
         });
@@ -327,11 +280,57 @@ class EnrollmentFinanceService
                 ->whereMonth('due_date', $currentMonth)
                 ->first();
 
-            if (!$existingMonthly && $enrollment->finance && $enrollment->finance->monthly_fee > 0) {
+            if (!$existingMonthly) {
                 $this->createMonthlyInvoice($enrollment, $currentMonth, $currentYear);
             }
 
-            return $enrollment->fresh(['finance', 'invoices', 'payments']);
+            return $enrollment->fresh(['invoices', 'payments']);
+        });
+    }
+
+    /**
+     * Criar faturas para serviços adicionais
+     */
+    public function createServiceInvoices(Enrollment $enrollment, array $serviceIds)
+    {
+        return DB::transaction(function () use ($enrollment, $serviceIds) {
+            $invoices = [];
+            
+            foreach ($serviceIds as $serviceId) {
+                $service = Service::find($serviceId);
+                
+                if (!$service) {
+                    throw new Exception("Serviço com ID {$serviceId} não encontrado.");
+                }
+                
+                // Verificar se já existe fatura para este serviço
+                $existingInvoice = $enrollment->invoices()
+                    ->where('type', 'service')
+                    ->where('description', 'like', "%{$service->name}%")
+                    ->first();
+                
+                if ($existingInvoice) {
+                    continue; // Pular se já existe fatura para este serviço
+                }
+                
+                // Criar fatura para o serviço
+                $invoice = EnrollmentInvoice::create([
+                    'enrollment_id' => $enrollment->id,
+                    'invoice_number' => EnrollmentInvoice::generateInvoiceNumber(),
+                    'type' => 'service',
+                    'description' => $service->name . ' - ' . $service->description,
+                    'amount' => $service->price,
+                    'due_date' => now()->addDays(30), // Vencimento em 30 dias
+                    'status' => 'pending',
+                    'notes' => 'Serviço adicional adicionado à matrícula'
+                ]);
+                
+                $invoices[] = $invoice;
+            }
+            
+            // Não é mais necessário recalcular totais
+            
+            return $invoices;
         });
     }
 
@@ -340,26 +339,17 @@ class EnrollmentFinanceService
      */
     public function getFinancialSummary(Enrollment $enrollment)
     {
-        $finance = $enrollment->finance;
-        
-        if (!$finance) {
-            return null;
-        }
-
-        $pendingInvoices = $enrollment->invoices()->pending()->count();
-        $overdueInvoices = $enrollment->invoices()->overdue()->count();
+        $summary = $enrollment->getFinancialSummary();
         $totalInvoices = $enrollment->invoices()->where('status', '!=', 'cancelled')->sum('amount');
-        $totalPayments = $enrollment->payments()->confirmed()->sum('amount');
 
         return [
-            'finance' => $finance,
             'summary' => [
                 'total_invoices' => $totalInvoices,
-                'total_payments' => $totalPayments,
-                'total_due' => $finance->total_due,
-                'pending_invoices' => $pendingInvoices,
-                'overdue_invoices' => $overdueInvoices,
-                'payment_status' => $finance->payment_status
+                'total_payments' => $summary['total_paid'],
+                'total_due' => $summary['total_due'],
+                'pending_invoices' => $summary['pending_invoices'],
+                'overdue_invoices' => $summary['overdue_invoices'],
+                'payment_status' => $summary['payment_status']
             ],
             'recent_invoices' => $enrollment->invoices()
                 ->orderBy('created_at', 'desc')

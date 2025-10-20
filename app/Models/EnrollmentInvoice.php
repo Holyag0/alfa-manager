@@ -118,7 +118,8 @@ class EnrollmentInvoice extends Model
             'pending' => 'Pendente',
             'paid' => 'Pago',
             'overdue' => 'Vencido',
-            'cancelled' => 'Cancelado'
+            'cancelled' => 'Cancelado',
+            'refunded' => 'Estornado'
         ];
 
         return $labels[$this->status] ?? $this->status;
@@ -161,5 +162,24 @@ class EnrollmentInvoice extends Model
             $this->status = 'overdue';
             $this->save();
         }
+    }
+
+    /**
+     * Reativar serviço estornado (mudar para pending)
+     */
+    public function reactivate()
+    {
+        if ($this->status !== 'refunded') {
+            throw new \Exception('Apenas serviços estornados podem ser reativados');
+        }
+
+        $this->status = 'pending';
+        $this->paid_date = null;
+        $this->save();
+
+        // Recalcular totais da matrícula
+        $this->enrollment->recalculateFinancials();
+
+        return $this;
     }
 }

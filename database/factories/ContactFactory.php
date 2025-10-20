@@ -12,7 +12,7 @@ class ContactFactory extends Factory
         
         return [
             'type' => $type,
-            'value' => $type === 'email' ? $this->faker->unique()->safeEmail() : $this->faker->cellphoneNumber(),
+            'value' => $type === 'email' ? $this->faker->unique()->safeEmail() : $this->faker->phoneNumber(),
             'label' => $this->faker->randomElement(['pessoal', 'trabalho', 'emergencia']),
             'is_primary' => false,
             'contact_for' => $this->faker->randomElement(['trabalho', 'pessoal', 'emergencia']),
@@ -47,7 +47,7 @@ class ContactFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'phone',
-            'value' => $this->faker->cellphoneNumber(),
+            'value' => $this->faker->phoneNumber(),
         ]);
     }
 

@@ -36,13 +36,7 @@ class Enrollment extends Model
         return $this->belongsTo(Classroom::class);
     }
 
-    /**
-     * Relacionamento com finanças da matrícula
-     */
-    public function finance()
-    {
-        return $this->hasOne(EnrollmentFinance::class);
-    }
+    // Removido relacionamento com enrollment_finances (tabela removida)
 
     /**
      * Relacionamento com faturas da matrícula
@@ -58,5 +52,66 @@ class Enrollment extends Model
     public function payments()
     {
         return $this->hasMany(EnrollmentPayment::class);
+    }
+
+    /**
+     * Calcular total devido dinamicamente
+     */
+    public function getTotalDue()
+    {
+        return $this->invoices()->where('status', 'pending')->sum('amount');
+    }
+
+    /**
+     * Calcular total pago dinamicamente
+     */
+    public function getTotalPaid()
+    {
+        return $this->payments()->where('status', 'confirmed')->sum('amount');
+    }
+
+    /**
+     * Obter status de pagamento baseado nos totais
+     */
+    public function getPaymentStatus()
+    {
+        $totalDue = $this->getTotalDue();
+        $totalPaid = $this->getTotalPaid();
+
+        if ($totalDue == 0) {
+            return 'paid';
+        } elseif ($totalPaid >= $totalDue) {
+            return 'paid';
+        } elseif ($totalPaid > 0) {
+            return 'partial';
+        } else {
+            return 'pending';
+        }
+    }
+
+    /**
+     * Obter resumo financeiro
+     */
+    public function getFinancialSummary()
+    {
+        return [
+            'total_due' => $this->getTotalDue(),
+            'total_paid' => $this->getTotalPaid(),
+            'payment_status' => $this->getPaymentStatus(),
+            'pending_invoices' => $this->invoices()->where('status', 'pending')->count(),
+            'overdue_invoices' => $this->invoices()->where('status', 'overdue')->count(),
+        ];
+    }
+
+    /**
+     * Recalcular totais financeiros
+     */
+    public function recalculateFinancials()
+    {
+        // Força o recálculo dos totais
+        $this->touch(); // Atualiza updated_at
+        
+        // Retorna o resumo atualizado
+        return $this->getFinancialSummary();
     }
 } 

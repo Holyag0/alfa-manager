@@ -14,6 +14,8 @@ class Service extends Model
         'name',
         'type',
         'price',
+        'has_discount',
+        'discount_amount',
         'status',
         'category',
         'description',
@@ -21,6 +23,8 @@ class Service extends Model
 
     protected $casts = [
         'price' => 'float',
+        'has_discount' => 'boolean',
+        'discount_amount' => 'float',
         'status' => 'string',
     ];
 
@@ -28,7 +32,10 @@ class Service extends Model
         'formatted_price',
         'category_color',
         'is_classroom_linked',
-        'classroom_linking_label'
+        'classroom_linking_label',
+        'final_price',
+        'formatted_final_price',
+        'formatted_discount_amount'
     ];
 
     /**
@@ -64,11 +71,42 @@ class Service extends Model
     }
 
     /**
-     * Accessor para formatar o preço
+     * Accessor para formatar o preço original
      */
     public function getFormattedPriceAttribute()
     {
         return 'R$ ' . number_format($this->price, 2, ',', '.');
+    }
+
+    /**
+     * Accessor para preço final (com desconto aplicado)
+     */
+    public function getFinalPriceAttribute()
+    {
+        if ($this->has_discount && $this->discount_amount > 0) {
+            // Desconto por valor fixo (apenas para serviços)
+            return $this->price - $this->discount_amount;
+        }
+        return $this->price;
+    }
+
+    /**
+     * Accessor para preço final formatado
+     */
+    public function getFormattedFinalPriceAttribute()
+    {
+        return 'R$ ' . number_format($this->final_price, 2, ',', '.');
+    }
+
+    /**
+     * Accessor para valor do desconto formatado
+     */
+    public function getFormattedDiscountAmountAttribute()
+    {
+        if ($this->has_discount && $this->discount_amount > 0) {
+            return 'R$ ' . number_format($this->discount_amount, 2, ',', '.');
+        }
+        return 'R$ 0,00';
     }
 
     /**
