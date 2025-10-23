@@ -33,18 +33,16 @@ class SiblingGroup extends Model
     }
 
     /**
-     * Relacionamento com alunos através dos responsáveis
+     * Obter alunos do grupo através dos responsáveis
+     * Como Guardian e Student têm relacionamento many-to-many,
+     * não podemos usar hasManyThrough. Este método retorna
+     * todos os estudantes únicos associados aos responsáveis do grupo.
      */
     public function students()
     {
-        return $this->hasManyThrough(
-            Student::class,
-            Guardian::class,
-            'sibling_group_id', // Foreign key na tabela guardians
-            'id', // Foreign key na tabela students
-            'id', // Local key na tabela sibling_groups
-            'id' // Local key na tabela guardians
-        );
+        return Student::whereHas('guardians', function ($query) {
+            $query->where('sibling_group_id', $this->id);
+        });
     }
 
     /**

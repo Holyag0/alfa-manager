@@ -225,7 +225,7 @@ class PromotionTestSeeder extends Seeder
             // Matrículas - Sem Irmão
             [
                 'name' => 'Matrícula INFANTIL II - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 430.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL II sem desconto de irmão',
@@ -233,7 +233,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL III - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL III sem desconto de irmão',
@@ -241,7 +241,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL IV - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL IV sem desconto de irmão',
@@ -249,7 +249,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL V - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL V sem desconto de irmão',
@@ -257,7 +257,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 1º ANO - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 435.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 1º ANO sem desconto de irmão',
@@ -265,7 +265,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 2º ANO - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 435.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 2º ANO sem desconto de irmão',
@@ -273,7 +273,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 3º ANO - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 435.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 3º ANO sem desconto de irmão',
@@ -281,7 +281,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 4º ANO - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 435.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 4º ANO sem desconto de irmão',
@@ -289,7 +289,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 5º ANO - Sem Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 435.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 5º ANO sem desconto de irmão',
@@ -299,7 +299,7 @@ class PromotionTestSeeder extends Seeder
             // Matrículas - Com Irmão
             [
                 'name' => 'Matrícula INFANTIL II - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 410.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL II com desconto de irmão',
@@ -307,7 +307,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL III - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 395.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL III com desconto de irmão',
@@ -315,7 +315,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL IV - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 395.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL IV com desconto de irmão',
@@ -323,7 +323,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula INFANTIL V - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 395.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para INFANTIL V com desconto de irmão',
@@ -331,7 +331,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 1º ANO - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 1º ANO com desconto de irmão',
@@ -339,7 +339,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 2º ANO - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 2º ANO com desconto de irmão',
@@ -347,7 +347,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 3º ANO - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 3º ANO com desconto de irmão',
@@ -355,7 +355,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 4º ANO - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 4º ANO com desconto de irmão',
@@ -363,7 +363,7 @@ class PromotionTestSeeder extends Seeder
             ],
             [
                 'name' => 'Matrícula 5º ANO - Com Irmão',
-                'type' => 'service',
+                'type' => 'enrollment',
                 'price' => 415.00,
                 'category' => 'Matrícula',
                 'description' => 'Matrícula para 5º ANO com desconto de irmão',
