@@ -17,7 +17,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             UsersTableSeeder::class,
-            ComercialSeeder::class
+            ComercialSeeder::class,
+            PromotionTestSeeder::class,
+            SiblingTestSeeder::class
         ]);
         //criando um user isolado  para teste
         User::factory()->withPersonalTeam()->create([
