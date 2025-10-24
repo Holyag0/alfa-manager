@@ -157,7 +157,8 @@ class EnrollmentPayment extends Model
             'credit_card' => 'Cartão de Crédito',
             'debit_card' => 'Cartão de Débito',
             'bank_transfer' => 'Transferência Bancária',
-            'check' => 'Cheque'
+            'check' => 'Cheque',
+            'other' => 'Outro'
         ];
 
         return $labels[$this->method] ?? $this->method;
