@@ -46,6 +46,27 @@
                 </div>
               </div>
 
+              <!-- Valor Original -->
+              <div>
+                <label for="original_amount" class="block text-sm font-medium text-gray-700 mb-1">
+                  Valor Original
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span class="text-gray-500 sm:text-sm">R$</span>
+                  </div>
+                  <input
+                    id="original_amount"
+                    v-model="editForm.original_amount"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    class="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    placeholder="0,00"
+                  />
+                </div>
+              </div>
+
               <!-- Método de Pagamento -->
               <div>
                 <label for="method" class="block text-sm font-medium text-gray-700 mb-1">
@@ -164,8 +185,8 @@
               <h4 class="text-sm font-medium text-gray-900 mb-3">Resumo dos Valores</h4>
               <div class="space-y-2">
                 <div class="flex justify-between text-sm">
-                  <span class="text-gray-600">Valor Pago:</span>
-                  <span class="font-medium">{{ getFormattedAmount(editForm.amount) }}</span>
+                  <span class="text-gray-600">Valor Serviço:</span>
+                  <span class="font-medium text-green-600">{{ getFormattedAmount(editForm.original_amount) }}</span>
                 </div>
                 <div v-if="editForm.interest_amount > 0" class="flex justify-between text-sm">
                   <span class="text-gray-600">Juros:</span>
@@ -176,8 +197,8 @@
                   <span class="font-medium text-red-600">-{{ getFormattedAmount(editForm.discount_amount) }}</span>
                 </div>
                 <div class="border-t border-gray-200 pt-2 flex justify-between text-sm font-semibold">
-                  <span class="text-gray-900">Total:</span>
-                  <span class="text-blue-600">{{ getFormattedTotal() }}</span>
+                  <span class="text-gray-900">Valor Final:</span>
+                  <span class="text-blue-600">{{ getFormattedAmount(editForm.amount) }}</span>
                 </div>
               </div>
             </div>
@@ -284,6 +305,7 @@ const flashMessage = ref({ type: '', message: '' })
 // Formulário de edição
 const editForm = ref({
   amount: '',
+  original_amount: '',
   interest_amount: 0,
   discount_amount: 0,
   method: '',
@@ -292,13 +314,15 @@ const editForm = ref({
   notes: ''
 })
 
-// Computed para calcular o total
-const getFormattedTotal = () => {
-  const amount = parseFloat(editForm.value.amount) || 0
+// Recalcular valor pago quando juros ou desconto mudarem
+const recalculateAmount = () => {
+  const originalAmount = parseFloat(editForm.value.original_amount) || 0
   const interest = parseFloat(editForm.value.interest_amount) || 0
   const discount = parseFloat(editForm.value.discount_amount) || 0
-  const total = amount + interest - discount
-  return `R$ ${total.toFixed(2).replace('.', ',')}`
+  
+  // Valor pago = valor original + juros - desconto
+  const newAmount = originalAmount + interest - discount
+  editForm.value.amount = newAmount
 }
 
 // Função para formatar valores
@@ -350,6 +374,7 @@ const updatePayment = async () => {
       },
       body: JSON.stringify({
         amount: parseFloat(editForm.value.amount),
+        original_amount: parseFloat(editForm.value.original_amount) || parseFloat(editForm.value.amount),
         interest_amount: parseFloat(editForm.value.interest_amount) || 0,
         discount_amount: parseFloat(editForm.value.discount_amount) || 0,
         method: editForm.value.method,
@@ -390,7 +415,8 @@ const updatePayment = async () => {
 const initializeForm = () => {
   if (props.payment) {
     editForm.value = {
-      amount: props.payment.amount || props.payment.original_amount || '',
+      amount: props.payment.amount || '',
+      original_amount: props.payment.original_amount || props.payment.amount || '',
       interest_amount: props.payment.interest_amount || 0,
       discount_amount: props.payment.discount_amount || 0,
       method: props.payment.method || '',
@@ -414,4 +440,9 @@ watch(() => props.payment, (newPayment) => {
     initializeForm()
   }
 })
+
+// Watcher para recalcular valor pago quando juros ou desconto mudarem
+watch(() => [editForm.value.interest_amount, editForm.value.discount_amount], () => {
+  recalculateAmount()
+}, { deep: true })
 </script>

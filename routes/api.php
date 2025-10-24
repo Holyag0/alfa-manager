@@ -167,6 +167,7 @@ Route::put('enrollments/{enrollment}/payments/{payment}/update', function ($enro
     
     $validatedData = $request->validate([
         'amount' => 'required|numeric|min:0',
+        'original_amount' => 'nullable|numeric|min:0',
         'interest_amount' => 'nullable|numeric|min:0',
         'discount_amount' => 'nullable|numeric|min:0',
         'method' => 'required|in:cash,pix,credit_card,debit_card,bank_transfer,check,other',
@@ -179,6 +180,7 @@ Route::put('enrollments/{enrollment}/payments/{payment}/update', function ($enro
         // Atualizar o pagamento
         $payment->update([
             'amount' => $validatedData['amount'],
+            'original_amount' => $validatedData['original_amount'] ?? $validatedData['amount'],
             'interest_amount' => $validatedData['interest_amount'] ?? 0,
             'discount_amount' => $validatedData['discount_amount'] ?? 0,
             'method' => $validatedData['method'],
@@ -282,13 +284,22 @@ Route::post('enrollments/{enrollment}/register-payment', function ($enrollment, 
             $notes .= ($notes ? ' | ' : '') . 'Desconto: R$ ' . number_format($validatedData['discount_amount'], 2, ',', '.');
         }
         
+        // Calcular valor original dos serviços selecionados
+        $totalOriginalAmount = 0;
+        foreach ($validatedData['invoice_ids'] as $invoiceId) {
+            $invoice = \App\Models\EnrollmentInvoice::find($invoiceId);
+            if ($invoice && $invoice->enrollment_id == $enrollment->id) {
+                $totalOriginalAmount += $invoice->amount;
+            }
+        }
+        
         // Registrar o pagamento
         $payment = $financeService->registerPayment($enrollment, [
             'invoice_id' => $validatedData['invoice_ids'][0], // Pagamento principal para o primeiro serviço
             'type' => 'service',
             'description' => $description,
-            'amount' => $validatedData['amount'],
-            'original_amount' => $validatedData['amount'] + ($validatedData['interest_amount'] ?? 0) - ($validatedData['discount_amount'] ?? 0),
+            'amount' => $validatedData['amount'], // Valor final pago
+            'original_amount' => $totalOriginalAmount, // Valor original dos serviços
             'discount_amount' => $validatedData['discount_amount'] ?? 0,
             'interest_amount' => $validatedData['interest_amount'] ?? 0,
             'method' => $validatedData['method'],

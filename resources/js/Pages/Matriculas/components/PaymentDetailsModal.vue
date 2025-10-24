@@ -42,7 +42,7 @@
               <!-- Método de Pagamento -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pagamento</label>
-                <p class="text-gray-900">{{ payment.method_label }}</p>
+            <p class="text-gray-900">{{ payment.method_label }}</p> 
               </div>
 
               <!-- Data do Pagamento -->
@@ -69,11 +69,7 @@
             <div class="space-y-4 p-4 bg-blue-50 rounded-lg">
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Valor Serviço:</span>
-                <span class="text-lg font-semibold text-gray-900">{{ payment.formatted_amount }}</span>
-              </div>
-              <div class="flex justify-between items-center">
-                <span class="text-sm font-medium text-gray-700">Valor Pago:</span>
-                <span class="text-lg font-semibold text-green-600">{{ getFormattedOriginalAmount() }}</span>
+                <span class="text-lg font-semibold text-gray-900">{{ getFormattedOriginalAmount() }}</span>
               </div>
               <div v-if="payment.interest_amount > 0" class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Juros:</span>
@@ -82,6 +78,10 @@
               <div v-if="payment.discount_amount > 0" class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Desconto:</span>
                 <span class="text-lg font-semibold text-red-600">{{ getFormattedDiscountAmount() }}</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-gray-700">Valor Pago:</span>
+                <span class="text-lg font-semibold text-green-600">{{ payment.formatted_amount }}</span>
               </div>
             </div>
 
