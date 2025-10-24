@@ -32,7 +32,7 @@
               <!-- Valor do Pagamento -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Valor Serviço <span class="text-red-500">*</span>
+                  Valor Pago <span class="text-red-500">*</span>
                 </label>
                 <input
                   v-model="paymentForm.amount"
@@ -146,7 +146,7 @@
             <div class="space-y-4 p-4 bg-blue-50 rounded-lg">
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Valor Serviço:</span>
-                <span class="text-lg font-semibold text-green-600">{{ getFormattedPaidAmount() }}</span>
+                <span class="text-lg font-semibold text-green-600">{{ getTotalAmount() }}</span>
               </div>
               <div class="flex justify-between items-center">
                 <span class="text-sm font-medium text-gray-700">Juros:</span>
@@ -158,7 +158,7 @@
               </div>
               <div class="border-t pt-3 flex justify-between items-center font-semibold">
                 <span class="text-gray-900">Valor Final:</span>
-                <span class="text-xl text-green-600">{{ getFinalAmount() }}</span>
+                <span class="text-xl text-green-600">{{ getFormattedPaidAmount() }}</span>
               </div>
             </div>
 
@@ -313,13 +313,8 @@ const getFormattedDiscountAmount = () => {
 }
 
 const getFinalAmount = () => {
-  const total = getTotalAmountRaw()
   const paid = getPaidAmount()
-  const interest = getInterestAmount()
-  const discount = getDiscountAmount()
-  
-  const final = total + interest - discount
-  return `R$ ${final.toFixed(2).replace('.', ',')}`
+  return `R$ ${paid.toFixed(2).replace('.', ',')}`
 }
 
 const hasDiscount = computed(() => {
@@ -388,8 +383,9 @@ const processPayment = async () => {
 }
 
 const resetForm = () => {
+  const totalAmount = getTotalAmountRaw()
   paymentForm.value = {
-    amount: '',
+    amount: totalAmount,
     interest_amount: 0,
     discount_amount: 0,
     method: '',
@@ -405,4 +401,15 @@ watch(() => props.show, (newValue) => {
     resetForm()
   }
 })
+
+// Recalcular valor pago quando juros ou desconto mudarem
+watch(() => [paymentForm.value.interest_amount, paymentForm.value.discount_amount], () => {
+  const totalAmount = getTotalAmountRaw()
+  const interest = parseFloat(paymentForm.value.interest_amount) || 0
+  const discount = parseFloat(paymentForm.value.discount_amount) || 0
+  
+  // Valor pago = valor original + juros - desconto
+  const newAmount = totalAmount + interest - discount
+  paymentForm.value.amount = newAmount
+}, { deep: true })
 </script>

@@ -289,6 +289,7 @@
       :show="showPaymentDetailsModal" 
       :payment="selectedPayment"
       @close="closePaymentDetailsModal"
+      @request-edit="handleEditRequest"
       @request-refund="handleRefundRequest"
       @request-delete-service="handleDeleteServiceRequest"
     />
@@ -300,6 +301,71 @@
       @close="closeRefundModal"
       @refund-success="handleRefundSuccess"
     />
+
+    <!-- Modal para Editar Pagamento -->
+    <EditPaymentModal 
+      :show="showEditPaymentModal" 
+      :payment="paymentToEdit"
+      :enrollment="enrollment"
+      @close="closeEditPaymentModal"
+      @payment-updated="handlePaymentUpdated"
+    />
+
+    <!-- Flash Messages -->
+    <div v-if="flashMessage.message" class="fixed top-4 right-4 z-50">
+      <div :class="[
+        'px-4 py-3 rounded-md shadow-lg max-w-sm',
+        flashMessage.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+      ]">
+        <div class="flex items-center">
+          <svg v-if="flashMessage.type === 'success'" class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <svg v-else class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+          <span class="text-sm font-medium">{{ flashMessage.message }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <ConfirmationModal :show="showDeleteConfirmation" @close="showDeleteConfirmation = false">
+      <template #title>
+        <span v-if="serviceToDelete?.action === 'reactivate'">Reativar Serviço</span>
+        <span v-else-if="serviceToDelete?.action === 'delete'">Deletar Serviço</span>
+        <span v-else>Remover Serviço</span>
+      </template>
+      <template #content>
+        <span v-if="serviceToDelete?.action === 'reactivate'">
+          Tem certeza que deseja reativar este serviço? Ele voltará ao status "Pendente" e poderá ser pago normalmente.
+        </span>
+        <span v-else-if="serviceToDelete?.action === 'delete'">
+          Tem certeza que deseja deletar este serviço estornado? Esta ação não pode ser desfeita e removerá permanentemente o serviço e seus pagamentos.
+        </span>
+        <span v-else>
+          Tem certeza que deseja remover este serviço? Esta ação não pode ser desfeita.
+        </span>
+      </template>
+      <template #footer>
+        <button
+          type="button"
+          @click="showDeleteConfirmation = false"
+          class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 focus:bg-gray-400 active:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          @click="serviceToDelete?.action === 'reactivate' ? confirmReactivation() : serviceToDelete?.action === 'delete' ? confirmDelete() : confirmRemove()"
+          class="ml-3 inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
+        >
+          <span v-if="serviceToDelete?.action === 'reactivate'">Reativar</span>
+          <span v-else-if="serviceToDelete?.action === 'delete'">Deletar</span>
+          <span v-else>Remover</span>
+        </button>
+      </template>
+    </ConfirmationModal>
   </div>
 </template>
 
@@ -309,6 +375,8 @@ import AddServicesModal from './AddServicesModal.vue'
 import PaymentModal from './PaymentModal.vue'
 import PaymentDetailsModal from './PaymentDetailsModal.vue'
 import RefundPaymentModal from './RefundPaymentModal.vue'
+import EditPaymentModal from './EditPaymentModal.vue'
+import ConfirmationModal from '@/Components/ConfirmationModal.vue'
 
 const props = defineProps({ 
   enrollment: Object 
@@ -333,6 +401,15 @@ const selectedPayment = ref(null)
 // Variáveis para o modal de estorno
 const showRefundModal = ref(false)
 const paymentToRefund = ref(null)
+
+// Variáveis para o modal de edição
+const showEditPaymentModal = ref(false)
+const paymentToEdit = ref(null)
+
+// Variáveis para confirmações e feedback
+const showDeleteConfirmation = ref(false)
+const serviceToDelete = ref(null)
+const flashMessage = ref({ type: '', message: '' })
 
 // Computed properties para formatação
 const formatDate = (dateString) => {
@@ -463,10 +540,18 @@ const getFormattedCartTotal = () => {
   return `R$ ${total.toFixed(2).replace('.', ',')}`
 }
 
+// Função para mostrar mensagem flash
+const showFlashMessage = (type, message) => {
+  flashMessage.value = { type, message }
+  setTimeout(() => {
+    flashMessage.value = { type: '', message: '' }
+  }, 5000)
+}
+
 // Processar pagamento (criar faturas)
 const processPayment = async () => {
   if (cartServices.value.length === 0) {
-    alert('Carrinho vazio!')
+    showFlashMessage('error', 'Carrinho vazio!')
     return
   }
   
@@ -486,8 +571,14 @@ const processPayment = async () => {
     })
     
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao criar faturas')
+      let errorMessage = 'Erro ao criar faturas'
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (e) {
+        console.error('Erro ao fazer parse da resposta:', e)
+      }
+      throw new Error(errorMessage)
     }
     
     const result = await response.json()
@@ -500,11 +591,11 @@ const processPayment = async () => {
     await loadFinancialData()
     await loadEnrollmentServices()
     
-    alert('Faturas criadas com sucesso! Agora você pode registrar o pagamento.')
+    showFlashMessage('success', 'Faturas criadas com sucesso! Agora você pode registrar o pagamento.')
     
   } catch (error) {
     console.error('Erro ao criar faturas:', error)
-    alert(`Erro ao criar faturas: ${error.message}`)
+    showFlashMessage('error', `Erro ao criar faturas: ${error.message}`)
   }
 }
 
@@ -514,7 +605,7 @@ const openPaymentModal = () => {
   const pendingInvoices = enrollmentServices.value.filter(service => service.status === 'pending')
   
   if (pendingInvoices.length === 0) {
-    alert('Não há faturas pendentes para pagamento.')
+    showFlashMessage('error', 'Não há faturas pendentes para pagamento.')
     return
   }
   
@@ -545,6 +636,31 @@ const closePaymentDetailsModal = () => {
 }
 
 
+// Função para lidar com solicitação de edição
+const handleEditRequest = (payment) => {
+  // Fechar modal de detalhes
+  closePaymentDetailsModal()
+  
+  // Abrir modal de edição
+  paymentToEdit.value = payment
+  showEditPaymentModal.value = true
+}
+
+// Função para fechar modal de edição
+const closeEditPaymentModal = () => {
+  showEditPaymentModal.value = false
+  paymentToEdit.value = null
+}
+
+// Função para lidar com atualização bem-sucedida
+const handlePaymentUpdated = async (result) => {
+  console.log('Pagamento atualizado:', result)
+  
+  // Recarregar dados financeiros
+  await loadFinancialData()
+  await loadEnrollmentServices()
+}
+
 // Função para lidar com solicitação de estorno
 const handleRefundRequest = (payment) => {
   // Fechar modal de detalhes
@@ -572,24 +688,47 @@ const handleRefundSuccess = async (result) => {
 
 // Função para reativar serviço estornado
 const reactivateService = async (serviceId) => {
-  if (!confirm('Tem certeza que deseja reativar este serviço? Ele voltará ao status "Pendente" e poderá ser pago normalmente.')) {
-    return
-  }
+  serviceToDelete.value = { id: serviceId, action: 'reactivate' }
+  showDeleteConfirmation.value = true
+}
 
+// Função para confirmar reativação
+const confirmReactivation = async () => {
+  if (!serviceToDelete.value) return
+  
   try {
-    const response = await axios.post(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/reactivate`)
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services/${serviceToDelete.value.id}/reactivate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
     
-    if (response.data.message) {
-      // Mostrar mensagem de sucesso
-      alert(response.data.message)
-      
-      // Recarregar dados
-      await loadFinancialData()
-      await loadEnrollmentServices()
+    if (!response.ok) {
+      let errorMessage = 'Erro ao reativar serviço'
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (e) {
+        console.error('Erro ao fazer parse da resposta:', e)
+      }
+      throw new Error(errorMessage)
     }
+    
+    const result = await response.json()
+    showFlashMessage('success', result.message || 'Serviço reativado com sucesso!')
+    
+    // Recarregar dados
+    await loadFinancialData()
+    await loadEnrollmentServices()
+    
   } catch (error) {
     console.error('Erro ao reativar serviço:', error)
-    alert('Erro ao reativar serviço: ' + (error.response?.data?.error || error.message))
+    showFlashMessage('error', `Erro ao reativar serviço: ${error.message}`)
+  } finally {
+    showDeleteConfirmation.value = false
+    serviceToDelete.value = null
   }
 }
 
@@ -598,31 +737,47 @@ const handleDeleteServiceRequest = (payment) => {
   // Fechar modal de detalhes
   closePaymentDetailsModal()
   
-  // Confirmar deleção
-  if (!confirm('Tem certeza que deseja deletar este serviço estornado? Esta ação não pode ser desfeita e removerá permanentemente o serviço e seus pagamentos.')) {
-    return
-  }
-
-  // Executar deleção
-  deleteService(payment.invoice_id)
+  serviceToDelete.value = { id: payment.invoice_id, action: 'delete' }
+  showDeleteConfirmation.value = true
 }
 
-// Função para deletar serviço estornado
-const deleteService = async (serviceId) => {
+// Função para confirmar deleção
+const confirmDelete = async () => {
+  if (!serviceToDelete.value) return
+  
   try {
-    const response = await axios.delete(`/api/enrollments/${enrollment.value.id}/services/${serviceId}/permanent-delete`)
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services/${serviceToDelete.value.id}/permanent-delete`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      }
+    })
     
-    if (response.data.message) {
-      // Mostrar mensagem de sucesso
-      alert(response.data.message)
-      
-      // Recarregar dados
-      await loadFinancialData()
-      await loadEnrollmentServices()
+    if (!response.ok) {
+      let errorMessage = 'Erro ao deletar serviço'
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (e) {
+        console.error('Erro ao fazer parse da resposta:', e)
+      }
+      throw new Error(errorMessage)
     }
+    
+    const result = await response.json()
+    showFlashMessage('success', result.message || 'Serviço deletado com sucesso!')
+    
+    // Recarregar dados
+    await loadFinancialData()
+    await loadEnrollmentServices()
+    
   } catch (error) {
     console.error('Erro ao deletar serviço:', error)
-    alert('Erro ao deletar serviço: ' + (error.response?.data?.error || error.message))
+    showFlashMessage('error', `Erro ao deletar serviço: ${error.message}`)
+  } finally {
+    showDeleteConfirmation.value = false
+    serviceToDelete.value = null
   }
 }
 
@@ -657,12 +812,16 @@ const loadEnrollmentServices = async () => {
 
 // Remover serviço da matrícula
 const removeService = async (invoiceId) => {
-  if (!confirm('Tem certeza que deseja remover este serviço? Esta ação não pode ser desfeita.')) {
-    return
-  }
+  serviceToDelete.value = { id: invoiceId, action: 'remove' }
+  showDeleteConfirmation.value = true
+}
+
+// Função para confirmar remoção
+const confirmRemove = async () => {
+  if (!serviceToDelete.value) return
   
   try {
-    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services/${invoiceId}`, {
+    const response = await fetch(`/api/enrollments/${props.enrollment.id}/services/${serviceToDelete.value.id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -671,8 +830,14 @@ const removeService = async (invoiceId) => {
     })
     
     if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || 'Erro ao remover serviço')
+      let errorMessage = 'Erro ao remover serviço'
+      try {
+        const errorData = await response.json()
+        errorMessage = errorData.error || errorData.message || errorMessage
+      } catch (e) {
+        console.error('Erro ao fazer parse da resposta:', e)
+      }
+      throw new Error(errorMessage)
     }
     
     const result = await response.json()
@@ -682,11 +847,14 @@ const removeService = async (invoiceId) => {
     await loadFinancialData()
     await loadEnrollmentServices()
     
-    alert('Serviço removido com sucesso!')
+    showFlashMessage('success', 'Serviço removido com sucesso!')
     
   } catch (error) {
     console.error('Erro ao remover serviço:', error)
-    alert(`Erro ao remover serviço: ${error.message}`)
+    showFlashMessage('error', `Erro ao remover serviço: ${error.message}`)
+  } finally {
+    showDeleteConfirmation.value = false
+    serviceToDelete.value = null
   }
 }
 
