@@ -150,6 +150,54 @@ Route::post('enrollments/{enrollment}/payments/{payment}/refund', function ($enr
     }
 });
 
+// Rota para atualizar pagamento
+Route::put('enrollments/{enrollment}/payments/{payment}/update', function ($enrollment, $payment, \Illuminate\Http\Request $request) {
+    $enrollment = \App\Models\Enrollment::findOrFail($enrollment);
+    $payment = \App\Models\EnrollmentPayment::findOrFail($payment);
+    
+    // Verificar se o pagamento pertence à matrícula
+    if ($payment->enrollment_id !== $enrollment->id) {
+        return response()->json(['error' => 'Pagamento não pertence a esta matrícula'], 403);
+    }
+    
+    // Verificar se o pagamento pode ser editado
+    if (!$payment->canBeEdited()) {
+        return response()->json(['error' => 'Este pagamento não pode ser editado'], 400);
+    }
+    
+    $validatedData = $request->validate([
+        'amount' => 'required|numeric|min:0',
+        'interest_amount' => 'nullable|numeric|min:0',
+        'discount_amount' => 'nullable|numeric|min:0',
+        'method' => 'required|in:cash,pix,credit_card,debit_card,bank_transfer,check,other',
+        'payment_date' => 'required|date',
+        'reference' => 'nullable|string|max:255',
+        'notes' => 'nullable|string|max:1000'
+    ]);
+    
+    try {
+        // Atualizar o pagamento
+        $payment->update([
+            'amount' => $validatedData['amount'],
+            'interest_amount' => $validatedData['interest_amount'] ?? 0,
+            'discount_amount' => $validatedData['discount_amount'] ?? 0,
+            'method' => $validatedData['method'],
+            'payment_date' => $validatedData['payment_date'],
+            'reference' => $validatedData['reference'],
+            'notes' => $validatedData['notes']
+        ]);
+        
+        return response()->json([
+            'message' => 'Pagamento atualizado com sucesso!',
+            'payment' => $payment->fresh(),
+            'financial_summary' => $enrollment->getFinancialSummary()
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'Erro ao atualizar pagamento: ' . $e->getMessage()], 500);
+    }
+});
+
 // Rota para reativar serviço estornado
 Route::post('enrollments/{enrollment}/services/{invoice}/reactivate', function ($enrollment, $invoice) {
     $enrollment = \App\Models\Enrollment::findOrFail($enrollment);

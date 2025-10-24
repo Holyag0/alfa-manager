@@ -250,4 +250,12 @@ class EnrollmentPayment extends Model
     {
         return $this->status === 'confirmed';
     }
+
+    /**
+     * Verificar se o pagamento pode ser editado
+     */
+    public function canBeEdited()
+    {
+        return $this->status === 'confirmed';
+    }
 }
