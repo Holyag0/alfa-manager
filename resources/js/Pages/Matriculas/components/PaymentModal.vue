@@ -94,7 +94,35 @@
                   <option value="debit_card">Cartão de Débito</option>
                   <option value="bank_transfer">Transferência Bancária</option>
                   <option value="check">Cheque</option>
+                  <option value="other">Outro</option>
                 </select>
+              </div>
+
+              <!-- Responsável pelo Pagamento -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Responsável pelo Pagamento <span class="text-red-500">*</span>
+                </label>
+                <select
+                  v-model="paymentForm.paid_by_guardian_id"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                  :disabled="loadingGuardians"
+                >
+                  <option value="">
+                    {{ loadingGuardians ? 'Carregando responsáveis...' : 'Selecione o responsável' }}
+                  </option>
+                  <option 
+                    v-for="guardian in availableGuardians" 
+                    :key="guardian.id" 
+                    :value="guardian.id"
+                  >
+                    {{ guardian.name }} ({{ guardian.relationship }})
+                  </option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  Selecione quem está efetuando o pagamento
+                </p>
               </div>
 
               <!-- Data do Pagamento -->
@@ -265,8 +293,13 @@ const paymentForm = ref({
   method: '',
   payment_date: new Date().toISOString().split('T')[0], // Data atual
   reference: '',
-  notes: ''
+  notes: '',
+  paid_by_guardian_id: ''
 })
+
+// Lista de responsáveis disponíveis
+const availableGuardians = ref([])
+const loadingGuardians = ref(false)
 
 // Computed properties
 const getTotalAmountRaw = () => {
@@ -336,7 +369,7 @@ const closeModal = () => {
 }
 
 const processPayment = async () => {
-  if (!paymentForm.value.amount || !paymentForm.value.method) {
+  if (!paymentForm.value.amount || !paymentForm.value.method || !paymentForm.value.paid_by_guardian_id) {
     alert('Por favor, preencha todos os campos obrigatórios.')
     return
   }
@@ -358,7 +391,8 @@ const processPayment = async () => {
         method: paymentForm.value.method,
         payment_date: paymentForm.value.payment_date,
         reference: paymentForm.value.reference,
-        notes: paymentForm.value.notes
+        notes: paymentForm.value.notes,
+        paid_by_guardian_id: parseInt(paymentForm.value.paid_by_guardian_id)
       })
     })
 
@@ -391,7 +425,26 @@ const resetForm = () => {
     method: '',
     payment_date: new Date().toISOString().split('T')[0],
     reference: '',
-    notes: ''
+    notes: '',
+    paid_by_guardian_id: ''
+  }
+}
+
+// Carregar responsáveis disponíveis
+const loadAvailableGuardians = async () => {
+  if (!props.enrollment?.id) return
+  
+  loadingGuardians.value = true
+  try {
+    const response = await fetch(`/api/students/${props.enrollment.student_id}/guardians`)
+    if (response.ok) {
+      const data = await response.json()
+      availableGuardians.value = data
+    }
+  } catch (error) {
+    console.error('Erro ao carregar responsáveis:', error)
+  } finally {
+    loadingGuardians.value = false
   }
 }
 
@@ -399,6 +452,7 @@ const resetForm = () => {
 watch(() => props.show, (newValue) => {
   if (newValue) {
     resetForm()
+    loadAvailableGuardians()
   }
 })
 

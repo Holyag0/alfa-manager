@@ -27,6 +27,13 @@ Route::get('students-autocomplete', [StudentController::class, 'autocomplete']);
 // Rota API para buscar guardians não vinculados a um aluno
 Route::get('students/{student}/guardians/search-not-linked', [GuardianController::class, 'searchNotLinked']);
 
+// Rota API para buscar responsáveis vinculados a um aluno
+Route::get('students/{student}/guardians', function ($student) {
+    $student = \App\Models\Student::findOrFail($student);
+    $guardians = $student->guardians()->get();
+    return response()->json($guardians);
+});
+
 // Rotas para finanças de matrícula
 Route::get('enrollments/{enrollment}/financial-summary', function ($enrollment) {
     $enrollment = \App\Models\Enrollment::findOrFail($enrollment);
@@ -173,7 +180,8 @@ Route::put('enrollments/{enrollment}/payments/{payment}/update', function ($enro
         'method' => 'required|in:cash,pix,credit_card,debit_card,bank_transfer,check,other',
         'payment_date' => 'required|date',
         'reference' => 'nullable|string|max:255',
-        'notes' => 'nullable|string|max:1000'
+        'notes' => 'nullable|string|max:1000',
+        'paid_by_guardian_id' => 'required|integer|exists:guardians,id'
     ]);
     
     try {
@@ -186,7 +194,8 @@ Route::put('enrollments/{enrollment}/payments/{payment}/update', function ($enro
             'method' => $validatedData['method'],
             'payment_date' => $validatedData['payment_date'],
             'reference' => $validatedData['reference'],
-            'notes' => $validatedData['notes']
+            'notes' => $validatedData['notes'],
+            'paid_by_guardian_id' => $validatedData['paid_by_guardian_id']
         ]);
         
         return response()->json([
@@ -265,10 +274,11 @@ Route::post('enrollments/{enrollment}/register-payment', function ($enrollment, 
         'amount' => 'required|numeric|min:0',
         'interest_amount' => 'nullable|numeric|min:0',
         'discount_amount' => 'nullable|numeric|min:0',
-        'method' => 'required|in:cash,pix,credit_card,debit_card,bank_transfer,check',
+        'method' => 'required|in:cash,pix,credit_card,debit_card,bank_transfer,check,other',
         'payment_date' => 'required|date',
         'reference' => 'nullable|string|max:255',
-        'notes' => 'nullable|string|max:1000'
+        'notes' => 'nullable|string|max:1000',
+        'paid_by_guardian_id' => 'required|integer|exists:guardians,id'
     ]);
     
     try {
@@ -306,7 +316,8 @@ Route::post('enrollments/{enrollment}/register-payment', function ($enrollment, 
             'payment_date' => $validatedData['payment_date'],
             'reference' => $validatedData['reference'],
             'status' => 'confirmed',
-            'notes' => $notes
+            'notes' => $notes,
+            'paid_by_guardian_id' => $validatedData['paid_by_guardian_id']
         ]);
         
         // Marcar todos os serviços como pagos

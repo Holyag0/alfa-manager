@@ -116,6 +116,31 @@
                   placeholder="Ex: Comprovante, NSU, etc."
                 />
               </div>
+
+              <!-- Responsável pelo Pagamento -->
+              <div>
+                <label for="paid_by_guardian_id" class="block text-sm font-medium text-gray-700 mb-1">
+                  Responsável pelo Pagamento <span class="text-red-500">*</span>
+                </label>
+                <select
+                  id="paid_by_guardian_id"
+                  v-model="editForm.paid_by_guardian_id"
+                  required
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                >
+                  <option value="">Selecione o responsável</option>
+                  <option 
+                    v-for="guardian in availableGuardians" 
+                    :key="guardian.id" 
+                    :value="guardian.id"
+                  >
+                    {{ guardian.name }} - {{ guardian.relationship }}
+                  </option>
+                </select>
+                <div v-if="loadingGuardians" class="mt-1 text-sm text-gray-500">
+                  Carregando responsáveis...
+                </div>
+              </div>
             </div>
 
             <!-- Valores Adicionais -->
@@ -278,6 +303,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
+import axios from 'axios'
 import ConfirmationModal from '@/Components/ConfirmationModal.vue'
 import FlashMessenger from '@/Shared/FlashMessenger.vue'
 
@@ -311,8 +337,13 @@ const editForm = ref({
   method: '',
   payment_date: '',
   reference: '',
-  notes: ''
+  notes: '',
+  paid_by_guardian_id: ''
 })
+
+// Lista de responsáveis disponíveis
+const availableGuardians = ref([])
+const loadingGuardians = ref(false)
 
 // Recalcular valor pago quando juros ou desconto mudarem
 const recalculateAmount = () => {
@@ -336,9 +367,25 @@ const closeModal = () => {
   emit('close')
 }
 
+// Função para carregar responsáveis disponíveis
+const loadAvailableGuardians = async () => {
+  if (!props.enrollment?.student_id) return
+  
+  loadingGuardians.value = true
+  try {
+    const response = await axios.get(`/api/students/${props.enrollment.student_id}/guardians`)
+    availableGuardians.value = response.data || []
+  } catch (error) {
+    console.error('Erro ao carregar responsáveis:', error)
+    showFlashMessage('error', 'Erro ao carregar responsáveis disponíveis.')
+  } finally {
+    loadingGuardians.value = false
+  }
+}
+
 // Função para validar formulário
 const validateForm = () => {
-  if (!editForm.value.amount || !editForm.value.method) {
+  if (!editForm.value.amount || !editForm.value.method || !editForm.value.paid_by_guardian_id) {
     showFlashMessage('error', 'Por favor, preencha todos os campos obrigatórios.')
     return false
   }
@@ -366,23 +413,24 @@ const updatePayment = async () => {
   showConfirmation.value = false
 
   try {
-    const response = await fetch(`/api/enrollments/${props.enrollment.id}/payments/${props.payment.id}/update`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-      },
-      body: JSON.stringify({
-        amount: parseFloat(editForm.value.amount),
-        original_amount: parseFloat(editForm.value.original_amount) || parseFloat(editForm.value.amount),
-        interest_amount: parseFloat(editForm.value.interest_amount) || 0,
-        discount_amount: parseFloat(editForm.value.discount_amount) || 0,
-        method: editForm.value.method,
-        payment_date: editForm.value.payment_date,
-        reference: editForm.value.reference,
-        notes: editForm.value.notes
+      const response = await fetch(`/api/enrollments/${props.enrollment.id}/payments/${props.payment.id}/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+          amount: parseFloat(editForm.value.amount),
+          original_amount: parseFloat(editForm.value.original_amount) || parseFloat(editForm.value.amount),
+          interest_amount: parseFloat(editForm.value.interest_amount) || 0,
+          discount_amount: parseFloat(editForm.value.discount_amount) || 0,
+          method: editForm.value.method,
+          payment_date: editForm.value.payment_date,
+          reference: editForm.value.reference,
+          notes: editForm.value.notes,
+          paid_by_guardian_id: editForm.value.paid_by_guardian_id
+        })
       })
-    })
 
     if (!response.ok) {
       let errorMessage = 'Erro ao atualizar pagamento'
@@ -422,8 +470,12 @@ const initializeForm = () => {
       method: props.payment.method || '',
       payment_date: props.payment.payment_date ? props.payment.payment_date.split('T')[0] : '',
       reference: props.payment.reference || '',
-      notes: props.payment.notes || ''
+      notes: props.payment.notes || '',
+      paid_by_guardian_id: props.payment.paid_by_guardian_id || ''
     }
+    
+    // Carregar responsáveis disponíveis
+    loadAvailableGuardians()
   }
 }
 

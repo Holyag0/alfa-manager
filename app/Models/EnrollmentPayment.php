@@ -12,6 +12,7 @@ class EnrollmentPayment extends Model
     protected $fillable = [
         'enrollment_id',
         'invoice_id',
+        'paid_by_guardian_id',
         'payment_number',
         'type',
         'description',
@@ -63,6 +64,14 @@ class EnrollmentPayment extends Model
     public function invoice()
     {
         return $this->belongsTo(EnrollmentInvoice::class, 'invoice_id');
+    }
+
+    /**
+     * Relacionamento com responsável que efetuou o pagamento
+     */
+    public function paidByGuardian()
+    {
+        return $this->belongsTo(Guardian::class, 'paid_by_guardian_id');
     }
 
     /**
