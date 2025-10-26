@@ -45,6 +45,12 @@
             <p class="text-gray-900">{{ payment.method_label }}</p> 
               </div>
 
+              <!-- Responsável pelo Pagamento -->
+              <div v-if="payment.paid_by_guardian">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Responsável pelo Pagamento</label>
+                <p class="text-gray-900">{{ payment.paid_by_guardian.name }} - {{ payment.paid_by_guardian.relationship }}</p>
+              </div>
+
               <!-- Data do Pagamento -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Data do Pagamento</label>

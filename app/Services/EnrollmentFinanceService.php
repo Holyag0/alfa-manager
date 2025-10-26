@@ -356,6 +356,7 @@ class EnrollmentFinanceService
                 ->limit(5)
                 ->get(),
             'recent_payments' => $enrollment->payments()
+                ->with('paidByGuardian')
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get()
