@@ -30,4 +30,52 @@ class ClassroomApiController extends Controller
             
         return response()->json(['count' => $enrollmentCount]);
     }
+
+    public function show($id)
+    {
+        $classroom = Classroom::findOrFail($id);
+        
+        return response()->json([
+            'id' => $classroom->id,
+            'name' => $classroom->name,
+            'year' => $classroom->year,
+            'shift' => $classroom->shift,
+            'max_students' => $classroom->max_students,
+            'current_students' => $classroom->getEnrolledStudentsCount(),
+            'available_slots' => $classroom->getAvailableSlots(),
+            'is_active' => $classroom->is_active,
+            'vacancies' => $classroom->vacancies,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'year' => 'required|string|max:255',
+            'shift' => 'required|string|in:Manhã,Tarde,Noite,Integral',
+            'max_students' => 'required|integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        $classroom = Classroom::findOrFail($id);
+        $classroom->update($validated);
+        
+        // Atualizar contador após mudança
+        $classroom->updateEnrolledCount();
+
+        return response()->json([
+            'message' => 'Turma atualizada com sucesso!',
+            'classroom' => [
+                'id' => $classroom->id,
+                'name' => $classroom->name,
+                'year' => $classroom->year,
+                'shift' => $classroom->shift,
+                'max_students' => $classroom->max_students,
+                'current_students' => $classroom->current_students,
+                'available_slots' => $classroom->getAvailableSlots(),
+                'is_active' => $classroom->is_active,
+            ]
+        ]);
+    }
 } 

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\GuardianApiController;
 use App\Http\Controllers\Api\StudentApiController;
 use App\Http\Controllers\Api\ClassroomApiController;
+use App\Http\Controllers\ClassroomLinkingController;
 use App\Http\Controllers\Matriculas\GuardianController;
 use App\Http\Controllers\Matriculas\StudentController;
 
@@ -13,7 +14,42 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::get('classrooms', [ClassroomApiController::class, 'index']);
+Route::get('classrooms/{classroom}', [ClassroomApiController::class, 'show']);
+Route::put('classrooms/{classroom}', [ClassroomApiController::class, 'update']);
 Route::get('classrooms/{classroom}/enrollments', [ClassroomApiController::class, 'getEnrollments']);
+
+// Classroom linking endpoints
+Route::prefix('classrooms/{classroom}')->group(function () {
+    Route::get('linked-enrollments', [ClassroomLinkingController::class, 'linked']);
+    Route::get('eligible-enrollments', [ClassroomLinkingController::class, 'eligible']);
+    Route::post('link-enrollment', [ClassroomLinkingController::class, 'link']);
+    Route::post('transfer-enrollment', [ClassroomLinkingController::class, 'transfer']);
+    Route::post('unlink-enrollment', [ClassroomLinkingController::class, 'unlink']);
+});
+
+// Rota para obter informações detalhadas das turmas
+Route::get('classrooms-detailed', function () {
+    $classrooms = \App\Models\Classroom::withCount(['enrollments as total_enrollments'])
+        ->active()
+        ->get()
+        ->map(function ($classroom) {
+            return [
+                'id' => $classroom->id,
+                'name' => $classroom->name,
+                'year' => $classroom->year,
+                'shift' => $classroom->shift,
+                'max_students' => $classroom->max_students,
+                'current_students' => $classroom->getEnrolledStudentsCount(),
+                'available_slots' => $classroom->getAvailableSlots(),
+                'is_active' => $classroom->is_active,
+                'occupation_percentage' => $classroom->max_students > 0 
+                    ? round(($classroom->getEnrolledStudentsCount() / $classroom->max_students) * 100, 2)
+                    : 0
+            ];
+        });
+    
+    return response()->json($classrooms);
+});
 
 // Rotas API para Guardian (usadas pelo frontend)
 Route::get('guardians', [GuardianApiController::class, 'index']);

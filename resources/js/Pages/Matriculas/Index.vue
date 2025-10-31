@@ -138,7 +138,8 @@ const applyFilters = debounce(() => {
   router.get(route('matriculas.index'), {
     student: filters.value.student,
     classroom_id: filters.value.classroom_id,
-    status: filters.value.status
+    status: filters.value.status,
+    process: filters.value.process
   }, {
     preserveState: true,
     replace: true

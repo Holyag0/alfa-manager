@@ -90,6 +90,22 @@ class Enrollment extends Model
     }
 
     /**
+     * Verificar se a matrícula está completamente finalizada
+     */
+    public function isFullyEnrolled()
+    {
+        return $this->process === 'completa' && $this->status === 'active';
+    }
+
+    /**
+     * Verificar se a matrícula pode ser vinculada à turma
+     */
+    public function canBeLinkedToClassroom()
+    {
+        return $this->isFullyEnrolled();
+    }
+
+    /**
      * Obter resumo financeiro
      */
     public function getFinancialSummary()

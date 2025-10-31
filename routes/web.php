@@ -3,6 +3,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -11,6 +12,17 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
+
+// Rota para gestão de turmas
+Route::get('/turmas', function () {
+    return Inertia::render('Turmas/Index');
+})->name('turmas.index');
+
+Route::get('/turmas/{classroom}/edit', function ($classroom) {
+    return Inertia::render('Turmas/Edit', [
+        'classroomId' => (int) $classroom,
+    ]);
+})->name('turmas.edit');
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),

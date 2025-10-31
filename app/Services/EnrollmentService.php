@@ -20,31 +20,15 @@ class EnrollmentService
             // Validar dados obrigatórios antes de qualquer operação
             $this->validateEnrollmentData($data);
 
-            // Lock pessimista na turma para evitar race condition
-            $classroom = Classroom::lockForUpdate()->findOrFail($data['classroom_id']);
+            // IMPORTANTE: Vinculação à turma só pode acontecer via ClassroomLinkingController
+            // Não permitir vinculação direta na criação da matrícula
+            // A turma deve ser vinculada depois pelo sistema de vinculação de turmas
             
-            // Verifica se já existe matrícula ativa para o aluno na turma
-            $exists = Enrollment::where('student_id', $data['student_id'])
-                ->where('classroom_id', $data['classroom_id'])
-                ->where('status', '!=', 'cancelled')
-                ->exists();
-            if ($exists) {
-                throw new Exception('Student is already enrolled in this classroom.');
-            }
-
-            // Verifica se há vagas na turma APÓS o lock
-            $enrolledCount = Enrollment::where('classroom_id', $classroom->id)
-                ->where('status', '!=', 'cancelled')
-                ->count();
-            if ($enrolledCount >= $classroom->vacancies) {
-                throw new Exception('No vacancies available in this classroom.');
-            }
-
-            // Cria a matrícula
+            // Cria a matrícula SEM vinculação à turma
             $enrollment = Enrollment::create([
                 'student_id'      => $data['student_id'],
                 'guardian_id'     => $data['guardian_id'],
-                'classroom_id'    => $data['classroom_id'],
+                'classroom_id'    => null, // Sempre null - vinculação via sistema dedicado
                 'status'          => $data['status'] ?? 'active',
                 'process'         => $data['process'] ?? 'completa',
                 'enrollment_date' => $data['enrollment_date'] ?? now(),
@@ -52,13 +36,11 @@ class EnrollmentService
             ]);
 
             // Log da criação para auditoria
-            \Log::info('Enrollment created', [
+            \Log::info('Enrollment created (sem turma - deve ser vinculada via sistema)', [
                 'enrollment_id' => $enrollment->id,
                 'student_id' => $data['student_id'],
                 'guardian_id' => $data['guardian_id'],
-                'classroom_id' => $data['classroom_id'],
-                'vacancies_used' => $enrolledCount + 1,
-                'total_vacancies' => $classroom->vacancies,
+                'note' => 'Turma deve ser vinculada via /api/classrooms/{id}/link-enrollment',
             ]);
 
             return $enrollment;
@@ -91,34 +73,38 @@ class EnrollmentService
             }
             
             // Lock pessimista na nova turma para evitar race condition
-            $classroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
-            
-            // Verificar se há vagas na nova turma
-            $enrolledCount = Enrollment::where('classroom_id', $classroom->id)
-                ->where('status', '!=', 'cancelled')
-                ->count();
-            if ($enrolledCount >= $classroom->vacancies) {
-                throw new Exception('No vacancies available in the new classroom.');
+            $newClassroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
+
+            // Validar capacidade e duplicidade usando a regra centralizada
+            if (!$newClassroom->canEnrollStudent($enrollment->student_id)) {
+                throw new Exception('No vacancies available in the new classroom or student already enrolled.');
             }
-            
-            // Verificar se o aluno já está matriculado na nova turma
-            $alreadyEnrolled = Enrollment::where('student_id', $enrollment->student_id)
-                ->where('classroom_id', $newClassroomId)
-                ->where('status', '!=', 'cancelled')
-                ->exists();
-            if ($alreadyEnrolled) {
-                throw new Exception('Student is already enrolled in the target classroom.');
-            }
-            
+
+            $oldClassroomId = $enrollment->classroom_id;
+
+            // Contagens antes
+            $beforeNewCount = $newClassroom->getEnrolledStudentsCount();
+            $beforeOldCount = $oldClassroomId ? Classroom::find($oldClassroomId)?->getEnrolledStudentsCount() : null;
+
+            // Efetivar transferência
             $enrollment->classroom_id = $newClassroomId;
             $enrollment->save();
-            
+
+            // Atualizar contadores das turmas
+            $newClassroom->updateEnrolledCount();
+            if ($oldClassroomId) {
+                Classroom::find($oldClassroomId)?->updateEnrolledCount();
+            }
+
             // Log da mudança para auditoria
             \Log::info('Enrollment classroom changed', [
                 'enrollment_id' => $enrollment->id,
                 'student_id' => $enrollment->student_id,
-                'old_classroom_id' => $enrollment->classroom_id,
+                'old_classroom_id' => $oldClassroomId,
                 'new_classroom_id' => $newClassroomId,
+                'before_new_count' => $beforeNewCount,
+                'after_new_count' => $newClassroom->current_students,
+                'before_old_count' => $beforeOldCount,
             ]);
             
             return $enrollment;
@@ -172,8 +158,8 @@ class EnrollmentService
      */
     private function validateEnrollmentData(array $data)
     {
-        // Validar campos obrigatórios
-        $requiredFields = ['student_id', 'guardian_id', 'classroom_id'];
+        // Validar campos obrigatórios (classroom_id não é mais obrigatório - vinculação via sistema dedicado)
+        $requiredFields = ['student_id', 'guardian_id'];
         foreach ($requiredFields as $field) {
             if (empty($data[$field])) {
                 throw new Exception("Field '{$field}' is required.");
@@ -190,9 +176,11 @@ class EnrollmentService
             throw new Exception('Guardian not found.');
         }
 
-        // Validar se a turma existe
-        if (!Classroom::find($data['classroom_id'])) {
-            throw new Exception('Classroom not found.');
+        // Validar se a turma existe (se fornecida - não é mais obrigatória)
+        if (isset($data['classroom_id']) && !empty($data['classroom_id'])) {
+            if (!Classroom::find($data['classroom_id'])) {
+                throw new Exception('Classroom not found.');
+            }
         }
 
         // Validar formato da data se fornecida

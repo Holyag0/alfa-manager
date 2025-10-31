@@ -270,6 +270,9 @@ class EnrollmentFinanceService
             $enrollment->status = 'active';
             $enrollment->save();
 
+            // Atualizar contador de alunos da turma
+            $enrollment->classroom->updateEnrolledCount();
+
             // Criar primeira mensalidade se não existir
             $currentMonth = now()->month;
             $currentYear = now()->year;
