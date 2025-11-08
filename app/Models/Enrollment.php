@@ -15,6 +15,7 @@ class Enrollment extends Model
         'student_id',
         'guardian_id',
         'classroom_id',
+        'academic_year',
         'status',
         'process',
         'enrollment_date',
@@ -129,5 +130,97 @@ class Enrollment extends Model
         
         // Retorna o resumo atualizado
         return $this->getFinancialSummary();
+    }
+
+    /**
+     * Scope para filtrar por ano letivo
+     */
+    public function scopeByAcademicYear($query, $year)
+    {
+        return $query->where('academic_year', $year);
+    }
+
+    /**
+     * Scope para matrícula ativa de um aluno em um ano específico
+     */
+    public function scopeActiveForStudentInYear($query, $studentId, $year)
+    {
+        return $query->where('student_id', $studentId)
+                    ->where('academic_year', $year)
+                    ->where('status', 'active');
+    }
+
+    /**
+     * Scope para matrículas ativas
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    /**
+     * Scope para matrículas completas (finalizadas)
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    /**
+     * Verificar se pode ser renovada para novo ano
+     */
+    public function canBeRenewed()
+    {
+        return in_array($this->status, ['active', 'completed']);
+    }
+
+    /**
+     * Obter histórico de matrículas do aluno
+     */
+    public static function getStudentHistory($studentId)
+    {
+        return self::where('student_id', $studentId)
+            ->with(['classroom', 'guardian'])
+            ->orderBy('academic_year', 'desc')
+            ->get();
+    }
+
+    /**
+     * Verificar se aluno já tem matrícula ativa em determinado ano
+     */
+    public static function hasActiveEnrollmentInYear($studentId, $year)
+    {
+        return self::where('student_id', $studentId)
+            ->where('academic_year', $year)
+            ->where('status', 'active')
+            ->exists();
+    }
+
+    /**
+     * Relacionamento com histórico de turmas
+     */
+    public function classroomHistory()
+    {
+        return $this->hasMany(EnrollmentClassroomHistory::class)
+            ->orderBy('start_date', 'desc');
+    }
+
+    /**
+     * Obter turma atual através do histórico
+     */
+    public function currentClassroomFromHistory()
+    {
+        return $this->classroomHistory()
+            ->whereNull('end_date')
+            ->with('classroom')
+            ->first();
+    }
+
+    /**
+     * Obter todas as turmas que o aluno passou
+     */
+    public function getAllClassrooms()
+    {
+        return $this->classroomHistory()->with('classroom')->get();
     }
 } 

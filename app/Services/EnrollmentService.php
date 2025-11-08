@@ -20,28 +20,52 @@ class EnrollmentService
             // Validar dados obrigatórios antes de qualquer operação
             $this->validateEnrollmentData($data);
 
-            // IMPORTANTE: Vinculação à turma só pode acontecer via ClassroomLinkingController
-            // Não permitir vinculação direta na criação da matrícula
-            // A turma deve ser vinculada depois pelo sistema de vinculação de turmas
+            // Determinar classroom_id: aceitar se fornecido, senão null
+            $classroomId = $data['classroom_id'] ?? null;
             
-            // Cria a matrícula SEM vinculação à turma
+            // Cria a matrícula
             $enrollment = Enrollment::create([
                 'student_id'      => $data['student_id'],
                 'guardian_id'     => $data['guardian_id'],
-                'classroom_id'    => null, // Sempre null - vinculação via sistema dedicado
+                'classroom_id'    => $classroomId,
+                'academic_year'   => $data['academic_year'] ?? now()->year,
                 'status'          => $data['status'] ?? 'active',
                 'process'         => $data['process'] ?? 'completa',
                 'enrollment_date' => $data['enrollment_date'] ?? now(),
                 'notes'           => $data['notes'] ?? null,
             ]);
 
-            // Log da criação para auditoria
-            \Log::info('Enrollment created (sem turma - deve ser vinculada via sistema)', [
-                'enrollment_id' => $enrollment->id,
-                'student_id' => $data['student_id'],
-                'guardian_id' => $data['guardian_id'],
-                'note' => 'Turma deve ser vinculada via /api/classrooms/{id}/link-enrollment',
-            ]);
+            // Se turma foi fornecida, criar histórico e atualizar contador
+            if ($classroomId) {
+                // Criar registro de histórico
+                \App\Models\EnrollmentClassroomHistory::create([
+                    'enrollment_id' => $enrollment->id,
+                    'classroom_id' => $classroomId,
+                    'start_date' => $enrollment->enrollment_date ?? now(),
+                    'end_date' => null,
+                    'reason' => 'enrollment',
+                    'notes' => 'Vinculação inicial à turma durante matrícula',
+                ]);
+
+                // Atualizar contador da turma
+                $classroom = Classroom::find($classroomId);
+                if ($classroom) {
+                    $classroom->updateEnrolledCount();
+                }
+
+                \Log::info('Enrollment created WITH classroom', [
+                    'enrollment_id' => $enrollment->id,
+                    'student_id' => $data['student_id'],
+                    'classroom_id' => $classroomId,
+                    'note' => 'Turma vinculada automaticamente durante criação',
+                ]);
+            } else {
+                \Log::info('Enrollment created WITHOUT classroom', [
+                    'enrollment_id' => $enrollment->id,
+                    'student_id' => $data['student_id'],
+                    'note' => 'Turma pode ser vinculada posteriormente via /api/classrooms/{id}/link-enrollment',
+                ]);
+            }
 
             return $enrollment;
         });
@@ -154,6 +178,70 @@ class EnrollmentService
     }
 
     /**
+     * Renovar matrícula para novo ano letivo
+     */
+    public function renewEnrollment($previousEnrollmentId, array $data)
+    {
+        return DB::transaction(function () use ($previousEnrollmentId, $data) {
+            $previousEnrollment = Enrollment::findOrFail($previousEnrollmentId);
+            
+            // Verificar se a matrícula pode ser renovada
+            if (!$previousEnrollment->canBeRenewed()) {
+                throw new Exception('Esta matrícula não pode ser renovada. Status: ' . $previousEnrollment->status);
+            }
+            
+            // Validar ano letivo
+            $newYear = $data['academic_year'] ?? (now()->year + 1);
+            
+            // Verificar se já existe matrícula ativa para este aluno neste ano
+            if (Enrollment::hasActiveEnrollmentInYear($previousEnrollment->student_id, $newYear)) {
+                throw new Exception("Aluno já possui matrícula ativa para o ano {$newYear}.");
+            }
+            
+            // 1. Finalizar matrícula anterior (se ainda ativa)
+            if ($previousEnrollment->status === 'active') {
+                $previousEnrollment->status = 'completed';
+                $previousEnrollment->notes = ($previousEnrollment->notes ? $previousEnrollment->notes . "\n" : '') 
+                    . "Matrícula finalizada em " . now()->format('d/m/Y') . " - Renovada para {$newYear}";
+                $previousEnrollment->save();
+                
+                // Atualizar contador da turma anterior
+                if ($previousEnrollment->classroom_id) {
+                    Classroom::find($previousEnrollment->classroom_id)?->updateEnrolledCount();
+                }
+            }
+            
+            // 2. Criar nova matrícula para o novo ano
+            $newEnrollment = Enrollment::create([
+                'student_id'      => $previousEnrollment->student_id,
+                'guardian_id'     => $data['guardian_id'] ?? $previousEnrollment->guardian_id,
+                'classroom_id'    => $data['classroom_id'] ?? null,
+                'academic_year'   => $newYear,
+                'status'          => 'active',
+                'process'         => 'renovacao',
+                'enrollment_date' => now(),
+                'notes'           => "Renovação da matrícula #{$previousEnrollmentId} do ano {$previousEnrollment->academic_year}",
+            ]);
+            
+            // 3. Atualizar contador da nova turma (se fornecida)
+            if ($newEnrollment->classroom_id) {
+                Classroom::find($newEnrollment->classroom_id)?->updateEnrolledCount();
+            }
+            
+            // Log da renovação
+            \Log::info('Enrollment renewed', [
+                'old_enrollment_id' => $previousEnrollmentId,
+                'new_enrollment_id' => $newEnrollment->id,
+                'student_id' => $newEnrollment->student_id,
+                'old_year' => $previousEnrollment->academic_year,
+                'new_year' => $newYear,
+            ]);
+            
+            return $newEnrollment;
+        });
+    }
+
+    /**
      * Valida os dados obrigatórios para criação de matrícula.
      */
     private function validateEnrollmentData(array $data)
@@ -189,7 +277,7 @@ class EnrollmentService
         }
 
         // Validar status se fornecido
-        if (isset($data['status']) && !in_array($data['status'], ['active', 'pending', 'cancelled', 'inactive'])) {
+        if (isset($data['status']) && !in_array($data['status'], ['active', 'pending', 'cancelled', 'inactive', 'completed'])) {
             throw new Exception('Invalid status value.');
         }
 
@@ -197,6 +285,21 @@ class EnrollmentService
         $validProcesses = ['reserva', 'aguardando_pagamento', 'aguardando_documentos', 'desistencia', 'transferencia', 'renovacao', 'completa'];
         if (isset($data['process']) && !in_array($data['process'], $validProcesses)) {
             throw new Exception('Invalid process value.');
+        }
+        
+        // Validar ano letivo se fornecido
+        if (isset($data['academic_year'])) {
+            $year = (int) $data['academic_year'];
+            $currentYear = (int) now()->year;
+            if ($year < 2000 || $year > ($currentYear + 5)) {
+                throw new Exception('Invalid academic year. Must be between 2000 and ' . ($currentYear + 5));
+            }
+        }
+        
+        // Verificar se já existe matrícula ativa para este aluno neste ano
+        $academicYear = $data['academic_year'] ?? now()->year;
+        if (Enrollment::hasActiveEnrollmentInYear($data['student_id'], $academicYear)) {
+            throw new Exception("Aluno já possui matrícula ativa para o ano {$academicYear}.");
         }
     }
 } 

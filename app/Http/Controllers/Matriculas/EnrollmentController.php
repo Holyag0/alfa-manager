@@ -143,15 +143,15 @@ class EnrollmentController extends Controller
                 break;
                 
             case 'matricula':
-                // Verificar se há vagas na turma
+                // Verificar se há vagas na turma usando método consistente do model
                 $classroom = Classroom::findOrFail($validatedData['enrollment']['classroom_id']);
-                $activeEnrollments = Enrollment::where('classroom_id', $classroom->id)
-                    ->where('status', 'active')
-                    ->count();
+                
+                if (!$classroom->hasAvailableSlots()) {
+                    $availableSlots = $classroom->getAvailableSlots();
+                    $enrolledCount = $classroom->getEnrolledStudentsCount();
                     
-                if ($activeEnrollments >= $classroom->vacancies) {
                     return redirect()->back()->withErrors([
-                        'enrollment.classroom_id' => 'Esta turma não possui vagas disponíveis.'
+                        'enrollment.classroom_id' => "Esta turma não possui vagas disponíveis. Vagas ocupadas: {$enrolledCount}/{$classroom->max_students}"
                     ]);
                 }
                 
@@ -193,7 +193,8 @@ class EnrollmentController extends Controller
             $enrollment = $this->service->createEnrollment([
                 'student_id' => $student->id,
                 'guardian_id' => $guardian->id,
-                'classroom_id' => $validatedData['classroom_id'],
+                'classroom_id' => $validatedData['classroom_id'] ?? null,
+                'academic_year' => $validatedData['academic_year'] ?? now()->year,
                 'enrollment_date' => $validatedData['enrollment_date'],
                 'status' => $validatedData['status'] ?? 'active',
                 'process' => $validatedData['process'] ?? 'completa',
@@ -236,5 +237,65 @@ class EnrollmentController extends Controller
     {
         session()->forget('enrollment_wizard');
         return redirect()->route('matriculas.create');
+    }
+
+    /**
+     * Renovar matrícula para novo ano letivo
+     */
+    public function renew(Request $request, $id)
+    {
+        try {
+            $data = $request->validate([
+                'academic_year' => 'required|integer|min:2000|max:' . (now()->year + 5),
+                'classroom_id' => 'nullable|exists:classrooms,id',
+                'guardian_id' => 'nullable|exists:guardians,id',
+            ]);
+
+            $newEnrollment = $this->service->renewEnrollment($id, $data);
+            
+            return redirect()
+                ->route('matriculas.edit', $newEnrollment->id)
+                ->with('success', "Matrícula renovada com sucesso para o ano {$data['academic_year']}!");
+            
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors([
+                'renewal' => 'Erro ao renovar matrícula: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Visualizar histórico de matrículas do aluno
+     */
+    public function history($studentId)
+    {
+        $student = Student::with(['enrollments' => function($query) {
+            $query->with(['classroom', 'guardian'])
+                  ->orderBy('academic_year', 'desc');
+        }])->findOrFail($studentId);
+
+        return Inertia::render('Matriculas/History', [
+            'student' => $student,
+            'enrollments' => $student->enrollments,
+        ]);
+    }
+
+    /**
+     * Listar matrículas por ano letivo
+     */
+    public function byYear(Request $request, $year)
+    {
+        $enrollments = Enrollment::with(['student', 'guardian', 'classroom'])
+            ->byAcademicYear($year)
+            ->orderBy('id', 'desc')
+            ->paginate(20);
+
+        $classrooms = Classroom::all();
+
+        return Inertia::render('Matriculas/ByYear', [
+            'year' => $year,
+            'enrollments' => $enrollments,
+            'classrooms' => $classrooms,
+        ]);
     }
 } 

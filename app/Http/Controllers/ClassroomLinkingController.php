@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Classroom;
 use App\Models\Enrollment;
+use App\Models\EnrollmentClassroomHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -20,6 +21,32 @@ class ClassroomLinkingController extends Controller
             ->get();
 
         return response()->json($enrollments);
+    }
+
+    /**
+     * Listar TODOS os alunos que passaram pela turma (incluindo transferidos)
+     */
+    public function history(Classroom $classroom)
+    {
+        $history = EnrollmentClassroomHistory::with(['enrollment.student', 'enrollment.guardian'])
+            ->where('classroom_id', $classroom->id)
+            ->orderBy('start_date', 'desc')
+            ->get()
+            ->map(function($record) {
+                return [
+                    'id' => $record->id,
+                    'enrollment_id' => $record->enrollment_id,
+                    'student' => $record->enrollment->student,
+                    'guardian' => $record->enrollment->guardian,
+                    'start_date' => $record->start_date->format('d/m/Y'),
+                    'end_date' => $record->end_date ? $record->end_date->format('d/m/Y') : null,
+                    'reason' => $record->reason,
+                    'status' => $record->isActive() ? 'Ativo' : 'Transferido/Saiu',
+                    'notes' => $record->notes,
+                ];
+            });
+
+        return response()->json($history);
     }
 
     public function eligible(Classroom $classroom)
@@ -60,6 +87,16 @@ class ClassroomLinkingController extends Controller
             $enrollment->classroom_id = $classroom->id;
             $enrollment->save();
 
+            // Registrar no histórico de turmas
+            EnrollmentClassroomHistory::create([
+                'enrollment_id' => $enrollment->id,
+                'classroom_id' => $classroom->id,
+                'start_date' => now(),
+                'end_date' => null,
+                'reason' => 'enrollment',
+                'notes' => 'Vinculação inicial à turma',
+            ]);
+
             // Atualiza contadores
             $classroom->updateEnrolledCount();
 
@@ -98,8 +135,30 @@ class ClassroomLinkingController extends Controller
                 ]);
             }
 
+            // Finalizar histórico na turma anterior
+            if ($fromClassroomId) {
+                $previousHistory = EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                    ->where('classroom_id', $fromClassroomId)
+                    ->whereNull('end_date')
+                    ->first();
+                
+                if ($previousHistory) {
+                    $previousHistory->complete(now(), 'Aluno transferido para outra turma');
+                }
+            }
+
             $enrollment->classroom_id = $classroom->id;
             $enrollment->save();
+
+            // Criar novo histórico na turma nova
+            EnrollmentClassroomHistory::create([
+                'enrollment_id' => $enrollment->id,
+                'classroom_id' => $classroom->id,
+                'start_date' => now(),
+                'end_date' => null,
+                'reason' => 'transfer',
+                'notes' => $fromClassroomId ? "Transferido da turma ID {$fromClassroomId}" : 'Transferido de outra turma',
+            ]);
 
             // Atualiza contadores em ambas as turmas
             $classroom->updateEnrolledCount();
@@ -130,6 +189,16 @@ class ClassroomLinkingController extends Controller
                 throw ValidationException::withMessages([
                     'enrollment_id' => 'Esta matrícula não está vinculada a esta turma.'
                 ]);
+            }
+
+            // Finalizar histórico na turma antes de desvincular
+            $previousHistory = EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                ->where('classroom_id', $classroom->id)
+                ->whereNull('end_date')
+                ->first();
+            
+            if ($previousHistory) {
+                $previousHistory->complete(now(), 'Aluno desvinculado da turma');
             }
 
             // Desvincular (remover turma)
