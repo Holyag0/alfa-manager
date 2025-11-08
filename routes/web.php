@@ -69,6 +69,9 @@ Route::middleware([
         ->group(function () {
             Route::post('{id}/cancelar', 'cancel')->name('cancelar');
             Route::post('{id}/trocar-turma', 'changeClassroom')->name('trocar-turma');
+            Route::post('{id}/renovar', 'renew')->name('renovar');
+            Route::get('aluno/{studentId}/historico', 'history')->name('historico');
+            Route::get('ano/{year}', 'byYear')->name('por-ano');
             // Rotas do Wizard de Matrícula
             Route::post('wizard/store', 'wizardStore')->name('wizard.store');
             Route::post('wizard/complete', 'wizardComplete')->name('wizard.complete');

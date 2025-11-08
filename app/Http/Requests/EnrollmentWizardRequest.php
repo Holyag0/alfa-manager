@@ -23,8 +23,9 @@ class EnrollmentWizardRequest extends FormRequest
             'step' => 'required|string|in:matricula',
             'student_id' => 'required|exists:students,id',
             'guardian_id' => 'required|exists:guardians,id',
-            'classroom_id' => 'required|exists:classrooms,id',
-            'status' => 'required|in:active,pending,cancelled,inactive',
+            'classroom_id' => 'nullable|exists:classrooms,id',
+            'academic_year' => 'nullable|integer|min:2000|max:' . (now()->year + 5),
+            'status' => 'required|in:active,pending,cancelled,inactive,completed',
             'process' => 'required|in:reserva,aguardando_pagamento,aguardando_documentos,desistencia,transferencia,renovacao,completa',
             'enrollment_date' => 'required|date|before_or_equal:today',
             'notes' => 'nullable|string|max:1000',
@@ -46,8 +47,11 @@ class EnrollmentWizardRequest extends FormRequest
             'guardian_id.required' => 'O responsável é obrigatório.',
             'guardian_id.exists' => 'O responsável selecionado não existe.',
             
-            'classroom_id.required' => 'A turma é obrigatória.',
             'classroom_id.exists' => 'A turma selecionada não existe.',
+            
+            'academic_year.integer' => 'O ano letivo deve ser um número inteiro.',
+            'academic_year.min' => 'O ano letivo deve ser no mínimo 2000.',
+            'academic_year.max' => 'O ano letivo não pode ser maior que ' . (now()->year + 5) . '.',
             
             'status.required' => 'O status é obrigatório.',
             'status.in' => 'Status inválido.',
@@ -69,17 +73,15 @@ class EnrollmentWizardRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Validar se há vagas na turma
+            // Validar se há vagas na turma usando método consistente do model
             if ($this->classroom_id) {
                 $classroom = \App\Models\Classroom::find($this->classroom_id);
-                if ($classroom) {
-                    $enrolledCount = \App\Models\Enrollment::where('classroom_id', $classroom->id)
-                        ->where('status', '!=', 'cancelled')
-                        ->count();
-                    
-                    if ($enrolledCount >= $classroom->vacancies) {
-                        $validator->errors()->add('classroom_id', 'Esta turma não possui vagas disponíveis.');
-                    }
+                if ($classroom && !$classroom->hasAvailableSlots()) {
+                    $enrolledCount = $classroom->getEnrolledStudentsCount();
+                    $validator->errors()->add(
+                        'classroom_id', 
+                        "Esta turma não possui vagas disponíveis. Vagas ocupadas: {$enrolledCount}/{$classroom->max_students}"
+                    );
                 }
             }
 

@@ -21,6 +21,7 @@ Route::get('classrooms/{classroom}/enrollments', [ClassroomApiController::class,
 // Classroom linking endpoints
 Route::prefix('classrooms/{classroom}')->group(function () {
     Route::get('linked-enrollments', [ClassroomLinkingController::class, 'linked']);
+    Route::get('history', [ClassroomLinkingController::class, 'history']); // Histórico completo de alunos
     Route::get('eligible-enrollments', [ClassroomLinkingController::class, 'eligible']);
     Route::post('link-enrollment', [ClassroomLinkingController::class, 'link']);
     Route::post('transfer-enrollment', [ClassroomLinkingController::class, 'transfer']);
