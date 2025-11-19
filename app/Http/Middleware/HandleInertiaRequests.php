@@ -9,6 +9,20 @@ class HandleInertiaRequests extends Middleware
 {
     protected $rootView = 'app';
 
+    /**
+     * Determina se a requisição deve ser processada pelo Inertia
+     * Exclui rotas de API para evitar conflitos
+     */
+    public function shouldHandle(Request $request): bool
+    {
+        // Não processar rotas de API
+        if ($request->is('api/*')) {
+            return false;
+        }
+        
+        return parent::shouldHandle($request);
+    }
+
     public function version(Request $request): ?string
     {
         return parent::version($request);

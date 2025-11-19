@@ -224,6 +224,15 @@
       <div v-else-if="currentTab === 'Responsáveis'">
         <StudentGuardians :student="student" :guardians="guardians" />
       </div>
+
+      <!-- Aba Mensalidades -->
+      <div v-else-if="currentTab === 'Mensalidades'">
+        <StudentMonthlyFees
+          :student="student"
+          :installments="installments"
+          :sibling-discount-hint="hasSiblingDiscountSuggestion"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -231,12 +240,21 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { ArrowLeftIcon, UserIcon, UsersIcon } from '@heroicons/vue/20/solid'
+import { ArrowLeftIcon, UserIcon, UsersIcon, CurrencyDollarIcon } from '@heroicons/vue/20/solid'
 import StudentGuardians from './components/StudentGuardians.vue'
+import StudentMonthlyFees from './components/StudentMonthlyFees.vue'
 
 const props = defineProps({
   student: Object,
-  guardians: Array
+  guardians: Array,
+  installments: {
+    type: Array,
+    default: () => []
+  },
+  hasSiblingDiscountSuggestion: {
+    type: Boolean,
+    default: false
+  }
 })
 
 const processing = ref(false)
@@ -246,7 +264,8 @@ const photoInput = ref(null)
 
 const tabs = [
   { name: 'Dados Pessoais', icon: UserIcon },
-  { name: 'Responsáveis', icon: UsersIcon }
+  { name: 'Responsáveis', icon: UsersIcon },
+  { name: 'Mensalidades', icon: CurrencyDollarIcon }
 ]
 
 const currentTab = ref(tabs[0].name)

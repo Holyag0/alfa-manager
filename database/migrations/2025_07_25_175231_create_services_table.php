@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('services', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // Nome do serviço
+            $table->enum('type', ['monthly', 'enrollment', 'reservation', 'service', 'other'])->default('service'); // Tipo de serviço
             $table->decimal('price', 10, 2); // Valor do serviço
+            $table->boolean('has_discount')->default(false); // Indica se tem desconto
+            $table->decimal('discount_amount', 10, 2)->default(0); // Valor do desconto
             $table->enum('status', ['active', 'inactive'])->default('active'); // Status
             $table->string('category'); // Categoria do serviço
             $table->text('description')->nullable(); // Descrição opcional
@@ -22,6 +25,7 @@ return new class extends Migration
             
             // Índices para otimização
             $table->index(['status', 'category']);
+            $table->index(['type', 'status']);
             $table->index('name');
         });
     }

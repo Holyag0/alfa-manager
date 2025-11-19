@@ -6,6 +6,7 @@ use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Classroom;
+use App\Models\MonthlyFee;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -67,6 +68,26 @@ class EnrollmentService
                 ]);
             }
 
+            // ✅ Gerar mensalidades se matrícula ativa e turma vinculada
+            if ($enrollment->status === 'active' && $classroomId) {
+                try {
+                    $monthlyFeeService = app(MonthlyFeeService::class);
+                    $monthlyFeeService->createMonthlyFee($enrollment, [
+                        'academic_year' => $enrollment->academic_year,
+                    ]);
+                    
+                    \Log::info('Monthly fees created for enrollment', [
+                        'enrollment_id' => $enrollment->id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error creating monthly fees', [
+                        'enrollment_id' => $enrollment->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Não falha a matrícula se houver erro ao criar mensalidades
+                }
+            }
+
             return $enrollment;
         });
     }
@@ -75,13 +96,39 @@ class EnrollmentService
      */
     public function cancelEnrollment($enrollmentId, $reason = null)
     {
-        $enrollment = Enrollment::findOrFail($enrollmentId);
-        $enrollment->status = 'cancelled';
-        if ($reason) {
-            $enrollment->notes = ($enrollment->notes ? $enrollment->notes . "\n" : '') . 'Cancel reason: ' . $reason;
-        }
-        $enrollment->save();
-        return $enrollment;
+        return DB::transaction(function () use ($enrollmentId, $reason) {
+            $enrollment = Enrollment::findOrFail($enrollmentId);
+            $enrollment->status = 'cancelled';
+            if ($reason) {
+                $enrollment->notes = ($enrollment->notes ? $enrollment->notes . "\n" : '') . 'Cancel reason: ' . $reason;
+            }
+            $enrollment->save();
+            
+            // ✅ Cancelar mensalidades futuras
+            try {
+                $monthlyFeeService = app(MonthlyFeeService::class);
+                $monthlyFee = MonthlyFee::where('enrollment_id', $enrollmentId)
+                    ->where('status', 'active')
+                    ->first();
+                
+                if ($monthlyFee) {
+                    $monthlyFeeService->cancelMonthlyFee($monthlyFee, $reason ?? 'Matrícula cancelada');
+                    
+                    \Log::info('Monthly fees cancelled for enrollment', [
+                        'enrollment_id' => $enrollmentId,
+                        'monthly_fee_id' => $monthlyFee->id,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Error cancelling monthly fees', [
+                    'enrollment_id' => $enrollmentId,
+                    'error' => $e->getMessage(),
+                ]);
+                // Não falha o cancelamento da matrícula se houver erro ao cancelar mensalidades
+            }
+            
+            return $enrollment;
+        });
     }
     /**
      * Troca o aluno de turma.
@@ -236,6 +283,26 @@ class EnrollmentService
                 'old_year' => $previousEnrollment->academic_year,
                 'new_year' => $newYear,
             ]);
+            
+            // ✅ Gerar mensalidades para a nova matrícula renovada
+            if ($newEnrollment->classroom_id) {
+                try {
+                    $monthlyFeeService = app(MonthlyFeeService::class);
+                    $monthlyFeeService->createMonthlyFee($newEnrollment, [
+                        'academic_year' => $newYear,
+                    ]);
+                    
+                    \Log::info('Monthly fees created for renewed enrollment', [
+                        'enrollment_id' => $newEnrollment->id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error creating monthly fees for renewed enrollment', [
+                        'enrollment_id' => $newEnrollment->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Não falha a renovação se houver erro ao criar mensalidades
+                }
+            }
             
             return $newEnrollment;
         });

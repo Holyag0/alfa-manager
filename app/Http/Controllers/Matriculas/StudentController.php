@@ -45,10 +45,37 @@ class StudentController extends Controller
 
     public function edit($id)
     {
-        $student = Student::with(['guardians.contacts', 'guardians.addresses'])->findOrFail($id);
+        $student = Student::with([
+            'guardians.contacts', 
+            'guardians.addresses',
+            'enrollments.classroom'
+        ])->findOrFail($id);
+        
+        // Verificar possibilidade de desconto por irmão (somente feedback)
+        $monthlyFeeService = app(\App\Services\MonthlyFeeService::class);
+        $hasSiblingDiscountSuggestion = $student->enrollments->contains(function ($enrollment) use ($monthlyFeeService) {
+            return $monthlyFeeService->checkSiblingDiscount($enrollment);
+        });
+        
+        // Buscar parcelas de mensalidades do aluno
+        $installments = \App\Models\MonthlyFeeInstallment::whereHas('monthlyFee', function($query) use ($student) {
+            $query->whereHas('enrollment', function($q) use ($student) {
+                $q->where('student_id', $student->id);
+            });
+        })
+        ->with([
+            'monthlyFee.enrollment.classroom',
+            'classroomService.service',
+            'payments.guardian'
+        ])
+        ->orderBy('due_date', 'asc')
+        ->get();
+        
         return Inertia::render('Alunos/Edit', [
             'student' => $student,
-            'guardians' => $student->guardians
+            'guardians' => $student->guardians,
+            'installments' => $installments,
+            'hasSiblingDiscountSuggestion' => $hasSiblingDiscountSuggestion,
         ]);
     }
 

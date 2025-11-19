@@ -85,7 +85,8 @@ class Service extends Model
     {
         if ($this->has_discount && $this->discount_amount > 0) {
             // Desconto por valor fixo (apenas para serviços)
-            return $this->price - $this->discount_amount;
+            // Proteção contra valores negativos
+            return max(0, $this->price - $this->discount_amount);
         }
         return $this->price;
     }

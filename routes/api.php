@@ -8,6 +8,9 @@ use App\Http\Controllers\Api\ClassroomApiController;
 use App\Http\Controllers\ClassroomLinkingController;
 use App\Http\Controllers\Matriculas\GuardianController;
 use App\Http\Controllers\Matriculas\StudentController;
+use App\Http\Controllers\Api\MonthlyFeeController;
+use App\Http\Controllers\Api\MonthlyFeeInstallmentController;
+use App\Http\Controllers\Api\MonthlyFeePaymentController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -386,4 +389,48 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('guardians/{guardian}/siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'store']);
     Route::delete('guardians/{guardian}/siblings/{sibling}', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'destroy']);
     Route::get('guardians/{guardian}/has-active-siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'hasActiveSiblings']);
+});
+
+// ========================================
+// ROTAS DO SISTEMA DE MENSALIDADES
+// ========================================
+
+// Rotas de mensalidades SEM middleware por enquanto (para testes)
+// TODO: Adicionar middleware de autenticação depois
+
+// Grupo de rotas para mensalidades (Contratos)
+Route::prefix('monthly-fees')->name('monthly-fees.')->group(function () {
+    Route::get('/', [MonthlyFeeController::class, 'index'])->name('index');
+    Route::post('/', [MonthlyFeeController::class, 'store'])->name('store');
+    Route::get('{id}', [MonthlyFeeController::class, 'show'])->name('show');
+    Route::put('{id}', [MonthlyFeeController::class, 'update'])->name('update');
+    Route::delete('{id}', [MonthlyFeeController::class, 'destroy'])->name('destroy');
+    Route::get('{id}/installments', [MonthlyFeeController::class, 'installments'])->name('installments');
+    Route::post('{id}/suspend', [MonthlyFeeController::class, 'suspend'])->name('suspend');
+    Route::post('{id}/reactivate', [MonthlyFeeController::class, 'reactivate'])->name('reactivate');
+});
+
+// Grupo de rotas para parcelas de mensalidades
+Route::prefix('installments')->name('installments.')->group(function () {
+    Route::get('/', [MonthlyFeeInstallmentController::class, 'index'])->name('index');
+    Route::get('overdue', [MonthlyFeeInstallmentController::class, 'overdue'])->name('overdue');
+    Route::get('pending', [MonthlyFeeInstallmentController::class, 'pending'])->name('pending');
+    Route::get('month/{month}', [MonthlyFeeInstallmentController::class, 'byMonth'])->name('by-month');
+    Route::get('{id}', [MonthlyFeeInstallmentController::class, 'show'])->name('show');
+    Route::put('{id}', [MonthlyFeeInstallmentController::class, 'update'])->name('update');
+    Route::post('{id}/pay', [MonthlyFeeInstallmentController::class, 'pay'])->name('pay');
+    Route::post('{id}/cancel', [MonthlyFeeInstallmentController::class, 'cancel'])->name('cancel');
+    Route::post('{id}/waive', [MonthlyFeeInstallmentController::class, 'waive'])->name('waive');
+});
+
+// Grupo de rotas para pagamentos de mensalidades
+Route::prefix('monthly-payments')->name('monthly-payments.')->group(function () {
+    Route::get('/', [MonthlyFeePaymentController::class, 'index'])->name('index');
+    Route::post('/', [MonthlyFeePaymentController::class, 'store'])->name('store');
+    Route::get('statistics', [MonthlyFeePaymentController::class, 'statistics'])->name('statistics');
+    Route::get('{id}', [MonthlyFeePaymentController::class, 'show'])->name('show');
+    Route::post('{id}/confirm', [MonthlyFeePaymentController::class, 'confirm'])->name('confirm');
+    Route::post('{id}/refund', [MonthlyFeePaymentController::class, 'refund'])->name('refund');
+    Route::post('{id}/cancel', [MonthlyFeePaymentController::class, 'cancel'])->name('cancel');
+    Route::get('{id}/receipt', [MonthlyFeePaymentController::class, 'receipt'])->name('receipt');
 });

@@ -18,6 +18,14 @@ class CheckUserAuthorization
             $request->session()->invalidate();
             $request->session()->regenerateToken();
             
+            // Para requisições de API, retornar JSON ao invés de redirect
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Sua conta não está autorizada a acessar o sistema.',
+                    'error' => 'unauthorized'
+                ], 403);
+            }
+            
             return redirect()->route('login')->withErrors([
                 'email' => 'Sua conta não está autorizada a acessar o sistema Alfa Baby.',
             ]);
