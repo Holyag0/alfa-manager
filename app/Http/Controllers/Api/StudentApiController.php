@@ -26,4 +26,10 @@ class StudentApiController extends Controller
         $student = Student::with(['guardians', 'enrollments.classroom'])->findOrFail($id);
         return response()->json($student);
     }
+
+    public function guardians($id)
+    {
+        $student = Student::findOrFail($id);
+        return response()->json($student->guardians);
+    }
 } 
