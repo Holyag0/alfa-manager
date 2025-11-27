@@ -225,6 +225,11 @@
         <StudentGuardians :student="student" :guardians="guardians" />
       </div>
 
+      <!-- Aba Matrículas -->
+      <div v-else-if="currentTab === 'Matrículas'">
+        <StudentEnrollments :enrollments="student.enrollments || []" />
+      </div>
+
       <!-- Aba Mensalidades -->
       <div v-else-if="currentTab === 'Mensalidades'">
         <StudentMonthlyFees
@@ -240,9 +245,10 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
-import { ArrowLeftIcon, UserIcon, UsersIcon, CurrencyDollarIcon } from '@heroicons/vue/20/solid'
+import { ArrowLeftIcon, UserIcon, UsersIcon, CurrencyDollarIcon, AcademicCapIcon } from '@heroicons/vue/20/solid'
 import StudentGuardians from './components/StudentGuardians.vue'
 import StudentMonthlyFees from './components/StudentMonthlyFees.vue'
+import StudentEnrollments from './components/StudentEnrollments.vue'
 
 const props = defineProps({
   student: Object,
@@ -265,6 +271,7 @@ const photoInput = ref(null)
 const tabs = [
   { name: 'Dados Pessoais', icon: UserIcon },
   { name: 'Responsáveis', icon: UsersIcon },
+  { name: 'Matrículas', icon: AcademicCapIcon },
   { name: 'Mensalidades', icon: CurrencyDollarIcon }
 ]
 

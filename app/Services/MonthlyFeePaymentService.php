@@ -200,7 +200,7 @@ class MonthlyFeePaymentService
     }
 
     /**
-     * Estornar pagamento
+     * Estornar pagamento (apenas confirmados)
      */
     public function refundPayment(MonthlyFeePayment $payment, string $reason = null): bool
     {
@@ -246,6 +246,70 @@ class MonthlyFeePaymentService
     }
 
     /**
+     * Reverter pagamento (confirmado ou pendente)
+     * Remove o pagamento e restaura a mensalidade ao estado anterior
+     */
+    public function revertPayment(MonthlyFeePayment $payment, ?string $reason = null): bool
+    {
+        try {
+            return DB::transaction(function () use ($payment, $reason) {
+                // Validar se o pagamento pode ser revertido
+                if ($payment->status === 'cancelled') {
+                    throw new \Exception("Não é possível reverter um pagamento cancelado.");
+                }
+
+                if ($payment->status === 'refunded') {
+                    throw new \Exception("Este pagamento já foi revertido anteriormente.");
+                }
+
+                $installment = $payment->installment;
+                $wasConfirmed = $payment->status === 'confirmed';
+
+                // Marcar pagamento como revertido
+                $payment->update([
+                    'status' => 'refunded',
+                    'notes' => ($payment->notes ? $payment->notes . "\n" : '') . 
+                               "Revertido em " . now()->format('d/m/Y H:i') . 
+                               ($reason ? ": {$reason}" : ''),
+                ]);
+
+                // Verificar se há outros pagamentos confirmados para esta parcela
+                $hasOtherConfirmedPayments = $installment->payments()
+                    ->where('id', '!=', $payment->id)
+                    ->where('status', 'confirmed')
+                    ->exists();
+
+                // Se havia outros pagamentos confirmados, manter status como 'paid'
+                // Caso contrário, restaurar ao estado anterior
+                if (!$hasOtherConfirmedPayments && $wasConfirmed) {
+                    // Verificar se está vencida (comparar apenas datas, não horários)
+                    $newStatus = Carbon::today()->gt($installment->due_date) ? 'overdue' : 'pending';
+                    
+                    $installment->update([
+                        'status' => $newStatus,
+                    ]);
+                }
+
+                Log::info("Pagamento revertido com sucesso", [
+                    'payment_id' => $payment->id,
+                    'installment_id' => $installment->id,
+                    'was_confirmed' => $wasConfirmed,
+                    'new_installment_status' => $installment->status,
+                    'reason' => $reason,
+                ]);
+
+                return true;
+            });
+        } catch (\Exception $e) {
+            Log::error("Erro ao reverter pagamento", [
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
      * Registrar pagamento parcial
      */
     public function registerPartialPayment(MonthlyFeeInstallment $installment, float $amount, array $data = []): MonthlyFeePayment
@@ -277,6 +341,147 @@ class MonthlyFeePaymentService
             Log::error("Erro ao registrar pagamento parcial", [
                 'installment_id' => $installment->id,
                 'amount' => $amount,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Editar pagamento existente
+     */
+    public function updatePayment(MonthlyFeePayment $payment, array $data): MonthlyFeePayment
+    {
+        try {
+            return DB::transaction(function () use ($payment, $data) {
+                // Validar se o pagamento pode ser editado
+                if ($payment->status === 'refunded') {
+                    throw new \Exception("Não é possível editar um pagamento estornado.");
+                }
+
+                // Se o pagamento está confirmado, permitir edição apenas de campos específicos
+                // (não permitir alterar valores se já foi confirmado, apenas dados complementares)
+                $allowedFields = [];
+                
+                if ($payment->status === 'confirmed') {
+                    // Se confirmado, permitir editar apenas campos não financeiros
+                    $allowedFields = ['reference', 'transaction_id', 'notes'];
+                    
+                    // Verificar se está tentando alterar campos financeiros
+                    $financialFields = ['amount', 'original_installment_amount', 'sibling_discount', 
+                                      'punctuality_discount', 'other_discounts', 'interest_applied', 
+                                      'fine_applied', 'method', 'payment_date'];
+                    
+                    $hasFinancialChanges = false;
+                    foreach ($financialFields as $field) {
+                        if (isset($data[$field])) {
+                            $newValue = $data[$field];
+                            $oldValue = $payment->$field;
+                            
+                            // Para campos numéricos, normalizar tipos antes de comparar
+                            // Isso evita que valores numericamente iguais sejam considerados diferentes
+                            // devido a diferenças de tipo (string vs float)
+                            if (in_array($field, ['amount', 'original_installment_amount', 'sibling_discount', 
+                                                  'punctuality_discount', 'other_discounts', 'interest_applied', 
+                                                  'fine_applied'])) {
+                                $newValue = (float) $newValue;
+                                $oldValue = (float) $oldValue;
+                            }
+                            
+                            // Para datas, comparar como strings formatadas
+                            if (in_array($field, ['payment_date']) && $newValue && $oldValue) {
+                                $newValue = is_string($newValue) ? $newValue : Carbon::parse($newValue)->format('Y-m-d H:i:s');
+                                $oldValue = $oldValue instanceof \DateTime ? $oldValue->format('Y-m-d H:i:s') : (string) $oldValue;
+                            }
+                            
+                            if ($newValue !== $oldValue) {
+                                $hasFinancialChanges = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if ($hasFinancialChanges) {
+                        throw new \Exception("Não é possível alterar valores financeiros de um pagamento confirmado. Estorne o pagamento primeiro para fazer alterações.");
+                    }
+                } else {
+                    // Se não confirmado, permitir editar todos os campos
+                    $allowedFields = [
+                        'paid_by_guardian_id',
+                        'amount',
+                        'original_installment_amount',
+                        'sibling_discount',
+                        'punctuality_discount',
+                        'other_discounts',
+                        'interest_applied',
+                        'fine_applied',
+                        'method',
+                        'payment_date',
+                        'reference',
+                        'transaction_id',
+                        'notes',
+                    ];
+                }
+
+                // Filtrar apenas campos permitidos
+                $updateData = array_intersect_key($data, array_flip($allowedFields));
+
+                // Se está alterando a data de pagamento, recalcular juros e multa se necessário
+                if (isset($updateData['payment_date']) && $payment->status !== 'confirmed') {
+                    $paymentDate = Carbon::parse($updateData['payment_date']);
+                    $installment = $payment->installment;
+                    
+                    // Recalcular juros e multa baseado na nova data
+                    $lateFees = $this->calculateLateFees($installment, $paymentDate, $payment->original_installment_amount);
+                    
+                    // Se não foram fornecidos valores de juros/multa, usar os recalculados
+                    if (!isset($updateData['interest_applied'])) {
+                        $updateData['interest_applied'] = $lateFees['interest'];
+                    }
+                    if (!isset($updateData['fine_applied'])) {
+                        $updateData['fine_applied'] = $lateFees['fine'];
+                    }
+                    
+                    // Recalcular desconto de pontualidade
+                    if (!isset($updateData['punctuality_discount'])) {
+                        $updateData['punctuality_discount'] = $this->applyPunctualityDiscount($installment, $paymentDate);
+                    }
+                    
+                    // Recalcular valor final se necessário
+                    if (!isset($updateData['amount'])) {
+                        $baseAmount = $updateData['original_installment_amount'] ?? $payment->original_installment_amount;
+                        $siblingDiscount = $updateData['sibling_discount'] ?? $payment->sibling_discount ?? 0;
+                        // Garantir que punctuality_discount existe antes de usar
+                        $punctualityDiscount = $updateData['punctuality_discount'] ?? $payment->punctuality_discount ?? 0;
+                        $otherDiscounts = $updateData['other_discounts'] ?? $payment->other_discounts ?? 0;
+                        // Garantir que interest_applied e fine_applied existem
+                        $interest = $updateData['interest_applied'] ?? $payment->interest_applied ?? 0;
+                        $fine = $updateData['fine_applied'] ?? $payment->fine_applied ?? 0;
+                        
+                        $updateData['amount'] = max(0, 
+                            $baseAmount 
+                            - $siblingDiscount 
+                            - $punctualityDiscount
+                            - $otherDiscounts
+                            + $interest
+                            + $fine
+                        );
+                    }
+                }
+
+                // Atualizar pagamento
+                $payment->update($updateData);
+
+                Log::info("Pagamento editado com sucesso", [
+                    'payment_id' => $payment->id,
+                    'updated_fields' => array_keys($updateData),
+                ]);
+
+                return $payment->fresh(['installment', 'guardian']);
+            });
+        } catch (\Exception $e) {
+            Log::error("Erro ao editar pagamento", [
+                'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
             throw $e;

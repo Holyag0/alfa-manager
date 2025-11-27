@@ -30,57 +30,170 @@ class MonthlyFeeService
 
                 // Verificar se já existe contrato ativo para esta matrícula no ano acadêmico
                 $academicYear = $data['academic_year'] ?? now()->year;
+                $replaceExisting = $data['replace_existing'] ?? false;
+                $addToExisting = $data['add_to_existing'] ?? false;
+                
                 $existingFee = MonthlyFee::where('enrollment_id', $enrollment->id)
                     ->where('academic_year', $academicYear)
                     ->whereNull('deleted_at') // Apenas contratos não deletados
                     ->first();
 
                 if ($existingFee) {
-                    Log::info("Contrato de mensalidade já existe", [
+                    if ($addToExisting) {
+                        // Adicionar parcelas ao contrato existente
+                        Log::info("Adicionando parcelas ao contrato existente", [
+                            'enrollment_id' => $enrollment->id,
+                            'monthly_fee_id' => $existingFee->id,
+                            'academic_year' => $academicYear,
+                        ]);
+                        
+                        // Calcular período de mensalidades
+                        $startMonth = $data['start_month'] ?? 1;
+                        $endMonth = $data['end_month'] ?? 12;
+                        
+                        // Gerar parcelas adicionais (evitando duplicatas)
+                        $this->generateInstallments($existingFee, $startMonth, $endMonth, true);
+                        
+                        // Atualizar total de parcelas
+                        $existingFee->refresh();
+                        $existingFee->total_installments = $existingFee->installments()->whereNull('deleted_at')->count();
+                        $existingFee->save();
+                        
+                        return $existingFee;
+                    }
+                    
+                    if (!$replaceExisting) {
+                        // Se não foi solicitada substituição nem adição, retornar o existente
+                        Log::info("Contrato de mensalidade já existe", [
+                            'enrollment_id' => $enrollment->id,
+                            'monthly_fee_id' => $existingFee->id
+                        ]);
+                        return $existingFee;
+                    }
+                    
+                    // Se foi solicitada substituição, deletar apenas as parcelas no intervalo selecionado
+                    $startMonth = $data['start_month'] ?? 1;
+                    $endMonth = $data['end_month'] ?? 12;
+                    
+                    Log::info("Substituindo mensalidades no intervalo", [
                         'enrollment_id' => $enrollment->id,
-                        'monthly_fee_id' => $existingFee->id
+                        'monthly_fee_id' => $existingFee->id,
+                        'academic_year' => $academicYear,
+                        'start_month' => $startMonth,
+                        'end_month' => $endMonth,
                     ]);
-                    return $existingFee;
+                    
+                    // Deletar apenas parcelas no intervalo selecionado (soft delete)
+                    // IMPORTANTE: Precisamos fazer hard delete para liberar os números de parcela
+                    // para a constraint de unicidade, já que soft delete mantém os registros
+                    $installmentsToDelete = $existingFee->installments()
+                        ->whereNull('deleted_at')
+                        ->get()
+                        ->filter(function ($installment) use ($academicYear, $startMonth, $endMonth) {
+                            $refMonth = $installment->reference_month;
+                            if (!$refMonth) return false;
+                            
+                            $monthStr = explode('-', $refMonth)[1] ?? null;
+                            if (!$monthStr) return false;
+                            
+                            $month = (int) $monthStr;
+                            return $month >= $startMonth && $month <= $endMonth;
+                        });
+                    
+                    // Fazer hard delete para liberar os números de parcela para a constraint
+                    foreach ($installmentsToDelete as $installment) {
+                        // Verificar se tem pagamentos confirmados antes de fazer hard delete
+                        $hasConfirmedPayment = $installment->payments()
+                            ->where('status', 'confirmed')
+                            ->exists();
+                        
+                        if ($hasConfirmedPayment) {
+                            // Se tem pagamento confirmado, fazer soft delete e pular este mês na geração
+                            Log::warning('Mensalidade com pagamento confirmado não pode ser substituída', [
+                                'installment_id' => $installment->id,
+                                'reference_month' => $installment->reference_month,
+                            ]);
+                            $installment->delete(); // Soft delete
+                        } else {
+                            // Sem pagamento confirmado, fazer hard delete para liberar o número
+                            $installment->forceDelete();
+                        }
+                    }
+                    
+                    // Não deletar o contrato, apenas as parcelas no intervalo
+                    // O contrato será atualizado com as novas parcelas
+                    // Usar o contrato existente
+                    $monthlyFee = $existingFee;
+                    
+                    // Atualizar configurações do contrato se necessário
+                    if (isset($data['due_day'])) {
+                        $monthlyFee->due_day = $data['due_day'];
+                    }
+                    if (isset($data['has_punctuality_discount'])) {
+                        $monthlyFee->has_punctuality_discount = (bool) $data['has_punctuality_discount'];
+                    }
+                    if (isset($data['punctuality_discount_amount'])) {
+                        $monthlyFee->punctuality_discount_amount = (float) $data['punctuality_discount_amount'];
+                    }
+                    if (isset($data['notes'])) {
+                        $monthlyFee->notes = $data['notes'];
+                    }
+                    $monthlyFee->save();
+                } else {
+                    // Criar novo contrato apenas se não existir
+                    // Descontos podem ser aplicados manualmente através dos dados de entrada
+                    $hasSiblingDiscount = (bool) ($data['has_sibling_discount'] ?? false);
+                    $siblingDiscountAmount = $hasSiblingDiscount
+                        ? (float) ($data['sibling_discount_amount'] ?? 0)
+                        : 0;
+
+                    // Calcular período de mensalidades
+                    $startMonth = $data['start_month'] ?? 1;
+                    $endMonth = $data['end_month'] ?? 12;
+                    $totalInstallments = $data['total_installments'] ?? ($endMonth - $startMonth + 1);
+
+                    // Criar registro MonthlyFee
+                    $academicYear = $data['academic_year'] ?? now()->year;
+                    $monthlyFee = MonthlyFee::create([
+                        'enrollment_id' => $enrollment->id,
+                        'classroom_service_id' => $classroomService->id,
+                        'academic_year' => $academicYear,
+                        'contract_number' => $this->generateContractNumber($enrollment, $academicYear),
+                        'base_amount' => $classroomService->price,
+                        'total_installments' => $totalInstallments,
+                        'has_sibling_discount' => $hasSiblingDiscount,
+                        'sibling_discount_amount' => $siblingDiscountAmount,
+                        'has_punctuality_discount' => $data['has_punctuality_discount'] ?? true,
+                        'punctuality_discount_amount' => $data['punctuality_discount_amount'] ?? 10.00,
+                        'start_date' => $data['start_date'] ?? Carbon::create($academicYear, $startMonth, 1),
+                        'end_date' => $data['end_date'] ?? Carbon::create($academicYear, $endMonth, 1)->endOfMonth(),
+                        'due_day' => $data['due_day'] ?? 10,
+                        'status' => 'active',
+                        'notes' => $data['notes'] ?? null,
+                    ]);
                 }
 
-                // Descontos podem ser aplicados manualmente através dos dados de entrada
-                $hasSiblingDiscount = (bool) ($data['has_sibling_discount'] ?? false);
-                $siblingDiscountAmount = $hasSiblingDiscount
-                    ? (float) ($data['sibling_discount_amount'] ?? 0)
-                    : 0;
-
-                // Calcular período de mensalidades
+                // Calcular período de mensalidades (se ainda não foi calculado)
                 $startMonth = $data['start_month'] ?? 1;
                 $endMonth = $data['end_month'] ?? 12;
-                $totalInstallments = $data['total_installments'] ?? ($endMonth - $startMonth + 1);
-
-                // Criar registro MonthlyFee
-                $academicYear = $data['academic_year'] ?? now()->year;
-                $monthlyFee = MonthlyFee::create([
-                    'enrollment_id' => $enrollment->id,
-                    'classroom_service_id' => $classroomService->id,
-                    'academic_year' => $academicYear,
-                    'contract_number' => $this->generateContractNumber($enrollment, $academicYear),
-                    'base_amount' => $classroomService->price,
-                    'total_installments' => $totalInstallments,
-                    'has_sibling_discount' => $hasSiblingDiscount,
-                    'sibling_discount_amount' => $siblingDiscountAmount,
-                    'has_punctuality_discount' => $data['has_punctuality_discount'] ?? true,
-                    'punctuality_discount_amount' => $data['punctuality_discount_amount'] ?? 10.00,
-                    'start_date' => $data['start_date'] ?? Carbon::create($academicYear, $startMonth, 1),
-                    'end_date' => $data['end_date'] ?? Carbon::create($academicYear, $endMonth, 1)->endOfMonth(),
-                    'due_day' => $data['due_day'] ?? 10,
-                    'status' => 'active',
-                    'notes' => $data['notes'] ?? null,
-                ]);
-
+                
+                // Se foi substituição, usar skipExisting=false para criar novas mensalidades
+                // mesmo que existam mensalidades deletadas (soft delete) no intervalo
+                // Se foi adição, usar skipExisting=true para pular meses que já têm mensalidades
+                $skipExisting = $addToExisting ?? false;
+                
                 // Gerar parcelas automaticamente baseado no período
-                $this->generateInstallments($monthlyFee, $startMonth, $endMonth);
+                $this->generateInstallments($monthlyFee, $startMonth, $endMonth, $skipExisting);
+                
+                // Atualizar total de parcelas
+                $monthlyFee->refresh();
+                $monthlyFee->total_installments = $monthlyFee->installments()->whereNull('deleted_at')->count();
+                $monthlyFee->save();
 
-                Log::info("Contrato de mensalidade criado com sucesso", [
+                Log::info("Contrato de mensalidade criado/atualizado com sucesso", [
                     'monthly_fee_id' => $monthlyFee->id,
                     'enrollment_id' => $enrollment->id,
-                    'has_sibling_discount' => $hasSiblingDiscount,
+                    'replaced' => $replaceExisting,
                 ]);
 
                 return $monthlyFee;
@@ -96,13 +209,102 @@ class MonthlyFeeService
 
     /**
      * Gerar parcelas automaticamente baseado no período
+     * @param bool $skipExisting Se true, pula meses que já têm parcelas criadas
      */
-    public function generateInstallments(MonthlyFee $monthlyFee, int $startMonth = 1, int $endMonth = 12): Collection
+    public function generateInstallments(MonthlyFee $monthlyFee, int $startMonth = 1, int $endMonth = 12, bool $skipExisting = false): Collection
     {
         $installments = collect();
-        $installmentNumber = 1;
+        
+        // Determinar número inicial da parcela
+        if ($skipExisting) {
+            // Se está adicionando, começar do último número + 1
+            $lastInstallment = $monthlyFee->installments()
+                ->whereNull('deleted_at')
+                ->orderBy('installment_number', 'desc')
+                ->first();
+            $installmentNumber = $lastInstallment ? $lastInstallment->installment_number + 1 : 1;
+            } else {
+                // Se está substituindo ou criando novo, verificar se há parcelas existentes
+                // Para substituição parcial, buscar a última mensalidade ANTES do intervalo, não a última global
+                $startMonthReference = Carbon::create($monthlyFee->academic_year, $startMonth, 1)->format('Y-m');
+                
+                // Buscar última mensalidade ANTES do intervalo a ser substituído
+                $lastInstallmentBeforeRange = $monthlyFee->installments()
+                    ->whereNull('deleted_at')
+                    ->where('reference_month', '<', $startMonthReference)
+                    ->orderBy('installment_number', 'desc')
+                    ->first();
+                
+                if ($lastInstallmentBeforeRange) {
+                    // Há parcelas antes do intervalo, continuar numeração a partir da última antes do intervalo
+                    $installmentNumber = $lastInstallmentBeforeRange->installment_number + 1;
+                } else {
+                    // Não há parcelas antes, verificar se há mensalidades deletadas no intervalo
+                    // Se houver, reutilizar os números; se não, começar do 1
+                    // Como fizemos hard delete das mensalidades sem pagamento confirmado,
+                    // vamos verificar se há soft deleted (com pagamento confirmado) no intervalo
+                    $firstSoftDeleted = $monthlyFee->installments()
+                        ->withTrashed()
+                        ->whereNotNull('deleted_at')
+                        ->whereBetween('reference_month', [
+                            Carbon::create($monthlyFee->academic_year, $startMonth, 1)->format('Y-m'),
+                            Carbon::create($monthlyFee->academic_year, $endMonth, 1)->format('Y-m')
+                        ])
+                        ->orderBy('installment_number', 'asc')
+                        ->first();
+                    
+                    if ($firstSoftDeleted) {
+                        // Reutilizar o número da primeira mensalidade soft deleted
+                        $installmentNumber = $firstSoftDeleted->installment_number;
+                    } else {
+                        // Não há mensalidades deletadas, começar do 1
+                        $installmentNumber = 1;
+                    }
+                }
+            }
 
         for ($month = $startMonth; $month <= $endMonth; $month++) {
+            $referenceMonth = Carbon::create($monthlyFee->academic_year, $month, 1)->format('Y-m');
+            
+            // Se está adicionando e já existe parcela para este mês, pular
+            if ($skipExisting) {
+                $existingInstallment = $monthlyFee->installments()
+                    ->where('reference_month', $referenceMonth)
+                    ->whereNull('deleted_at')
+                    ->first();
+                
+                if ($existingInstallment) {
+                    // Incrementar número da parcela mesmo ao pular, para manter sequência
+                    $installmentNumber++;
+                    continue; // Pular este mês, já tem parcela
+                }
+            } else {
+                // Se está substituindo, verificar se há mensalidade deletada (soft delete) para este mês
+                // Se houver e tiver pagamento confirmado, pular este mês
+                $deletedInstallment = $monthlyFee->installments()
+                    ->withTrashed()
+                    ->where('reference_month', $referenceMonth)
+                    ->whereNotNull('deleted_at')
+                    ->first();
+                
+                if ($deletedInstallment) {
+                    $hasConfirmedPayment = $deletedInstallment->payments()
+                        ->where('status', 'confirmed')
+                        ->exists();
+                    
+                    if ($hasConfirmedPayment) {
+                        // Pular este mês se tem pagamento confirmado
+                        // Incrementar número da parcela mesmo ao pular, para manter sequência
+                        $installmentNumber++;
+                        Log::info('Pulando mês com mensalidade deletada que tem pagamento confirmado', [
+                            'reference_month' => $referenceMonth,
+                            'installment_id' => $deletedInstallment->id,
+                        ]);
+                        continue;
+                    }
+                }
+            }
+            
             // Ajustar due_day para evitar overflow em meses com menos dias
             $daysInMonth = Carbon::create($monthlyFee->academic_year, $month, 1)->daysInMonth;
             $adjustedDay = min($monthlyFee->due_day, $daysInMonth);
@@ -113,7 +315,7 @@ class MonthlyFeeService
             $installment = MonthlyFeeInstallment::create([
                 'monthly_fee_id' => $monthlyFee->id,
                 'classroom_service_id' => $monthlyFee->classroom_service_id, // ← Referência ao serviço
-                'reference_month' => Carbon::create($monthlyFee->academic_year, $month, 1)->format('Y-m'),
+                'reference_month' => $referenceMonth,
                 'installment_number' => $installmentNumber,
                 'due_date' => $dueDate,
                 'status' => 'pending',
@@ -127,6 +329,7 @@ class MonthlyFeeService
             'monthly_fee_id' => $monthlyFee->id,
             'total_installments' => $installments->count(),
             'period' => "$startMonth-$endMonth",
+            'skip_existing' => $skipExisting,
         ]);
 
         return $installments;
@@ -313,6 +516,212 @@ class MonthlyFeeService
                 $query->where('type', 'monthly');
             })
             ->first();
+    }
+
+    /**
+     * Trocar serviço de uma mensalidade individual
+     */
+    public function changeInstallmentService(MonthlyFeeInstallment $installment, int $newClassroomServiceId, ?string $reason = null): MonthlyFeeInstallment
+    {
+        try {
+            return DB::transaction(function () use ($installment, $newClassroomServiceId, $reason) {
+                // Validar se o novo serviço existe e é do tipo mensalidade
+                $newService = ClassroomService::with('service')->findOrFail($newClassroomServiceId);
+                
+                if (!$newService->service || $newService->service->type !== 'monthly') {
+                    throw new \Exception("O serviço selecionado não é do tipo mensalidade.");
+                }
+
+                // Validar se a parcela pode ter o serviço trocado
+                // Não permitir trocar se já foi paga (a menos que seja estornada)
+                if ($installment->status === 'paid') {
+                    $hasConfirmedPayment = $installment->payments()
+                        ->where('status', 'confirmed')
+                        ->exists();
+                    
+                    if ($hasConfirmedPayment) {
+                        throw new \Exception("Não é possível trocar o serviço de uma parcela com pagamento confirmado. Estorne o pagamento primeiro.");
+                    }
+                }
+
+                $oldServiceId = $installment->classroom_service_id;
+                
+                // Atualizar o serviço da parcela
+                $installment->update([
+                    'classroom_service_id' => $newClassroomServiceId,
+                ]);
+
+                Log::info("Serviço de mensalidade trocado (individual)", [
+                    'installment_id' => $installment->id,
+                    'old_service_id' => $oldServiceId,
+                    'new_service_id' => $newClassroomServiceId,
+                    'reason' => $reason,
+                ]);
+
+                return $installment->fresh(['classroomService.service']);
+            });
+        } catch (\Exception $e) {
+            Log::error("Erro ao trocar serviço de mensalidade (individual)", [
+                'installment_id' => $installment->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Pré-visualizar quais parcelas serão alteradas na troca de serviço em lote
+     */
+    public function previewChangeAllInstallmentsService(MonthlyFee $monthlyFee, int $newClassroomServiceId): array
+    {
+        // Validar se o novo serviço existe e é do tipo mensalidade
+        $newService = ClassroomService::with('service')->findOrFail($newClassroomServiceId);
+        
+        if (!$newService->service || $newService->service->type !== 'monthly') {
+            throw new \Exception("O serviço selecionado não é do tipo mensalidade.");
+        }
+
+        // Buscar todas as parcelas do contrato com seus pagamentos
+        $installments = $monthlyFee->installments()->with(['payments'])->get();
+        
+        if ($installments->isEmpty()) {
+            throw new \Exception("Nenhuma parcela encontrada para este contrato.");
+        }
+
+        $canUpdate = [];
+        $cannotUpdate = [];
+
+        foreach ($installments as $installment) {
+            $hasConfirmedPayment = $installment->payments()
+                ->where('status', 'confirmed')
+                ->exists();
+
+            if ($hasConfirmedPayment) {
+                $cannotUpdate[] = [
+                    'id' => $installment->id,
+                    'reference_month' => $installment->reference_month,
+                    'installment_number' => $installment->installment_number,
+                    'status' => $installment->status,
+                    'reason' => 'Possui pagamento(s) confirmado(s)',
+                ];
+            } else {
+                $canUpdate[] = [
+                    'id' => $installment->id,
+                    'reference_month' => $installment->reference_month,
+                    'installment_number' => $installment->installment_number,
+                    'status' => $installment->status,
+                ];
+            }
+        }
+
+        return [
+            'can_update' => $canUpdate,
+            'cannot_update' => $cannotUpdate,
+            'total_installments' => $installments->count(),
+            'will_update' => count($canUpdate),
+            'will_skip' => count($cannotUpdate),
+            'new_service' => [
+                'id' => $newService->id,
+                'name' => $newService->service->name,
+                'price' => $newService->price,
+            ],
+        ];
+    }
+
+    /**
+     * Trocar serviço de todas as mensalidades de um ano letivo
+     * Ignora parcelas com pagamentos confirmados
+     */
+    public function changeAllInstallmentsService(MonthlyFee $monthlyFee, int $newClassroomServiceId, ?string $reason = null): array
+    {
+        try {
+            return DB::transaction(function () use ($monthlyFee, $newClassroomServiceId, $reason) {
+                // Validar se o novo serviço existe e é do tipo mensalidade
+                $newService = ClassroomService::with('service')->findOrFail($newClassroomServiceId);
+                
+                if (!$newService->service || $newService->service->type !== 'monthly') {
+                    throw new \Exception("O serviço selecionado não é do tipo mensalidade.");
+                }
+
+                // Buscar todas as parcelas do contrato com seus pagamentos
+                $installments = $monthlyFee->installments()->with(['payments'])->get();
+                
+                if ($installments->isEmpty()) {
+                    throw new \Exception("Nenhuma parcela encontrada para este contrato.");
+                }
+
+                $oldServiceId = $monthlyFee->classroom_service_id;
+                $updated = [];
+                $skipped = [];
+
+                // Atualizar apenas parcelas sem pagamentos confirmados
+                foreach ($installments as $installment) {
+                    $hasConfirmedPayment = $installment->payments()
+                        ->where('status', 'confirmed')
+                        ->exists();
+
+                    if ($hasConfirmedPayment) {
+                        $skipped[] = [
+                            'id' => $installment->id,
+                            'reference_month' => $installment->reference_month,
+                            'installment_number' => $installment->installment_number,
+                            'reason' => 'Possui pagamento(s) confirmado(s)',
+                        ];
+                    } else {
+                        $installment->update([
+                            'classroom_service_id' => $newClassroomServiceId,
+                        ]);
+                        $updated[] = [
+                            'id' => $installment->id,
+                            'reference_month' => $installment->reference_month,
+                            'installment_number' => $installment->installment_number,
+                        ];
+                    }
+                }
+
+                // Atualizar também o serviço do contrato (para referência)
+                // Apenas se pelo menos uma parcela foi atualizada
+                if (count($updated) > 0) {
+                    $monthlyFee->update([
+                        'classroom_service_id' => $newClassroomServiceId,
+                        'base_amount' => $newService->price,
+                        'notes' => ($monthlyFee->notes ? $monthlyFee->notes . "\n" : '') . 
+                                   "Serviço trocado em " . now()->format('d/m/Y H:i') . 
+                                   " de {$oldServiceId} para {$newClassroomServiceId}" .
+                                   ($reason ? ": {$reason}" : '') .
+                                   (count($skipped) > 0 ? " (Ignoradas " . count($skipped) . " parcela(s) com pagamentos confirmados)" : ''),
+                    ]);
+                }
+
+                Log::info("Serviço de mensalidade trocado (em lote)", [
+                    'monthly_fee_id' => $monthlyFee->id,
+                    'old_service_id' => $oldServiceId,
+                    'new_service_id' => $newClassroomServiceId,
+                    'updated_installments' => count($updated),
+                    'skipped_installments' => count($skipped),
+                    'reason' => $reason,
+                ]);
+
+                return [
+                    'updated' => $monthlyFee->installments()
+                        ->whereIn('id', array_column($updated, 'id'))
+                        ->with(['classroomService.service'])
+                        ->get(),
+                    'skipped' => $skipped,
+                    'summary' => [
+                        'total' => $installments->count(),
+                        'updated' => count($updated),
+                        'skipped' => count($skipped),
+                    ],
+                ];
+            });
+        } catch (\Exception $e) {
+            Log::error("Erro ao trocar serviço de mensalidade (em lote)", [
+                'monthly_fee_id' => $monthlyFee->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
+        }
     }
 
     /**

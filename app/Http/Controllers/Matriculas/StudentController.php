@@ -48,7 +48,8 @@ class StudentController extends Controller
         $student = Student::with([
             'guardians.contacts', 
             'guardians.addresses',
-            'enrollments.classroom'
+            'enrollments.classroom',
+            'enrollments.guardian'
         ])->findOrFail($id);
         
         // Verificar possibilidade de desconto por irmão (somente feedback)
@@ -57,12 +58,14 @@ class StudentController extends Controller
             return $monthlyFeeService->checkSiblingDiscount($enrollment);
         });
         
-        // Buscar parcelas de mensalidades do aluno
+        // Buscar parcelas de mensalidades do aluno (apenas não deletadas)
         $installments = \App\Models\MonthlyFeeInstallment::whereHas('monthlyFee', function($query) use ($student) {
             $query->whereHas('enrollment', function($q) use ($student) {
                 $q->where('student_id', $student->id);
-            });
+            })
+            ->whereNull('deleted_at'); // Apenas contratos não deletados
         })
+        ->whereNull('deleted_at') // Apenas parcelas não deletadas
         ->with([
             'monthlyFee.enrollment.classroom',
             'classroomService.service',

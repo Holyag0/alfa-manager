@@ -25,12 +25,20 @@
             <h4 class="text-sm font-medium text-gray-900 mb-3">Informações da Mensalidade</h4>
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
+                <span class="text-gray-600">Ano Letivo:</span>
+                <p class="font-medium">
+                  <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold">
+                    {{ installment.monthly_fee?.academic_year || 'Não definido' }}
+                  </span>
+                </p>
+              </div>
+              <div>
                 <span class="text-gray-600">Mês de Referência:</span>
                 <p class="font-medium">{{ formatMonth(installment.reference_month) }}</p>
               </div>
               <div>
                 <span class="text-gray-600">Parcela:</span>
-                <p class="font-medium">{{ installment.installment_number }}/12</p>
+                <p class="font-medium">{{ installment.installment_number }}/{{ installment.monthly_fee?.total_installments || 12 }}</p>
               </div>
               <div>
                 <span class="text-gray-600">Data de Vencimento:</span>
@@ -88,13 +96,26 @@
             <div class="space-y-3">
               <div v-for="payment in installment.payments" :key="payment.id" class="bg-green-50 rounded-lg p-4 text-sm">
                 <div class="flex justify-between items-start mb-2">
-                  <div>
+                  <div class="flex-1">
                     <p class="font-medium text-gray-900">{{ formatCurrency(payment.amount) }}</p>
                     <p class="text-xs text-gray-600">{{ getMethodLabel(payment.method) }}</p>
                   </div>
+                  <div class="flex items-center space-x-2">
                   <span :class="getPaymentStatusClass(payment.status)" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                     {{ getPaymentStatusLabel(payment.status) }}
                   </span>
+                    <button
+                      v-if="canRevertPayment(payment)"
+                      @click="handleRevertPayment(payment)"
+                      class="inline-flex items-center px-2 py-1 border border-red-300 rounded text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      title="Reverter pagamento"
+                    >
+                      <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                      </svg>
+                      Reverter
+                    </button>
+                  </div>
                 </div>
                 <div class="text-xs text-gray-600 space-y-1">
                   <p>Data: {{ formatDate(payment.payment_date) }}</p>
@@ -114,7 +135,10 @@
 
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+          <div class="flex flex-col space-y-3">
+            <!-- Botões de Ação Principais -->
           <div class="flex justify-between items-center">
+              <div class="flex space-x-2">
             <button 
               v-if="canRegisterPayment"
               @click="handleRegisterPayment"
@@ -125,13 +149,77 @@
               </svg>
               Registrar Pagamento
             </button>
-            <div v-else></div>
+                <!-- Removido: Botão "Editar Pagamento" 
+                     Para corrigir erros em pagamentos confirmados, use "Reverter Pagamento" 
+                     e registre o pagamento novamente com os valores corretos -->
+                <button 
+                  v-if="canEditInstallment"
+                  @click="handleEditDueDate"
+                  :class="[
+                    'inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2',
+                    hasConfirmedPayment 
+                      ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:ring-yellow-500' 
+                      : 'border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 focus:ring-blue-500'
+                  ]"
+                  :title="hasConfirmedPayment ? 'Atenção: Esta mensalidade possui pagamento confirmado. Recomenda-se reverter o pagamento antes de editar.' : ''"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                  Editar Vencimento
+                  <svg v-if="hasConfirmedPayment" class="w-4 h-4 ml-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
+                <button 
+                  v-if="canDeleteInstallment"
+                  @click="handleDeleteInstallment"
+                  :class="[
+                    'inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2',
+                    hasConfirmedPayment 
+                      ? 'border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 focus:ring-yellow-500' 
+                      : 'border-red-300 text-red-700 bg-red-50 hover:bg-red-100 focus:ring-red-500'
+                  ]"
+                  :title="hasConfirmedPayment ? 'Atenção: Esta mensalidade possui pagamento confirmado. Recomenda-se reverter o pagamento antes de deletar.' : ''"
+                >
+                  <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                  </svg>
+                  Deletar
+                  <svg v-if="hasConfirmedPayment" class="w-4 h-4 ml-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                  </svg>
+                </button>
+              </div>
             <button 
               @click="$emit('close')"
               class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Fechar
             </button>
+            </div>
+            
+            <!-- Botões de Ações de Serviço -->
+            <div v-if="canChangeService" class="flex space-x-2 pt-2 border-t border-gray-200">
+              <button 
+                @click="handleChangeService"
+                class="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                </svg>
+                Trocar Serviço (Esta Parcela)
+              </button>
+              <button 
+                @click="handleChangeAllServices"
+                class="inline-flex items-center px-3 py-1.5 border border-orange-300 rounded-md shadow-sm text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                <svg class="w-3 h-3 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Trocar Serviço (Todas do Ano)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -144,13 +232,48 @@
       @close="closePaymentModal"
       @success="handlePaymentSuccess"
     />
+
+    <!-- Removido: Modal de Editar Pagamento
+         Para corrigir erros, use "Reverter Pagamento" e registre novamente -->
+
+    <!-- Modal de Trocar Serviço -->
+      <ChangeServiceModal
+      v-if="showChangeServiceModal"
+      :show="showChangeServiceModal"
+      :installment="installment"
+      :change-all="changeAllServices"
+      @close="closeChangeServiceModal"
+      @success="handleChangeServiceSuccess"
+    />
+    
+    <RevertPaymentModal
+      v-if="showRevertPaymentModal"
+      :show="showRevertPaymentModal"
+      :payment="selectedPaymentForRevert"
+      :installment="installment"
+      @close="closeRevertPaymentModal"
+      @success="handleRevertPaymentSuccess"
+    />
+    
+    <EditDueDateModal
+      v-if="showEditDueDateModal"
+      :show="showEditDueDateModal"
+      :installment="installment"
+      @close="closeEditDueDateModal"
+      @success="handleEditDueDateSuccess"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import axios from 'axios'
 import PaymentModal from './PaymentModal.vue'
+// Removido: EditPaymentModal - use Reverter Pagamento para corrigir erros
+import ChangeServiceModal from './ChangeServiceModal.vue'
+import RevertPaymentModal from './RevertPaymentModal.vue'
+import EditDueDateModal from './EditDueDateModal.vue'
 
 const props = defineProps({
   installment: {
@@ -166,11 +289,44 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const showPaymentModal = ref(false)
+// Removido: showEditPaymentModal - funcionalidade de editar pagamento removida
+const showChangeServiceModal = ref(false)
+const showRevertPaymentModal = ref(false)
+const showEditDueDateModal = ref(false)
+const showDeleteInstallmentModal = ref(false)
+// Removido: selectedPayment - não é mais necessário após remover edição de pagamento
+const selectedPaymentForRevert = ref(null)
+const changeAllServices = ref(false)
 
 const canRegisterPayment = computed(() => {
   return props.installment.status !== 'paid' && 
          props.installment.status !== 'cancelled' &&
          props.installment.status !== 'waived'
+})
+
+// Removido: canEditPayment - funcionalidade de editar pagamento removida
+// Para corrigir erros, use "Reverter Pagamento" e registre o pagamento novamente
+
+const canChangeService = computed(() => {
+  // Pode trocar serviço se não tiver pagamento confirmado
+  const confirmedPayment = getConfirmedPayment()
+  return !confirmedPayment || confirmedPayment.status !== 'confirmed'
+})
+
+// Verificar se há pagamento confirmado (para aviso, não bloqueia)
+const hasConfirmedPayment = computed(() => {
+  const confirmedPayment = getConfirmedPayment()
+  return confirmedPayment !== null && confirmedPayment.status === 'confirmed'
+})
+
+// Sempre permite editar/deletar para flexibilidade em correção de erros
+// O backend registra aviso no log se houver pagamento confirmado
+const canEditInstallment = computed(() => {
+  return true // Sempre permite editar
+})
+
+const canDeleteInstallment = computed(() => {
+  return true // Sempre permite deletar
 })
 
 const handleRegisterPayment = () => {
@@ -185,6 +341,96 @@ const handlePaymentSuccess = () => {
   closePaymentModal()
   // Recarregar página para atualizar dados
   router.reload()
+}
+
+// Removido: handleEditPayment, closeEditPaymentModal, handleEditPaymentSuccess
+// Funcionalidade de editar pagamento removida - use Reverter Pagamento para corrigir erros
+
+const handleChangeService = () => {
+  changeAllServices.value = false
+  showChangeServiceModal.value = true
+}
+
+const handleChangeAllServices = () => {
+  changeAllServices.value = true
+  showChangeServiceModal.value = true
+}
+
+const closeChangeServiceModal = () => {
+  showChangeServiceModal.value = false
+  changeAllServices.value = false
+}
+
+const handleChangeServiceSuccess = () => {
+  closeChangeServiceModal()
+  router.reload()
+}
+
+const canRevertPayment = (payment) => {
+  // Pode reverter se o pagamento estiver confirmado ou pendente
+  // Não pode reverter se já foi cancelado ou estornado
+  return payment.status === 'confirmed' || payment.status === 'pending'
+}
+
+const handleRevertPayment = (payment) => {
+  selectedPaymentForRevert.value = payment
+  showRevertPaymentModal.value = true
+}
+
+const closeRevertPaymentModal = () => {
+  showRevertPaymentModal.value = false
+  selectedPaymentForRevert.value = null
+}
+
+const handleRevertPaymentSuccess = () => {
+  closeRevertPaymentModal()
+  router.reload()
+}
+
+const handleEditDueDate = () => {
+  if (hasConfirmedPayment.value) {
+    const proceed = confirm('⚠️ ATENÇÃO: Esta mensalidade possui pagamento confirmado.\n\n' +
+                           'Recomenda-se reverter o pagamento antes de editar para manter a integridade dos dados.\n\n' +
+                           'Deseja continuar mesmo assim?')
+    if (!proceed) {
+      return
+    }
+  }
+  showEditDueDateModal.value = true
+}
+
+const closeEditDueDateModal = () => {
+  showEditDueDateModal.value = false
+}
+
+const handleEditDueDateSuccess = () => {
+  closeEditDueDateModal()
+  router.reload()
+}
+
+const handleDeleteInstallment = () => {
+  let confirmMessage = 'Tem certeza que deseja deletar esta mensalidade? Esta ação não pode ser desfeita.'
+  
+  if (hasConfirmedPayment.value) {
+    confirmMessage = '⚠️ ATENÇÃO: Esta mensalidade possui pagamento confirmado.\n\n' +
+                     'Recomenda-se reverter o pagamento antes de deletar para manter a integridade dos dados.\n\n' +
+                     'Deseja continuar mesmo assim?'
+  }
+  
+  if (confirm(confirmMessage)) {
+    deleteInstallment()
+  }
+}
+
+const deleteInstallment = async () => {
+  try {
+    await axios.delete(`/api/installments/${props.installment.id}`)
+    alert('Mensalidade deletada com sucesso!')
+    emit('close')
+    router.reload()
+  } catch (error) {
+    alert('Erro ao deletar mensalidade: ' + (error.response?.data?.message || error.message))
+  }
 }
 
 const formatMonth = (monthString) => {

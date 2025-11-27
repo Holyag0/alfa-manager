@@ -58,7 +58,7 @@
       
       <!-- Sidebar com Ações Rápidas - APENAS na aba Matrícula -->
       <div v-if="currentTab === 'Matrícula'" class="lg:col-span-2">
-        <QuickActionsCard :enrollment="enrollment" />
+        <QuickActionsCard :enrollment="enrollment" :classrooms="classrooms" />
       </div>
     </div>
   </div>

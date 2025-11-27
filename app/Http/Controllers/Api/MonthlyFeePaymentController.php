@@ -150,7 +150,7 @@ class MonthlyFeePaymentController extends Controller
     }
 
     /**
-     * Estornar pagamento
+     * Estornar pagamento (apenas confirmados)
      */
     public function refund(Request $request, $id): JsonResponse
     {
@@ -163,7 +163,7 @@ class MonthlyFeePaymentController extends Controller
             if ($success) {
                 return response()->json([
                     'message' => 'Pagamento estornado com sucesso',
-                    'data' => $payment->fresh(['installment', 'guardian']),
+                    'data' => $payment->fresh(['installment.monthlyFee.enrollment.student', 'guardian']),
                 ]);
             }
 
@@ -173,6 +173,43 @@ class MonthlyFeePaymentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Erro ao estornar pagamento',
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Reverter pagamento (confirmado ou pendente)
+     * Remove o pagamento e restaura a mensalidade ao estado anterior
+     */
+    public function revert(Request $request, $id): JsonResponse
+    {
+        try {
+            $request->validate([
+                'reason' => ['nullable', 'string', 'max:500'],
+            ]);
+
+            $payment = MonthlyFeePayment::with(['installment'])->findOrFail($id);
+            
+            $reason = $request->input('reason');
+            $success = $this->paymentService->revertPayment($payment, $reason);
+
+            if ($success) {
+                return response()->json([
+                    'message' => 'Pagamento revertido com sucesso. A mensalidade foi restaurada ao estado anterior.',
+                    'data' => [
+                        'payment' => $payment->fresh(['installment.monthlyFee.enrollment.student', 'guardian']),
+                        'installment' => $payment->installment->fresh(),
+                    ],
+                ]);
+            }
+
+            return response()->json([
+                'message' => 'Não foi possível reverter o pagamento',
+            ], 400);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao reverter pagamento',
                 'error' => $e->getMessage(),
             ], 400);
         }
@@ -245,6 +282,59 @@ class MonthlyFeePaymentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Erro ao cancelar pagamento',
+                'error' => $e->getMessage(),
+            ], 400);
+        }
+    }
+
+    /**
+     * Editar pagamento
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        try {
+            $payment = MonthlyFeePayment::findOrFail($id);
+            
+            // Validação condicional baseada no status do pagamento
+            $rules = [];
+            
+            if ($payment->status === 'confirmed') {
+                // Se confirmado, permitir editar apenas campos não financeiros
+                $rules = [
+                    'reference' => ['sometimes', 'string', 'max:255'],
+                    'transaction_id' => ['sometimes', 'string', 'max:255'],
+                    'notes' => ['sometimes', 'string', 'max:1000'],
+                ];
+            } else {
+                // Se não confirmado, permitir editar todos os campos
+                $rules = [
+                    'paid_by_guardian_id' => ['sometimes', 'integer', 'exists:guardians,id'],
+                    'amount' => ['sometimes', 'numeric', 'min:0'],
+                    'original_installment_amount' => ['sometimes', 'numeric', 'min:0'],
+                    'sibling_discount' => ['sometimes', 'numeric', 'min:0'],
+                    'punctuality_discount' => ['sometimes', 'numeric', 'min:0'],
+                    'other_discounts' => ['sometimes', 'numeric', 'min:0'],
+                    'interest_applied' => ['sometimes', 'numeric', 'min:0'],
+                    'fine_applied' => ['sometimes', 'numeric', 'min:0'],
+                    'method' => ['sometimes', 'string', 'in:pix,credit_card,debit_card,cash,bank_transfer,check'],
+                    'payment_date' => ['sometimes', 'date'],
+                    'reference' => ['sometimes', 'string', 'max:255'],
+                    'transaction_id' => ['sometimes', 'string', 'max:255'],
+                    'notes' => ['sometimes', 'string', 'max:1000'],
+                ];
+            }
+
+            $validated = $request->validate($rules);
+            
+            $updatedPayment = $this->paymentService->updatePayment($payment, $validated);
+
+            return response()->json([
+                'message' => 'Pagamento atualizado com sucesso',
+                'data' => $updatedPayment->load(['installment.monthlyFee.enrollment.student', 'guardian']),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Erro ao atualizar pagamento',
                 'error' => $e->getMessage(),
             ], 400);
         }

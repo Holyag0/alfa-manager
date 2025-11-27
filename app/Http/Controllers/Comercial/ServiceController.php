@@ -58,6 +58,20 @@ class ServiceController extends Controller
     }
 
     /**
+     * Mapear categoria para tipo de serviço automaticamente
+     */
+    private function mapCategoryToType(string $category): string
+    {
+        $mapping = [
+            'Mensalidade' => 'monthly',
+            'Reserva' => 'reservation',
+            'Matrícula' => 'enrollment',
+        ];
+        
+        return $mapping[$category] ?? 'service';
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(ServiceRequest $request)
@@ -68,6 +82,11 @@ class ServiceController extends Controller
             // Remover selected_classrooms dos dados do serviço
             $selectedClassrooms = $validatedData['selected_classrooms'] ?? [];
             unset($validatedData['selected_classrooms']);
+            
+            // Mapear categoria para tipo automaticamente se não fornecido
+            if (!isset($validatedData['type']) && isset($validatedData['category'])) {
+                $validatedData['type'] = $this->mapCategoryToType($validatedData['category']);
+            }
             
             // Criar o serviço
             $service = $this->serviceService->create($validatedData);
@@ -194,6 +213,11 @@ class ServiceController extends Controller
             // Remover selected_classrooms dos dados do serviço
             $selectedClassrooms = $validatedData['selected_classrooms'] ?? [];
             unset($validatedData['selected_classrooms']);
+            
+            // Mapear categoria para tipo automaticamente se não fornecido
+            if (!isset($validatedData['type']) && isset($validatedData['category'])) {
+                $validatedData['type'] = $this->mapCategoryToType($validatedData['category']);
+            }
             
             // Atualizar o serviço
             $this->serviceService->update($id, $validatedData);

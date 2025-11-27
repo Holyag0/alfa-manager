@@ -26,6 +26,7 @@ class ServiceRequest extends FormRequest
             'name' => 'required|string|max:255',
             'price' => 'required|numeric|min:0|max:999999.99',
             'category' => 'required|string|max:255',
+            'type' => 'nullable|in:monthly,enrollment,reservation,service,other', // Opcional, será mapeado automaticamente
             'status' => 'required|in:active,inactive',
             'description' => 'nullable|string|max:1000',
             'is_classroom_linked' => 'boolean',

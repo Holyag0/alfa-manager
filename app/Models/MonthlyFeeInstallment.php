@@ -20,6 +20,7 @@ class MonthlyFeeInstallment extends Model
         'installment_number',
         'due_date',
         'status',
+        'other_discounts',
     ];
 
     protected $casts = [
