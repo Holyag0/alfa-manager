@@ -256,7 +256,7 @@ class EnrollmentService
             $enrollment = Enrollment::findOrFail($id);
             
             // Se a turma está sendo alterada
-            if (isset($data['classroom_id']) && $data['classroom_id'] != $enrollment->classroom_id) {
+            if (array_key_exists('classroom_id', $data) && $data['classroom_id'] != $enrollment->classroom_id) {
                 $newClassroomId = $data['classroom_id'];
                 $oldClassroomId = $enrollment->classroom_id;
                 
