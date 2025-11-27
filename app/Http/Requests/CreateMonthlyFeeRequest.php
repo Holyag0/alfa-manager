@@ -46,6 +46,8 @@ class CreateMonthlyFeeRequest extends FormRequest
             'end_date' => 'nullable|date|after:start_date',
             'due_day' => 'nullable|integer|min:1|max:31',
             'notes' => 'nullable|string|max:1000',
+            'replace_existing' => 'nullable|boolean',
+            'add_to_existing' => 'nullable|boolean',
         ];
     }
 

@@ -82,16 +82,36 @@ class DatabaseSeeder extends Seeder
                 $guardian = $student->guardians()->inRandomOrder()->first();
                 
                 if ($guardian) {
+                    $enrollmentDate = fake()->date('Y-m-d');
+                    $academicYear = date('Y', strtotime($enrollmentDate));
+                    
+                    // Verificar se já existe matrícula ativa para este aluno no mesmo ano letivo
+                    $existingEnrollment = \App\Models\Enrollment::where('student_id', $student->id)
+                        ->where('academic_year', $academicYear)
+                        ->where('status', 'active')
+                        ->first();
+                    
+                    // Se já existe matrícula ativa no mesmo ano, pular
+                    if ($existingEnrollment) {
+                        continue;
+                    }
+                    
                     \App\Models\Enrollment::create([
                         'student_id' => $student->id,
                         'guardian_id' => $guardian->id,
                         'classroom_id' => \App\Models\Classroom::inRandomOrder()->first()->id,
+                        'academic_year' => $academicYear,
                         'status' => fake()->randomElement(['active', 'pending', 'cancelled']),
-                        'enrollment_date' => fake()->date('Y-m-d'),
+                        'enrollment_date' => $enrollmentDate,
                         'notes' => fake()->optional()->sentence(),
                     ]);
                 }
             }
         }
+        
+        // Chamar seeder de mensalidades após criar matrículas
+        $this->call([
+            MonthlyFeeSeeder::class,
+        ]);
     }
 }

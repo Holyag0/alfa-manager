@@ -20,6 +20,30 @@ Route::get('classrooms', [ClassroomApiController::class, 'index']);
 Route::get('classrooms/{classroom}', [ClassroomApiController::class, 'show']);
 Route::put('classrooms/{classroom}', [ClassroomApiController::class, 'update']);
 Route::get('classrooms/{classroom}/enrollments', [ClassroomApiController::class, 'getEnrollments']);
+Route::get('classrooms/{classroom}/services', function ($classroom, \Illuminate\Http\Request $request) {
+    $classroom = \App\Models\Classroom::findOrFail($classroom);
+    
+    $query = \App\Models\ClassroomService::where('classroom_id', $classroom->id)
+        ->with('service')
+        ->active(); // ClassroomService ativo
+    
+    // Filtrar por tipo se fornecido
+    if ($request->has('type')) {
+        $query->whereHas('service', function($q) use ($request) {
+            $q->where('type', $request->type)
+              ->where('status', 'active'); // Garantir que o Service também está ativo
+        });
+    } else {
+        // Se não especificar tipo, ainda verificar se o serviço está ativo
+        $query->whereHas('service', function($q) {
+            $q->where('status', 'active');
+        });
+    }
+    
+    $services = $query->get();
+    
+    return response()->json($services);
+});
 
 // Classroom linking endpoints
 Route::prefix('classrooms/{classroom}')->group(function () {
@@ -395,11 +419,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 // ROTAS DO SISTEMA DE MENSALIDADES
 // ========================================
 
-// Rotas de mensalidades SEM middleware por enquanto (para testes)
-// TODO: Adicionar middleware de autenticação depois
-
 // Grupo de rotas para mensalidades (Contratos)
-Route::prefix('monthly-fees')->name('monthly-fees.')->group(function () {
+// Usando middleware web para autenticação via sessão (compatível com Inertia)
+Route::middleware(['web', 'auth'])->prefix('monthly-fees')->name('monthly-fees.')->group(function () {
     Route::get('/', [MonthlyFeeController::class, 'index'])->name('index');
     Route::post('/', [MonthlyFeeController::class, 'store'])->name('store');
     Route::get('{id}', [MonthlyFeeController::class, 'show'])->name('show');
@@ -411,26 +433,36 @@ Route::prefix('monthly-fees')->name('monthly-fees.')->group(function () {
 });
 
 // Grupo de rotas para parcelas de mensalidades
-Route::prefix('installments')->name('installments.')->group(function () {
+// Usando middleware web para autenticação via sessão (compatível com Inertia)
+Route::middleware(['web', 'auth'])->prefix('installments')->name('installments.')->group(function () {
     Route::get('/', [MonthlyFeeInstallmentController::class, 'index'])->name('index');
     Route::get('overdue', [MonthlyFeeInstallmentController::class, 'overdue'])->name('overdue');
     Route::get('pending', [MonthlyFeeInstallmentController::class, 'pending'])->name('pending');
     Route::get('month/{month}', [MonthlyFeeInstallmentController::class, 'byMonth'])->name('by-month');
     Route::get('{id}', [MonthlyFeeInstallmentController::class, 'show'])->name('show');
     Route::put('{id}', [MonthlyFeeInstallmentController::class, 'update'])->name('update');
+    Route::delete('{id}', [MonthlyFeeInstallmentController::class, 'destroy'])->name('destroy');
     Route::post('{id}/pay', [MonthlyFeeInstallmentController::class, 'pay'])->name('pay');
+    Route::post('update-due-dates-batch', [MonthlyFeeInstallmentController::class, 'updateDueDatesBatch'])->name('update-due-dates-batch');
+    Route::post('delete-batch', [MonthlyFeeInstallmentController::class, 'destroyBatch'])->name('delete-batch');
     Route::post('{id}/cancel', [MonthlyFeeInstallmentController::class, 'cancel'])->name('cancel');
     Route::post('{id}/waive', [MonthlyFeeInstallmentController::class, 'waive'])->name('waive');
+    Route::post('{id}/change-service', [MonthlyFeeInstallmentController::class, 'changeService'])->name('change-service');
+    Route::post('{id}/preview-change-all-services', [MonthlyFeeInstallmentController::class, 'previewChangeAllServices'])->name('preview-change-all-services');
+    Route::post('{id}/change-all-services', [MonthlyFeeInstallmentController::class, 'changeAllServices'])->name('change-all-services');
 });
 
 // Grupo de rotas para pagamentos de mensalidades
-Route::prefix('monthly-payments')->name('monthly-payments.')->group(function () {
+// Usando middleware web para autenticação via sessão (compatível com Inertia)
+Route::middleware(['web', 'auth'])->prefix('monthly-payments')->name('monthly-payments.')->group(function () {
     Route::get('/', [MonthlyFeePaymentController::class, 'index'])->name('index');
     Route::post('/', [MonthlyFeePaymentController::class, 'store'])->name('store');
     Route::get('statistics', [MonthlyFeePaymentController::class, 'statistics'])->name('statistics');
     Route::get('{id}', [MonthlyFeePaymentController::class, 'show'])->name('show');
+    Route::put('{id}', [MonthlyFeePaymentController::class, 'update'])->name('update');
     Route::post('{id}/confirm', [MonthlyFeePaymentController::class, 'confirm'])->name('confirm');
     Route::post('{id}/refund', [MonthlyFeePaymentController::class, 'refund'])->name('refund');
+    Route::post('{id}/revert', [MonthlyFeePaymentController::class, 'revert'])->name('revert');
     Route::post('{id}/cancel', [MonthlyFeePaymentController::class, 'cancel'])->name('cancel');
     Route::get('{id}/receipt', [MonthlyFeePaymentController::class, 'receipt'])->name('receipt');
 });

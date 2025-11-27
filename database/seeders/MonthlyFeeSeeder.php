@@ -27,10 +27,13 @@ class MonthlyFeeSeeder extends Seeder
         }
 
         foreach ($enrollments as $enrollment) {
-            // Buscar serviço de mensalidade da turma
-            $classroomService = ClassroomService::where('classroom_id', $enrollment->classroom_id)
-                ->where('type', 'monthly')
-                ->first();
+            // Verificar se a matrícula tem turma vinculada
+            if (!$enrollment->classroom_id) {
+                continue;
+            }
+            
+            // Buscar serviço de mensalidade da turma usando o método do modelo
+            $classroomService = ClassroomService::findMonthlyService($enrollment->classroom_id);
 
             if (!$classroomService) {
                 continue;
@@ -51,7 +54,7 @@ class MonthlyFeeSeeder extends Seeder
                 'classroom_service_id' => $classroomService->id,
                 'academic_year' => now()->year,
                 'contract_number' => 'MF-' . now()->year . '-' . str_pad($enrollment->id, 4, '0', STR_PAD_LEFT),
-                'base_amount' => $classroomService->amount,
+                'base_amount' => $classroomService->price,
                 'total_installments' => 12,
                 'has_sibling_discount' => rand(0, 1) == 1,
                 'sibling_discount_amount' => rand(0, 1) == 1 ? 30.00 : 0,
@@ -94,20 +97,18 @@ class MonthlyFeeSeeder extends Seeder
 
                 $finalAmount = $baseAmount - $siblingDiscount - $punctualityDiscount + $interestAmount + $fineAmount;
 
+                // Criar parcela apenas com campos que existem na tabela
+                // Campos removidos pela migration: base_amount, sibling_discount, punctuality_discount,
+                // interest_amount, fine_amount, final_amount, paid_date
+                // Esses valores agora estão apenas em monthly_fee_payments
                 $installment = MonthlyFeeInstallment::create([
                     'monthly_fee_id' => $monthlyFee->id,
+                    'classroom_service_id' => $classroomService->id, // Campo obrigatório
                     'reference_month' => Carbon::create(now()->year, $month, 1)->format('Y-m'),
                     'installment_number' => $month,
-                    'base_amount' => $baseAmount,
-                    'sibling_discount' => $siblingDiscount,
-                    'punctuality_discount' => $punctualityDiscount,
-                    'other_discounts' => 0,
-                    'interest_amount' => $interestAmount,
-                    'fine_amount' => $fineAmount,
-                    'final_amount' => $finalAmount,
                     'due_date' => $dueDate,
-                    'paid_date' => $status === 'paid' ? $dueDate->addDays(rand(-3, 3)) : null,
                     'status' => $status,
+                    'other_discounts' => 0, // Campo que ainda existe na tabela
                 ]);
 
                 // Se pago, criar registro de pagamento
@@ -115,18 +116,23 @@ class MonthlyFeeSeeder extends Seeder
                     $guardian = $enrollment->student->guardians()->first();
                     
                     if ($guardian) {
+                        // Usar a data de vencimento como base para a data de pagamento
+                        $paymentDate = $dueDate->copy()->addDays(rand(-3, 3));
+                        
                         MonthlyFeePayment::create([
                             'monthly_fee_installment_id' => $installment->id,
                             'paid_by_guardian_id' => $guardian->id,
                             'payment_number' => 'PAY-' . now()->year . '-' . str_pad($installment->id, 5, '0', STR_PAD_LEFT),
                             'amount' => $finalAmount,
                             'original_installment_amount' => $baseAmount,
-                            'discount_applied' => $siblingDiscount + $punctualityDiscount,
+                            'sibling_discount' => $siblingDiscount,
+                            'punctuality_discount' => $punctualityDiscount,
+                            'other_discounts' => 0,
                             'interest_applied' => $interestAmount,
                             'fine_applied' => $fineAmount,
                             'method' => collect(['pix', 'credit_card', 'debit_card', 'cash'])->random(),
-                            'payment_date' => $installment->paid_date,
-                            'confirmation_date' => $installment->paid_date,
+                            'payment_date' => $paymentDate,
+                            'confirmation_date' => $paymentDate,
                             'status' => 'confirmed',
                         ]);
                     }

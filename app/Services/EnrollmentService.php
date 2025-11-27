@@ -8,12 +8,16 @@ use App\Models\Guardian;
 use App\Models\Classroom;
 use App\Models\MonthlyFee;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class EnrollmentService
 {
     /**
-     * Realiza uma matrícula de um aluno em uma turma, vinculando um responsável.
+     * Realiza uma matrícula de um aluno, vinculando um responsável.
+     * IMPORTANTE: Se classroom_id for fornecido, será salvo na matrícula mas o aluno NÃO será vinculado automaticamente.
+     * O aluno ficará como "elegível" e aparecerá na lista de elegíveis da turma selecionada.
+     * A vinculação real deve ser feita via interface de vinculação de turmas.
      */
     public function createEnrollment(array $data)
     {
@@ -21,72 +25,38 @@ class EnrollmentService
             // Validar dados obrigatórios antes de qualquer operação
             $this->validateEnrollmentData($data);
 
-            // Determinar classroom_id: aceitar se fornecido, senão null
-            $classroomId = $data['classroom_id'] ?? null;
+            // IMPORTANTE: Se classroom_id for fornecido, salva na matrícula mas NÃO vincula o aluno
+            // O aluno ficará como "elegível" e aparecerá na lista de elegíveis da turma selecionada
+            // Isso permite que o usuário confirme a turma correta antes de vincular
+            $classroomId = isset($data['classroom_id']) && !empty($data['classroom_id']) 
+                ? $data['classroom_id'] 
+                : null;
             
-            // Cria a matrícula
+            // Cria a matrícula (pode ter classroom_id, mas aluno fica elegível)
             $enrollment = Enrollment::create([
                 'student_id'      => $data['student_id'],
                 'guardian_id'     => $data['guardian_id'],
-                'classroom_id'    => $classroomId,
+                'classroom_id'    => $classroomId, // Pode receber o ID da turma, mas aluno fica elegível
                 'academic_year'   => $data['academic_year'] ?? now()->year,
                 'status'          => $data['status'] ?? 'active',
                 'process'         => $data['process'] ?? 'completa',
                 'enrollment_date' => $data['enrollment_date'] ?? now(),
-                'notes'           => $data['notes'] ?? null,
-            ]);
-
-            // Se turma foi fornecida, criar histórico e atualizar contador
-            if ($classroomId) {
-                // Criar registro de histórico
-                \App\Models\EnrollmentClassroomHistory::create([
-                    'enrollment_id' => $enrollment->id,
-                    'classroom_id' => $classroomId,
-                    'start_date' => $enrollment->enrollment_date ?? now(),
-                    'end_date' => null,
-                    'reason' => 'enrollment',
-                    'notes' => 'Vinculação inicial à turma durante matrícula',
+                'notes'           => $data['notes'] ?? ($classroomId ? "Turma pretendida: {$classroomId}, aluno elegível" : null),
                 ]);
 
-                // Atualizar contador da turma
-                $classroom = Classroom::find($classroomId);
-                if ($classroom) {
-                    $classroom->updateEnrolledCount();
-                }
-
-                \Log::info('Enrollment created WITH classroom', [
+            Log::info('Enrollment created as eligible', [
                     'enrollment_id' => $enrollment->id,
                     'student_id' => $data['student_id'],
                     'classroom_id' => $classroomId,
-                    'note' => 'Turma vinculada automaticamente durante criação',
+                'note' => $classroomId 
+                    ? "Aluno criado com classroom_id={$classroomId} mas não vinculado. Aparecerá como elegível na turma."
+                    : 'Aluno criado sem turma. Vinculação deve ser feita via /api/classrooms/{id}/link-enrollment ou interface de turmas',
                 ]);
-            } else {
-                \Log::info('Enrollment created WITHOUT classroom', [
-                    'enrollment_id' => $enrollment->id,
-                    'student_id' => $data['student_id'],
-                    'note' => 'Turma pode ser vinculada posteriormente via /api/classrooms/{id}/link-enrollment',
-                ]);
-            }
 
-            // ✅ Gerar mensalidades se matrícula ativa e turma vinculada
-            if ($enrollment->status === 'active' && $classroomId) {
-                try {
-                    $monthlyFeeService = app(MonthlyFeeService::class);
-                    $monthlyFeeService->createMonthlyFee($enrollment, [
-                        'academic_year' => $enrollment->academic_year,
-                    ]);
-                    
-                    \Log::info('Monthly fees created for enrollment', [
-                        'enrollment_id' => $enrollment->id,
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error('Error creating monthly fees', [
-                        'enrollment_id' => $enrollment->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    // Não falha a matrícula se houver erro ao criar mensalidades
-                }
-            }
+            // ✅ Mensalidades NÃO serão geradas automaticamente
+            // As mensalidades devem ser geradas manualmente pelo usuário após vincular o aluno à turma
+            // Isso evita gerar mensalidades incorretas caso a vinculação/transferência de turma esteja errada
+            // A geração manual permite que o usuário confirme a turma correta antes de criar as mensalidades
 
             return $enrollment;
         });
@@ -114,13 +84,13 @@ class EnrollmentService
                 if ($monthlyFee) {
                     $monthlyFeeService->cancelMonthlyFee($monthlyFee, $reason ?? 'Matrícula cancelada');
                     
-                    \Log::info('Monthly fees cancelled for enrollment', [
+                    Log::info('Monthly fees cancelled for enrollment', [
                         'enrollment_id' => $enrollmentId,
                         'monthly_fee_id' => $monthlyFee->id,
                     ]);
                 }
             } catch (\Exception $e) {
-                \Log::error('Error cancelling monthly fees', [
+                Log::error('Error cancelling monthly fees', [
                     'enrollment_id' => $enrollmentId,
                     'error' => $e->getMessage(),
                 ]);
@@ -131,55 +101,116 @@ class EnrollmentService
         });
     }
     /**
-     * Troca o aluno de turma.
+     * Método centralizado para transferir aluno de turma.
+     * 
+     * @param int $enrollmentId ID da matrícula
+     * @param int|null $newClassroomId ID da nova turma (null para desvincular)
+     * @param bool $makeEligibleFirst Se true, desvincula primeiro (deixa elegível) antes de vincular à nova turma
+     * @param string|null $reason Motivo da transferência (para histórico)
+     * @return Enrollment Matrícula atualizada
      */
-    public function changeClassroom($enrollmentId, $newClassroomId)
+    public function transferStudentToClassroom($enrollmentId, $newClassroomId, $makeEligibleFirst = false, $reason = null)
     {
-        return DB::transaction(function () use ($enrollmentId, $newClassroomId) {
-            $enrollment = Enrollment::findOrFail($enrollmentId);
+        return DB::transaction(function () use ($enrollmentId, $newClassroomId, $makeEligibleFirst, $reason) {
+            $enrollment = Enrollment::lockForUpdate()->findOrFail($enrollmentId);
             
-            // Verificar se a nova turma é diferente da atual
-            if ($enrollment->classroom_id == $newClassroomId) {
-                throw new Exception('Student is already enrolled in this classroom.');
+            // Validar se matrícula pode ser vinculada/transferida
+            if (!$enrollment->canBeLinkedToClassroom()) {
+                throw new Exception('A matrícula não está completa/ativa para transferência.');
             }
             
-            // Lock pessimista na nova turma para evitar race condition
-            $newClassroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
-
-            // Validar capacidade e duplicidade usando a regra centralizada
-            if (!$newClassroom->canEnrollStudent($enrollment->student_id)) {
-                throw new Exception('No vacancies available in the new classroom or student already enrolled.');
-            }
-
             $oldClassroomId = $enrollment->classroom_id;
-
-            // Contagens antes
-            $beforeNewCount = $newClassroom->getEnrolledStudentsCount();
-            $beforeOldCount = $oldClassroomId ? Classroom::find($oldClassroomId)?->getEnrolledStudentsCount() : null;
-
-            // Efetivar transferência
-            $enrollment->classroom_id = $newClassroomId;
-            $enrollment->save();
-
-            // Atualizar contadores das turmas
-            $newClassroom->updateEnrolledCount();
-            if ($oldClassroomId) {
-                Classroom::find($oldClassroomId)?->updateEnrolledCount();
+            
+            // Se está tentando transferir para a mesma turma
+            // Usar strict comparison (===) para evitar que null == 0 seja considerado igual
+            if ($oldClassroomId === $newClassroomId) {
+                return $enrollment; // Nada a fazer
             }
-
-            // Log da mudança para auditoria
-            \Log::info('Enrollment classroom changed', [
-                'enrollment_id' => $enrollment->id,
-                'student_id' => $enrollment->student_id,
-                'old_classroom_id' => $oldClassroomId,
-                'new_classroom_id' => $newClassroomId,
-                'before_new_count' => $beforeNewCount,
-                'after_new_count' => $newClassroom->current_students,
-                'before_old_count' => $beforeOldCount,
-            ]);
+            
+            // Se makeEligibleFirst = true, desvincular primeiro (deixar elegível)
+            if ($makeEligibleFirst && $oldClassroomId) {
+                // Finalizar histórico na turma atual
+                $previousHistory = \App\Models\EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                    ->where('classroom_id', $oldClassroomId)
+                    ->whereNull('end_date')
+                    ->first();
+                
+                if ($previousHistory) {
+                    $previousHistory->complete(now(), $reason ?? 'Aluno desvinculado para transferência');
+                }
+                
+                // Desvincular (deixar elegível)
+                $enrollment->classroom_id = null;
+                $enrollment->save();
+                
+                // Atualizar contador da turma anterior
+                Classroom::find($oldClassroomId)?->updateEnrolledCount();
+                
+                $oldClassroomId = null; // Agora está sem turma
+            }
+            
+            // Se há nova turma para vincular
+            if ($newClassroomId) {
+                // Validar capacidade e duplicidade
+                $newClassroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
+                
+                if (!$newClassroom->canEnrollStudent($enrollment->student_id)) {
+                    throw new Exception('No vacancies available in the new classroom or student already enrolled.');
+                }
+                
+                // Se havia turma anterior (e não foi desvinculado), finalizar histórico
+                if ($oldClassroomId) {
+                    $previousHistory = \App\Models\EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                        ->where('classroom_id', $oldClassroomId)
+                        ->whereNull('end_date')
+                        ->first();
+                    
+                    if ($previousHistory) {
+                        $previousHistory->complete(now(), $reason ?? 'Aluno transferido para outra turma');
+                    }
+                }
+                
+                // Vincular à nova turma
+                $enrollment->classroom_id = $newClassroomId;
+                $enrollment->save();
+                
+                // Verificar se já existe histórico ativo (evitar duplicação)
+                $existingActiveHistory = \App\Models\EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                    ->where('classroom_id', $newClassroomId)
+                    ->whereNull('end_date')
+                    ->first();
+                
+                // Criar novo histórico apenas se não existir
+                if (!$existingActiveHistory) {
+                    \App\Models\EnrollmentClassroomHistory::create([
+                        'enrollment_id' => $enrollment->id,
+                        'classroom_id' => $newClassroomId,
+                        'start_date' => now(),
+                        'end_date' => null,
+                        'reason' => $oldClassroomId ? 'transfer' : 'enrollment',
+                        'notes' => $reason ?? ($oldClassroomId ? 'Transferência de turma' : 'Vinculação à turma'),
+                    ]);
+                }
+                
+                // Atualizar contadores
+                $newClassroom->updateEnrolledCount();
+                if ($oldClassroomId) {
+                    Classroom::find($oldClassroomId)?->updateEnrolledCount();
+                }
+            }
             
             return $enrollment;
         });
+    }
+
+    /**
+     * Troca o aluno de turma (método legado - usa transferStudentToClassroom).
+     * @deprecated Use transferStudentToClassroom() diretamente
+     */
+    public function changeClassroom($enrollmentId, $newClassroomId)
+    {
+        // Usar método centralizado (transferência direta, sem deixar elegível primeiro)
+        return $this->transferStudentToClassroom($enrollmentId, $newClassroomId, false, 'Transferência de turma');
     }
     /**
      * Consulta matrículas por filtros, com paginação.
@@ -216,12 +247,56 @@ class EnrollmentService
 
     /**
      * Atualiza uma matrícula existente.
+     * Se a turma for alterada, atualiza o classroom_id mas NÃO vincula automaticamente.
+     * O aluno ficará como "elegível" na nova turma.
      */
     public function updateEnrollment($id, array $data)
     {
-        $enrollment = Enrollment::findOrFail($id);
-        $enrollment->update($data);
-        return $enrollment;
+        return DB::transaction(function () use ($id, $data) {
+            $enrollment = Enrollment::findOrFail($id);
+            
+            // Se a turma está sendo alterada
+            if (array_key_exists('classroom_id', $data) && $data['classroom_id'] != $enrollment->classroom_id) {
+                $newClassroomId = $data['classroom_id'];
+                $oldClassroomId = $enrollment->classroom_id;
+                
+                // Se havia turma anterior, desvincular primeiro
+                if ($oldClassroomId) {
+                    // Finalizar histórico na turma anterior (se existir)
+                    $previousHistory = \App\Models\EnrollmentClassroomHistory::where('enrollment_id', $enrollment->id)
+                        ->where('classroom_id', $oldClassroomId)
+                        ->whereNull('end_date')
+                        ->first();
+                    
+                    if ($previousHistory) {
+                        $previousHistory->complete(now(), 'Turma alterada via edição de matrícula');
+                    }
+                    
+                    // Atualizar contador da turma anterior
+                    Classroom::find($oldClassroomId)?->updateEnrolledCount();
+                }
+                
+                // Atualizar classroom_id na matrícula
+                // IMPORTANTE: NÃO criar histórico nem atualizar contador da nova turma
+                // O aluno ficará como "elegível" (tem classroom_id mas sem histórico ativo)
+                $enrollment->classroom_id = $newClassroomId;
+                $enrollment->save();
+                
+                Log::info('Classroom changed in enrollment edit', [
+                    'enrollment_id' => $enrollment->id,
+                    'old_classroom_id' => $oldClassroomId,
+                    'new_classroom_id' => $newClassroomId,
+                    'note' => 'Aluno ficou elegível na nova turma. Vinculação deve ser feita via interface de turmas.',
+                ]);
+                
+                // Remover classroom_id do array para não atualizar novamente
+                unset($data['classroom_id']);
+            }
+            
+            // Atualizar os demais campos
+            $enrollment->update($data);
+            return $enrollment->fresh();
+        });
     }
 
     /**
@@ -245,6 +320,13 @@ class EnrollmentService
                 throw new Exception("Aluno já possui matrícula ativa para o ano {$newYear}.");
             }
             
+            // IMPORTANTE: Na renovação, a matrícula pode receber o classroom_id
+            // mas o aluno NÃO será vinculado automaticamente (não cria histórico, não atualiza contador)
+            // O aluno ficará como "elegível" e aparecerá na lista de elegíveis da turma selecionada
+            $classroomId = isset($data['classroom_id']) && !empty($data['classroom_id']) 
+                ? $data['classroom_id'] 
+                : null;
+            
             // 1. Finalizar matrícula anterior (se ainda ativa)
             if ($previousEnrollment->status === 'active') {
                 $previousEnrollment->status = 'completed';
@@ -259,50 +341,43 @@ class EnrollmentService
             }
             
             // 2. Criar nova matrícula para o novo ano
+            // Nota: Cada ano letivo tem sua própria matrícula, não preservamos histórico entre anos
+            // Se classroom_id foi fornecido, salva na matrícula mas NÃO vincula o aluno
             $newEnrollment = Enrollment::create([
                 'student_id'      => $previousEnrollment->student_id,
                 'guardian_id'     => $data['guardian_id'] ?? $previousEnrollment->guardian_id,
-                'classroom_id'    => $data['classroom_id'] ?? null,
+                'classroom_id'    => $classroomId, // Pode receber o ID da turma, mas aluno fica elegível
                 'academic_year'   => $newYear,
                 'status'          => 'active',
                 'process'         => 'renovacao',
                 'enrollment_date' => now(),
-                'notes'           => "Renovação da matrícula #{$previousEnrollmentId} do ano {$previousEnrollment->academic_year}",
+                'notes'           => "Renovação da matrícula #{$previousEnrollmentId} do ano {$previousEnrollment->academic_year}" .
+                                   ($classroomId ? " (Turma pretendida: {$classroomId}, aluno elegível)" : ''),
             ]);
             
-            // 3. Atualizar contador da nova turma (se fornecida)
-            if ($newEnrollment->classroom_id) {
-                Classroom::find($newEnrollment->classroom_id)?->updateEnrolledCount();
-            }
+            // 3. IMPORTANTE: NÃO criar histórico de vinculação nem atualizar contador da turma
+            // O aluno terá o classroom_id na matrícula, mas não estará vinculado
+            // Ele aparecerá como elegível na lista de elegíveis da turma selecionada
+            // A vinculação real deve ser feita via interface de vinculação de turmas
             
             // Log da renovação
-            \Log::info('Enrollment renewed', [
+            Log::info('Enrollment renewed', [
                 'old_enrollment_id' => $previousEnrollmentId,
                 'new_enrollment_id' => $newEnrollment->id,
                 'student_id' => $newEnrollment->student_id,
                 'old_year' => $previousEnrollment->academic_year,
                 'new_year' => $newYear,
+                'classroom_id' => $classroomId,
+                'note' => $classroomId 
+                    ? "Matrícula criada com classroom_id={$classroomId}, mas aluno não vinculado (elegível)" 
+                    : 'Aluno criado como elegível sem turma definida',
             ]);
             
-            // ✅ Gerar mensalidades para a nova matrícula renovada
-            if ($newEnrollment->classroom_id) {
-                try {
-                    $monthlyFeeService = app(MonthlyFeeService::class);
-                    $monthlyFeeService->createMonthlyFee($newEnrollment, [
-                        'academic_year' => $newYear,
-                    ]);
-                    
-                    \Log::info('Monthly fees created for renewed enrollment', [
-                        'enrollment_id' => $newEnrollment->id,
-                    ]);
-                } catch (\Exception $e) {
-                    \Log::error('Error creating monthly fees for renewed enrollment', [
-                        'enrollment_id' => $newEnrollment->id,
-                        'error' => $e->getMessage(),
-                    ]);
-                    // Não falha a renovação se houver erro ao criar mensalidades
-                }
-            }
+            // ✅ Mensalidades NÃO serão geradas automaticamente na renovação
+            // As mensalidades devem ser geradas manualmente pelo usuário após vincular o aluno à turma
+            // Isso evita gerar mensalidades incorretas caso a vinculação/transferência de turma esteja errada
+            // As mensalidades serão geradas apenas quando o aluno for vinculado a uma turma
+            // Isso acontece automaticamente quando o aluno é vinculado via /api/classrooms/{id}/link-enrollment
             
             return $newEnrollment;
         });
