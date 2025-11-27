@@ -293,12 +293,31 @@
             </div>
 
             <!-- Mensagem de erro -->
-              <div v-if="error" class="rounded-md bg-red-50 p-4 border border-red-200">
-              <div class="flex">
-                  <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                  </svg>
-                  <p class="ml-3 text-sm font-medium text-red-800">{{ error }}</p>
+            <div v-if="error" :class="[
+              'rounded-md p-4 border',
+              isConfirmedPaymentsError 
+                ? 'bg-orange-50 border-orange-300' 
+                : 'bg-red-50 border-red-200'
+            ]">
+              <div class="flex items-start">
+                <svg v-if="isConfirmedPaymentsError" class="h-5 w-5 text-orange-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <svg v-else class="h-5 w-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                </svg>
+                <div class="ml-3 flex-1">
+                  <p v-if="isConfirmedPaymentsError" class="text-sm font-semibold text-orange-900 mb-2">
+                    ⚠️ Pagamentos Confirmados Encontrados
+                  </p>
+                  <p :class="[
+                    'text-sm',
+                    isConfirmedPaymentsError ? 'text-orange-800' : 'text-red-800 font-medium'
+                  ]">{{ error }}</p>
+                  <p v-if="isConfirmedPaymentsError" class="text-xs text-orange-700 mt-3 font-medium">
+                    💡 <strong>Ação necessária:</strong> Acesse a página de mensalidades do aluno e reverta os pagamentos confirmados antes de tentar substituir as mensalidades novamente.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -863,6 +882,16 @@ const addValidationWarning = computed(() => {
   return null
 })
 
+// Computed para verificar se o erro é relacionado a pagamentos confirmados
+const isConfirmedPaymentsError = computed(() => {
+  if (!error.value) return false
+  const errorMsg = error.value.toLowerCase()
+  return errorMsg.includes('pagamentos confirmados') || 
+         errorMsg.includes('pagamento confirmado') ||
+         errorMsg.includes('reverta os pagamentos') ||
+         errorMsg.includes('reverter os pagamentos')
+})
+
 onMounted(() => {
   checkExistingMonthlyFees()
   checkExistingForMonth()
@@ -979,21 +1008,36 @@ const confirmGenerate = () => {
     onError: (errors) => {
       console.error('Erro ao gerar mensalidades:', errors)
       
+      let errorMessage = ''
+      
       if (typeof errors === 'string') {
-        error.value = errors
+        errorMessage = errors
       } else if (errors?.message) {
-        error.value = errors.message
+        errorMessage = errors.message
       } else if (errors?.error) {
-        error.value = errors.error
+        errorMessage = errors.error
       } else if (errors?.errors && typeof errors.errors === 'object') {
         const firstError = Object.values(errors.errors)[0]
-        error.value = Array.isArray(firstError) ? firstError[0] : firstError
+        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError
       } else if (Array.isArray(errors) && errors.length > 0) {
-        error.value = errors[0]
+        errorMessage = errors[0]
       } else {
-        error.value = 'Erro ao gerar mensalidades. Verifique se você está autenticado e tente novamente.'
+        errorMessage = 'Erro ao gerar mensalidades. Verifique se você está autenticado e tente novamente.'
       }
       
+      // Verificar se o erro é relacionado a pagamentos confirmados
+      const hasConfirmedPaymentsError = errorMessage.includes('pagamentos confirmados') || 
+                                       errorMessage.includes('pagamento confirmado') ||
+                                       errorMessage.includes('reverta os pagamentos')
+      
+      if (hasConfirmedPaymentsError) {
+        // Exibir alerta destacado para erros de pagamentos confirmados
+        alert('⚠️ ATENÇÃO: Pagamentos Confirmados Encontrados\n\n' + 
+              errorMessage + '\n\n' +
+              'Por favor, acesse a página de mensalidades do aluno e reverta os pagamentos confirmados antes de tentar substituir as mensalidades.')
+      }
+      
+      error.value = errorMessage
       submitting.value = false
     },
     onFinish: () => {

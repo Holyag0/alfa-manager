@@ -164,16 +164,33 @@ const hasOtherPayments = computed(() => {
 const getNewInstallmentStatus = () => {
   if (!props.installment) return 'pendente'
   
+  // Função para parsear data sem problemas de timezone
+  const parseDateLocal = (dateString) => {
+    if (!dateString) return null
+    const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/)
+    if (match) {
+      const year = parseInt(match[1], 10)
+      const month = parseInt(match[2], 10) - 1 // month é 0-indexed
+      const day = parseInt(match[3], 10)
+      return new Date(year, month, day)
+    }
+    return new Date(dateString)
+  }
+  
   const today = new Date()
-  const dueDate = new Date(props.installment.due_date)
+  const dueDate = parseDateLocal(props.installment.due_date)
   today.setHours(0, 0, 0, 0)
-  dueDate.setHours(0, 0, 0, 0)
   
   if (hasOtherPayments.value) {
     return 'pago (existem outros pagamentos confirmados)'
   }
   
-  return today > dueDate ? 'vencida' : 'pendente'
+  if (dueDate) {
+    dueDate.setHours(0, 0, 0, 0)
+    return today > dueDate ? 'vencida' : 'pendente'
+  }
+  
+  return 'pendente'
 }
 
 const handleConfirm = async () => {

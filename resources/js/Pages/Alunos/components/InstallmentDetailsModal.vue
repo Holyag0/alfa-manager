@@ -567,6 +567,20 @@ const getOtherDiscounts = () => {
   return 0
 }
 
+// Função para parsear data sem problemas de timezone
+// Cria Date no timezone local a partir de string "YYYY-MM-DD"
+const parseDateLocal = (dateString) => {
+  if (!dateString) return null
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    const year = parseInt(match[1], 10)
+    const month = parseInt(match[2], 10) - 1 // month é 0-indexed
+    const day = parseInt(match[3], 10)
+    return new Date(year, month, day)
+  }
+  return new Date(dateString)
+}
+
 const getInterestAmount = () => {
   // Se já tem pagamento confirmado, usar o valor do pagamento
   const confirmedPayment = getConfirmedPayment()
@@ -579,8 +593,11 @@ const getInterestAmount = () => {
   // Se não tem pagamento, calcular baseado na data atual vs vencimento
   if (!props.installment?.due_date) return 0
   
-  const dueDate = new Date(props.installment.due_date)
+  const dueDate = parseDateLocal(props.installment.due_date)
   const today = new Date()
+  today.setHours(0, 0, 0, 0) // Normalizar para meia-noite local
+  
+  if (!dueDate) return 0
   
   // Se pagamento antes ou na data de vencimento, sem juros
   if (today <= dueDate) return 0
@@ -606,8 +623,11 @@ const getFineAmount = () => {
   // Se não tem pagamento, calcular baseado na data atual vs vencimento
   if (!props.installment?.due_date) return 0
   
-  const dueDate = new Date(props.installment.due_date)
+  const dueDate = parseDateLocal(props.installment.due_date)
   const today = new Date()
+  today.setHours(0, 0, 0, 0) // Normalizar para meia-noite local
+  
+  if (!dueDate) return 0
   
   // Se pagamento antes ou na data de vencimento, sem multa
   if (today <= dueDate) return 0

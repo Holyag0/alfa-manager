@@ -83,9 +83,38 @@ class MonthlyFeeService
                         'end_month' => $endMonth,
                     ]);
                     
-                    // Deletar apenas parcelas no intervalo selecionado (soft delete)
-                    // IMPORTANTE: Precisamos fazer hard delete para liberar os números de parcela
-                    // para a constraint de unicidade, já que soft delete mantém os registros
+                    // VERIFICAR ANTES: Se há parcelas com pagamentos confirmados no intervalo
+                    // Isso impede a substituição e evita o bug de constraint violation
+                    $installmentsWithConfirmedPayments = $this->checkConfirmedPaymentsInRange(
+                        $existingFee,
+                        $academicYear,
+                        $startMonth,
+                        $endMonth
+                    );
+                    
+                    if (!empty($installmentsWithConfirmedPayments)) {
+                        $monthsList = collect($installmentsWithConfirmedPayments)
+                            ->map(function ($item) {
+                                $monthNum = (int) explode('-', $item['reference_month'])[1];
+                                $monthNames = [
+                                    1 => 'Janeiro', 2 => 'Fevereiro', 3 => 'Março', 4 => 'Abril',
+                                    5 => 'Maio', 6 => 'Junho', 7 => 'Julho', 8 => 'Agosto',
+                                    9 => 'Setembro', 10 => 'Outubro', 11 => 'Novembro', 12 => 'Dezembro'
+                                ];
+                                return $monthNames[$monthNum] ?? "Mês {$monthNum}";
+                            })
+                            ->implode(', ');
+                        
+                        $count = count($installmentsWithConfirmedPayments);
+                        throw new \Exception(
+                            "Não é possível substituir as mensalidades pois existem {$count} mensalidade(s) " .
+                            "com pagamentos confirmados no período selecionado. " .
+                            "Meses afetados: {$monthsList}. " .
+                            "Por favor, reverta os pagamentos confirmados antes de tentar substituir as mensalidades."
+                        );
+                    }
+                    
+                    // Buscar parcelas no intervalo selecionado
                     $installmentsToDelete = $existingFee->installments()
                         ->whereNull('deleted_at')
                         ->get()
@@ -101,23 +130,9 @@ class MonthlyFeeService
                         });
                     
                     // Fazer hard delete para liberar os números de parcela para a constraint
+                    // Como já verificamos acima, não haverá pagamentos confirmados aqui
                     foreach ($installmentsToDelete as $installment) {
-                        // Verificar se tem pagamentos confirmados antes de fazer hard delete
-                        $hasConfirmedPayment = $installment->payments()
-                            ->where('status', 'confirmed')
-                            ->exists();
-                        
-                        if ($hasConfirmedPayment) {
-                            // Se tem pagamento confirmado, fazer soft delete e pular este mês na geração
-                            Log::warning('Mensalidade com pagamento confirmado não pode ser substituída', [
-                                'installment_id' => $installment->id,
-                                'reference_month' => $installment->reference_month,
-                            ]);
-                            $installment->delete(); // Soft delete
-                        } else {
-                            // Sem pagamento confirmado, fazer hard delete para liberar o número
-                            $installment->forceDelete();
-                        }
+                        $installment->forceDelete();
                     }
                     
                     // Não deletar o contrato, apenas as parcelas no intervalo
@@ -239,10 +254,9 @@ class MonthlyFeeService
                     // Há parcelas antes do intervalo, continuar numeração a partir da última antes do intervalo
                     $installmentNumber = $lastInstallmentBeforeRange->installment_number + 1;
                 } else {
-                    // Não há parcelas antes, verificar se há mensalidades deletadas no intervalo
-                    // Se houver, reutilizar os números; se não, começar do 1
-                    // Como fizemos hard delete das mensalidades sem pagamento confirmado,
-                    // vamos verificar se há soft deleted (com pagamento confirmado) no intervalo
+                    // Não há parcelas antes do intervalo
+                    // NOTA: Com a validação preventiva, não deveria haver soft-deleted com pagamentos confirmados,
+                    // mas verificamos para ser defensivo e evitar problemas
                     $firstSoftDeleted = $monthlyFee->installments()
                         ->withTrashed()
                         ->whereNotNull('deleted_at')
@@ -254,10 +268,25 @@ class MonthlyFeeService
                         ->first();
                     
                     if ($firstSoftDeleted) {
-                        // Reutilizar o número da primeira mensalidade soft deleted
-                        $installmentNumber = $firstSoftDeleted->installment_number;
+                        // Se há soft-deleted, verificar se tem pagamento confirmado
+                        $hasConfirmedPayment = $firstSoftDeleted->payments()
+                            ->where('status', 'confirmed')
+                            ->exists();
+                        
+                        if ($hasConfirmedPayment) {
+                            // Se tem pagamento confirmado, não podemos reutilizar o número
+                            // Começar do próximo número disponível (número da soft-deleted + 1)
+                            $installmentNumber = $firstSoftDeleted->installment_number + 1;
+                            Log::warning('Iniciando numeração após soft-deleted com pagamento confirmado para evitar conflito de constraint', [
+                                'soft_deleted_number' => $firstSoftDeleted->installment_number,
+                                'starting_number' => $installmentNumber,
+                            ]);
+                        } else {
+                            // Sem pagamento confirmado, pode reutilizar (mas não deveria acontecer após hard delete)
+                            $installmentNumber = $firstSoftDeleted->installment_number;
+                        }
                     } else {
-                        // Não há mensalidades deletadas, começar do 1
+                        // Não há mensalidades deletadas no intervalo, começar do 1
                         $installmentNumber = 1;
                     }
                 }
@@ -279,7 +308,8 @@ class MonthlyFeeService
                 }
             } else {
                 // Se está substituindo, verificar se há mensalidade deletada (soft delete) para este mês
-                // Se houver e tiver pagamento confirmado, pular este mês
+                // NOTA: Com a validação preventiva em createMonthlyFee(), isso não deveria acontecer,
+                // mas mantemos como código defensivo para casos de borda ou soft-deleted de outras origens
                 $deletedInstallment = $monthlyFee->installments()
                     ->withTrashed()
                     ->where('reference_month', $referenceMonth)
@@ -293,11 +323,14 @@ class MonthlyFeeService
                     
                     if ($hasConfirmedPayment) {
                         // Pular este mês se tem pagamento confirmado
-                        // Não incrementar aqui - o número já está correto para a próxima parcela a ser criada
-                        Log::info('Pulando mês com mensalidade deletada que tem pagamento confirmado', [
+                        // IMPORTANTE: Incrementar o número para evitar conflito com a soft-deleted
+                        // que mantém o número ocupado na constraint única
+                        Log::warning('Pulando mês com mensalidade deletada que tem pagamento confirmado. Incrementando número para evitar conflito.', [
                             'reference_month' => $referenceMonth,
                             'installment_id' => $deletedInstallment->id,
+                            'installment_number' => $installmentNumber,
                         ]);
+                        $installmentNumber++; // Incrementar para evitar violação de constraint
                         continue;
                     }
                 }
@@ -720,6 +753,49 @@ class MonthlyFeeService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Verificar se há parcelas com pagamentos confirmados no intervalo
+     * Retorna array com informações das parcelas que têm pagamentos confirmados
+     */
+    protected function checkConfirmedPaymentsInRange(MonthlyFee $monthlyFee, string|int $academicYear, int $startMonth, int $endMonth): array
+    {
+        $installmentsWithConfirmedPayments = [];
+        
+        // Buscar todas as parcelas do contrato no intervalo selecionado
+        $installments = $monthlyFee->installments()
+            ->whereNull('deleted_at')
+            ->with('payments')
+            ->get()
+            ->filter(function ($installment) use ($academicYear, $startMonth, $endMonth) {
+                $refMonth = $installment->reference_month;
+                if (!$refMonth) return false;
+                
+                // Verificar se o mês da referência está no intervalo
+                $monthStr = explode('-', $refMonth)[1] ?? null;
+                if (!$monthStr) return false;
+                
+                $month = (int) $monthStr;
+                return $month >= $startMonth && $month <= $endMonth;
+            });
+        
+        // Verificar quais têm pagamentos confirmados
+        foreach ($installments as $installment) {
+            $hasConfirmedPayment = $installment->payments()
+                ->where('status', 'confirmed')
+                ->exists();
+            
+            if ($hasConfirmedPayment) {
+                $installmentsWithConfirmedPayments[] = [
+                    'id' => $installment->id,
+                    'reference_month' => $installment->reference_month,
+                    'installment_number' => $installment->installment_number,
+                ];
+            }
+        }
+        
+        return $installmentsWithConfirmedPayments;
     }
 
     /**

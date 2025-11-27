@@ -417,13 +417,27 @@ const isOverdue = (installment) => {
   
   // Se está pendente, verificar se a data de vencimento passou
   if (installment.status === 'pending' && installment.due_date) {
-    const dueDate = new Date(installment.due_date)
+    // Função para parsear data sem problemas de timezone
+    const parseDateLocal = (dateString) => {
+      if (!dateString) return null
+      const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/)
+      if (match) {
+        const year = parseInt(match[1], 10)
+        const month = parseInt(match[2], 10) - 1 // month é 0-indexed
+        const day = parseInt(match[3], 10)
+        return new Date(year, month, day)
+      }
+      return new Date(dateString)
+    }
+    
+    const dueDate = parseDateLocal(installment.due_date)
     const today = new Date()
     // Comparar apenas datas (sem hora)
     today.setHours(0, 0, 0, 0)
-    dueDate.setHours(0, 0, 0, 0)
-    
-    return dueDate < today
+    if (dueDate) {
+      dueDate.setHours(0, 0, 0, 0)
+      return dueDate < today
+    }
   }
   
   return false

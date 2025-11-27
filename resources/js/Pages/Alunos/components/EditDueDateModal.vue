@@ -127,16 +127,30 @@ const hasPayment = computed(() => {
   return props.installment.payments.some(p => p.status === 'confirmed')
 })
 
+// Função para parsear data sem problemas de timezone
+// Parseia string "YYYY-MM-DD" diretamente, sem usar new Date() que interpreta como UTC
+const parseDateOnly = (dateString) => {
+  if (!dateString) return null
+  // Se já está no formato YYYY-MM-DD, retornar diretamente
+  if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString
+  }
+  // Se é uma string de data completa, extrair apenas a parte da data
+  const match = dateString.match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`
+  }
+  return null
+}
+
 watch(() => props.show, (newValue) => {
   if (newValue && props.installment?.due_date) {
     // Formatar data para input type="date" (YYYY-MM-DD)
-    // Usar método que não sofre com timezone
-    const date = new Date(props.installment.due_date)
-    // Ajustar para timezone local para evitar problemas de conversão
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    dueDate.value = `${year}-${month}-${day}`
+    // Usar método que não sofre com timezone - parsear diretamente da string
+    const parsedDate = parseDateOnly(props.installment.due_date)
+    if (parsedDate) {
+      dueDate.value = parsedDate
+    }
   }
 })
 
