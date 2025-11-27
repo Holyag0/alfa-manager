@@ -274,8 +274,7 @@ class MonthlyFeeService
                     ->first();
                 
                 if ($existingInstallment) {
-                    // Incrementar número da parcela mesmo ao pular, para manter sequência
-                    $installmentNumber++;
+                    // Não incrementar aqui - o número já está correto para a próxima parcela a ser criada
                     continue; // Pular este mês, já tem parcela
                 }
             } else {
@@ -294,8 +293,7 @@ class MonthlyFeeService
                     
                     if ($hasConfirmedPayment) {
                         // Pular este mês se tem pagamento confirmado
-                        // Incrementar número da parcela mesmo ao pular, para manter sequência
-                        $installmentNumber++;
+                        // Não incrementar aqui - o número já está correto para a próxima parcela a ser criada
                         Log::info('Pulando mês com mensalidade deletada que tem pagamento confirmado', [
                             'reference_month' => $referenceMonth,
                             'installment_id' => $deletedInstallment->id,

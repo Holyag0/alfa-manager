@@ -388,10 +388,12 @@ class MonthlyFeePaymentService
                                 $oldValue = (float) $oldValue;
                             }
                             
-                            // Para datas, comparar como strings formatadas
+                            // Para datas, normalizar ambas através do Carbon para garantir formato consistente
+                            // Isso evita falsos positivos quando $newValue vem como string '2024-01-15'
+                            // e $oldValue é um Carbon/DateTime que seria formatado como '2024-01-15 00:00:00'
                             if (in_array($field, ['payment_date']) && $newValue && $oldValue) {
-                                $newValue = is_string($newValue) ? $newValue : Carbon::parse($newValue)->format('Y-m-d H:i:s');
-                                $oldValue = $oldValue instanceof \DateTime ? $oldValue->format('Y-m-d H:i:s') : (string) $oldValue;
+                                $newValue = Carbon::parse($newValue)->format('Y-m-d H:i:s');
+                                $oldValue = Carbon::parse($oldValue)->format('Y-m-d H:i:s');
                             }
                             
                             if ($newValue !== $oldValue) {
