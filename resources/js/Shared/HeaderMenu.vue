@@ -111,6 +111,51 @@
                     </transition>
                 </Popover>
                 
+                <!-- Módulo Financeiro -->
+                <Popover>
+                    <PopoverButton class="flex items-center gap-x-1 text-sm/6 font-semibold text-gray-100
+                    transition ease-in-out delay-150 hover:text-sky-800 hover:translate-y-1 hover:scale-110 ">
+                        Financeiro
+                        <ChevronDownIcon class="size-5 flex-none text-white " aria-hidden="true" />
+                    </PopoverButton>
+
+                    <transition enter-active-class="transition ease-out duration-200"
+                        enter-from-class="opacity-0 -translate-y-1" enter-to-class="opacity-100 translate-y-0"
+                        leave-active-class="transition ease-in duration-150"
+                        leave-from-class="opacity-100 translate-y-0" leave-to-class="opacity-0 -translate-y-1">
+                        <PopoverPanel class="absolute inset-x-0 top-0 -z-10 bg-sky-800 pt-14 shadow-lg rounded-md">
+                            <div class="mx-auto grid max-w-7xl grid-cols-4 gap-x-4 px-6 py-10 lg:px-8 xl:gap-x-8">
+                                <div v-for="item in financialItems" :key="item.name"
+                                    class="group relative rounded-lg p-6 text-sm/6 hover:bg-white/5">
+                                    <div
+                                        class="flex size-11 items-center justify-center rounded-lg bg-gray-50 group-hover:bg-white/5">
+                                        <component :is="item.icon"
+                                            class="size-6 text-gray-600 group-hover:text-green-500"
+                                            aria-hidden="true" />
+                                    </div>
+                                    <Link :href="item.href" class="mt-6 block font-semibold text-white">
+                                    {{ item.name }}
+                                    <span class="absolute inset-0" />
+                                    </Link>
+                                    <p class="mt-1 text-gray-100">{{ item.description }}</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/5 ">
+                                <div class="mx-auto max-w-7xl px-6 lg:px-8">
+                                    <div class="grid grid-cols-3 divide-x divide-gray-900/5 ">
+                                        <a v-for="item in financialActions" :key="item.name" :href="item.href"
+                                            class="flex items-center justify-center gap-x-2.5 p-3 text-sm/6 font-semibold text-gray-100 hover:bg-white/5">
+                                            <component :is="item.icon" class="size-5 flex-none text-gray-400"
+                                                aria-hidden="true" />
+                                            {{ item.name }}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </PopoverPanel>
+                    </transition>
+                </Popover>
+                
                 <a href="#" class="text-sm/6 font-semibold text-gray-100">Company</a>
             </PopoverGroup>
             <div class="lg:flex lg:flex-1 lg:justify-end">
@@ -167,39 +212,70 @@
     <DisclosurePanel class="border-b border-gray-700 md:hidden">
         <div class="space-y-1 px-2 py-3 sm:px-3">
             <!-- Menu Cadastro Mobile -->
-            <DisclosureButton class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
-                Cadastro
-            </DisclosureButton>
-            <div class="ml-4 space-y-1">
-                <Link :href="route('user.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Usuários
-                </Link>
-                <Link :href="route('roles.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Cargos
-                </Link>
-                <Link :href="route('permissions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Permissões
-                </Link>
-            </div>
+            <Disclosure v-slot="{ open }">
+                <DisclosureButton class="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <span>Cadastro</span>
+                    <ChevronDownIcon :class="[open ? 'rotate-180' : '', 'h-5 w-5 transition-transform']" />
+                </DisclosureButton>
+                <DisclosurePanel class="ml-4 space-y-1 mt-1">
+                    <Link :href="route('user.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Usuários
+                    </Link>
+                    <Link :href="route('roles.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Cargos
+                    </Link>
+                    <Link :href="route('permissions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Permissões
+                    </Link>
+                </DisclosurePanel>
+            </Disclosure>
             
             <!-- Menu Comercial Mobile -->
-            <DisclosureButton class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
-                Comercial
-            </DisclosureButton>
-            <div class="ml-4 space-y-1">
-                <Link :href="route('services.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Serviços
-                </Link>
-                <Link :href="route('packages.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Pacotes
-                </Link>
-                <Link :href="route('services.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Novo Serviço
-                </Link>
-                <Link :href="route('packages.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
-                    Novo Pacote
-                </Link>
-            </div>
+            <Disclosure v-slot="{ open }">
+                <DisclosureButton class="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <span>Comercial</span>
+                    <ChevronDownIcon :class="[open ? 'rotate-180' : '', 'h-5 w-5 transition-transform']" />
+                </DisclosureButton>
+                <DisclosurePanel class="ml-4 space-y-1 mt-1">
+                    <Link :href="route('services.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Serviços
+                    </Link>
+                    <Link :href="route('packages.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Pacotes
+                    </Link>
+                    <Link :href="route('services.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Novo Serviço
+                    </Link>
+                    <Link :href="route('packages.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Novo Pacote
+                    </Link>
+                </DisclosurePanel>
+            </Disclosure>
+            
+            <!-- Menu Financeiro Mobile -->
+            <Disclosure v-slot="{ open }">
+                <DisclosureButton class="flex w-full items-center justify-between rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                    <span>Financeiro</span>
+                    <ChevronDownIcon :class="[open ? 'rotate-180' : '', 'h-5 w-5 transition-transform']" />
+                </DisclosureButton>
+                <DisclosurePanel class="ml-4 space-y-1 mt-1">
+                    <Link :href="route('financial.transactions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Transações
+                    </Link>
+                    <Link :href="route('financial.report')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Relatórios
+                    </Link>
+                    <Link :href="route('financial.categories.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Categorias
+                    </Link>
+                    <Link :href="route('financial.suppliers.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Fornecedores/Pagantes
+                    </Link>
+                    <Link :href="route('financial.transactions.create')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Nova Transação
+                    </Link>
+                </DisclosurePanel>
+            </Disclosure>
             
             <!-- Outros Links Mobile -->
             <Link :href="route('matriculas.index')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
@@ -345,6 +421,39 @@ const comercialActions = [
     { name: 'Novo Pacote', href: route('packages.create'), icon: CubeIcon },
     { name: 'Nova Categoria', href: route('categories.create'), icon: TagIcon },
     { name: 'Ver Todos', href: route('services.index'), icon: ShoppingCartIcon },
+]
+
+const financialItems = [
+    {
+        name: 'Transações',
+        description: 'Gerencie receitas e despesas, visualize histórico de transações.',
+        href: route('financial.transactions.index'),
+        icon: CurrencyDollarIcon,
+    },
+    {
+        name: 'Relatórios',
+        description: 'Acompanhe o fluxo de caixa, balanços e indicadores financeiros.',
+        href: route('financial.report'),
+        icon: ChartBarIcon,
+    },
+    {
+        name: 'Categorias',
+        description: 'Organize suas receitas e despesas por categorias.',
+        href: route('financial.categories.index'),
+        icon: TagIcon,
+    },
+    {
+        name: 'Fornecedores/Pagantes',
+        description: 'Gerencie fornecedores e pagantes para suas transações.',
+        href: route('financial.suppliers.index'),
+        icon: CursorArrowRaysIcon,
+    },
+]
+
+const financialActions = [
+    { name: 'Nova Transação', href: route('financial.transactions.create'), icon: CurrencyDollarIcon },
+    { name: 'Gerenciar Categorias', href: route('financial.categories.index'), icon: TagIcon },
+    { name: 'Fornecedores/Pagantes', href: route('financial.suppliers.index'), icon: CursorArrowRaysIcon },
 ]
 
 const mobileMenuOpen = ref(false)

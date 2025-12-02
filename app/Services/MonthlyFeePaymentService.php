@@ -17,7 +17,7 @@ class MonthlyFeePaymentService
     public function processPayment(MonthlyFeeInstallment $installment, array $data): MonthlyFeePayment
     {
         try {
-            return DB::transaction(function () use ($installment, $data) {
+            $payment = DB::transaction(function () use ($installment, $data) {
                 // Validar se parcela está disponível para pagamento
                 if (!$installment->canBePaid()) {
                     $statusMessages = [
@@ -93,7 +93,35 @@ class MonthlyFeePaymentService
                 ]);
 
                 return $payment;
-            });
+            }); // Fim da transação - pagamento salvo
+            
+            // Registrar receita na contabilidade (fora da transação principal)
+            // Se falhar aqui, o pagamento já foi confirmado e não será revertido
+            if ($payment->status === 'confirmed') {
+                try {
+                    $financialService = app(\App\Services\FinancialService::class);
+                    $financialTransaction = $financialService->registerMonthlyFeeRevenue($payment);
+                    
+                    if ($financialTransaction) {
+                        Log::info("Receita registrada na contabilidade", [
+                            'payment_id' => $payment->id,
+                            'financial_transaction_id' => $financialTransaction->id,
+                            'transaction_number' => $financialTransaction->transaction_number,
+                            'amount' => $financialTransaction->amount,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log do erro mas não falha o pagamento
+                    Log::error("Erro ao registrar receita na contabilidade (pagamento já confirmado)", [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Não lança exceção - pagamento já foi confirmado com sucesso
+                }
+            }
+            
+            return $payment;
         } catch (\Exception $e) {
             Log::error("Erro ao processar pagamento de mensalidade", [
                 'installment_id' => $installment->id,
@@ -159,12 +187,15 @@ class MonthlyFeePaymentService
     public function confirmPayment(MonthlyFeePayment $payment): bool
     {
         try {
-            return DB::transaction(function () use ($payment) {
+            // Flag para rastrear se o pagamento foi RECÉM confirmado
+            $wasNewlyConfirmed = false;
+            
+            $result = DB::transaction(function () use ($payment, &$wasNewlyConfirmed) {
                 if ($payment->status === 'confirmed') {
                     Log::warning("Tentativa de confirmar pagamento já confirmado", [
                         'payment_id' => $payment->id,
                     ]);
-                    return true;
+                    return true; // Já confirmado, não faz nada
                 }
 
                 if ($payment->status === 'cancelled' || $payment->status === 'refunded') {
@@ -188,8 +219,37 @@ class MonthlyFeePaymentService
                     'installment_id' => $installment->id,
                 ]);
 
+                $wasNewlyConfirmed = true; // Marca que foi recém confirmado
                 return true;
             });
+            
+            // Registrar receita na contabilidade APENAS se foi RECÉM confirmado
+            // Evita registrar duplicatas se confirmPayment() for chamado múltiplas vezes
+            if ($result && $wasNewlyConfirmed) {
+                try {
+                    $financialService = app(\App\Services\FinancialService::class);
+                    $financialTransaction = $financialService->registerMonthlyFeeRevenue($payment->fresh());
+                    
+                    if ($financialTransaction) {
+                        Log::info("Receita registrada na contabilidade após confirmação", [
+                            'payment_id' => $payment->id,
+                            'financial_transaction_id' => $financialTransaction->id,
+                            'transaction_number' => $financialTransaction->transaction_number,
+                            'amount' => $financialTransaction->amount,
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    // Log do erro mas não falha a confirmação do pagamento
+                    Log::error("Erro ao registrar receita na contabilidade (pagamento já confirmado)", [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    // Não afeta o retorno - pagamento foi confirmado com sucesso
+                }
+            }
+            
+            return $result;
         } catch (\Exception $e) {
             Log::error("Erro ao confirmar pagamento", [
                 'payment_id' => $payment->id,
