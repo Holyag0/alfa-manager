@@ -104,7 +104,7 @@ class EnrollmentFinanceService
      */
     public function registerPayment(Enrollment $enrollment, array $data)
     {
-        return DB::transaction(function () use ($enrollment, $data) {
+        $payment = DB::transaction(function () use ($enrollment, $data) {
             // Calcular valor original (base do serviço sem juros/desconto)
             // Se o amount é o valor final pago, então: original = amount - juros + desconto
             $originalAmount = $data['amount'] - ($data['interest_amount'] ?? 0) + ($data['discount_amount'] ?? 0);
@@ -132,12 +132,40 @@ class EnrollmentFinanceService
                 if ($payment->invoice) {
                     $payment->invoice->markAsPaid($payment->payment_date);
                 }
-
-                // Não é mais necessário atualizar registro financeiro
             }
 
             return $payment;
         });
+        
+        // Registrar receita na contabilidade (fora da transação principal)
+        // Se falhar aqui, o pagamento já foi registrado e não será revertido
+        if ($payment->status === 'confirmed') {
+            try {
+                $financialService = app(\App\Services\FinancialService::class);
+                $financialTransaction = $financialService->registerEnrollmentRevenue($payment);
+                
+                if ($financialTransaction) {
+                    Log::info("Receita de matrícula registrada na contabilidade", [
+                        'payment_id' => $payment->id,
+                        'enrollment_id' => $enrollment->id,
+                        'financial_transaction_id' => $financialTransaction->id,
+                        'transaction_number' => $financialTransaction->transaction_number,
+                        'amount' => $financialTransaction->amount,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                // Log do erro mas não falha o registro do pagamento
+                Log::error("Erro ao registrar receita na contabilidade (pagamento já registrado)", [
+                    'payment_id' => $payment->id,
+                    'enrollment_id' => $enrollment->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+                // Não lança exceção - pagamento já foi registrado com sucesso
+            }
+        }
+        
+        return $payment;
     }
 
     /**

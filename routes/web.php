@@ -116,4 +116,37 @@ Route::middleware([
                 Route::get('categories/list', 'getCategories')->name('categories.list');
             });
     });
+    
+    // Rotas de Finanças
+    Route::prefix('financial')->name('financial.')->group(function () {
+        // Transações
+        Route::get('/transactions', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'index'])->name('transactions.index');
+        Route::get('/transactions/create', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'create'])->name('transactions.create');
+        Route::post('/transactions', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'store'])->name('transactions.store');
+        Route::get('/transactions/{id}/details', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'details'])->name('transactions.details');
+        Route::get('/transactions/{id}/edit', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'edit'])->name('transactions.edit');
+        Route::put('/transactions/{id}', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'update'])->name('transactions.update');
+        Route::patch('/transactions/{id}/status', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'updateStatus'])->name('transactions.updateStatus');
+        Route::get('/transactions/{id}', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'show'])->name('transactions.show');
+        Route::post('/transactions/{id}/cancel', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'cancel'])->name('transactions.cancel');
+        
+        // Relatório
+        Route::get('/report', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'report'])->name('report');
+        
+        // Categorias
+        Route::get('/categories', [App\Http\Controllers\Financial\FinancialCategoryController::class, 'index'])->name('categories.index');
+        Route::post('/categories', [App\Http\Controllers\Financial\FinancialCategoryController::class, 'store'])->name('categories.store');
+        Route::put('/categories/{id}', [App\Http\Controllers\Financial\FinancialCategoryController::class, 'update'])->name('categories.update');
+        Route::delete('/categories/{id}', [App\Http\Controllers\Financial\FinancialCategoryController::class, 'destroy'])->name('categories.destroy');
+        
+        // Fornecedores/Pagadores
+        Route::get('/suppliers', [App\Http\Controllers\Financial\SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('/suppliers/create', [App\Http\Controllers\Financial\SupplierController::class, 'create'])->name('suppliers.create');
+        Route::post('/suppliers', [App\Http\Controllers\Financial\SupplierController::class, 'store'])->name('suppliers.store');
+        Route::get('/suppliers/{id}', [App\Http\Controllers\Financial\SupplierController::class, 'show'])->name('suppliers.show');
+        Route::get('/suppliers/{id}/edit', [App\Http\Controllers\Financial\SupplierController::class, 'edit'])->name('suppliers.edit');
+        Route::put('/suppliers/{id}', [App\Http\Controllers\Financial\SupplierController::class, 'update'])->name('suppliers.update');
+        Route::delete('/suppliers/{id}', [App\Http\Controllers\Financial\SupplierController::class, 'destroy'])->name('suppliers.destroy');
+        Route::get('/suppliers-api', [App\Http\Controllers\Financial\SupplierController::class, 'api'])->name('suppliers.api');
+    });
 });
