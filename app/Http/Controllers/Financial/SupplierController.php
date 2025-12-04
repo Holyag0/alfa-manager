@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Financial;
 
 use App\Http\Controllers\Controller;
-use App\Models\Supplier;
+use App\Services\SupplierService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
@@ -11,65 +11,25 @@ use Illuminate\Validation\Rule;
 
 class SupplierController extends Controller
 {
+    protected SupplierService $supplierService;
+
+    public function __construct(SupplierService $supplierService)
+    {
+        $this->supplierService = $supplierService;
+    }
+
     /**
      * Listar fornecedores/pagantes
      */
     public function index(Request $request)
     {
         try {
-            $query = Supplier::query();
-
-            // Filtros
-            if ($request->filled('is_pagante')) {
-                $query->where('is_pagante', $request->is_pagante === 'true');
-            }
-            if ($request->filled('is_fornecedor')) {
-                $query->where('is_fornecedor', $request->is_fornecedor === 'true');
-            }
-
-            if ($request->filled('active')) {
-                $query->where('active', $request->active === 'true');
-            }
-
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('document', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%');
-                });
-            }
-
-            // Ordenação - Whitelist de colunas permitidas para prevenir SQL injection
-            $allowedSortColumns = [
-                'id',
-                'name',
-                'document',
-                'email',
-                'phone',
-                'is_pagante',
-                'is_fornecedor',
-                'active',
-                'created_at',
-                'updated_at',
-            ];
-            $sortBy = $request->get('sort_by', 'name');
-            $sortBy = in_array($sortBy, $allowedSortColumns) ? $sortBy : 'name';
-            
-            $allowedSortOrders = ['asc', 'desc'];
-            $sortOrder = $request->get('sort_order', 'asc');
-            $sortOrder = in_array(strtolower($sortOrder), $allowedSortOrders) ? strtolower($sortOrder) : 'asc';
-            
-            $query->orderBy($sortBy, $sortOrder);
-
-            // Paginação - Validar e limitar per_page para prevenir DoS
-            $perPage = $request->get('per_page', 15);
-            $perPage = max(1, min(100, (int) $perPage)); // Limitar entre 1 e 100
-            $suppliers = $query->paginate($perPage);
+            $filters = $request->only(['is_pagante', 'is_fornecedor', 'active', 'search', 'sort_by', 'sort_order']);
+            $suppliers = $this->supplierService->search($filters, 15);
 
             return Inertia::render('Financial/Suppliers/Index', [
                 'suppliers' => $suppliers,
-                'filters' => $request->only(['is_pagante', 'is_fornecedor', 'active', 'search']),
+                'filters' => $filters,
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao listar fornecedores/pagantes: ' . $e->getMessage());
@@ -91,16 +51,7 @@ class SupplierController extends Controller
     public function store(Request $request)
     {
         try {
-            // Converter valores booleanos antes da validação
-            $data = $request->all();
-            $data['is_pagante'] = filter_var($data['is_pagante'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $data['is_fornecedor'] = filter_var($data['is_fornecedor'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $data['active'] = isset($data['active']) ? filter_var($data['active'], FILTER_VALIDATE_BOOLEAN) : true;
-
-            // Criar uma nova request com os valores convertidos
-            $request->merge($data);
-
-            // Preparar regras de validação
+            // Validação de dados
             $rules = [
                 'is_pagante' => 'required|boolean',
                 'is_fornecedor' => 'required|boolean',
@@ -125,23 +76,19 @@ class SupplierController extends Controller
 
             $validated = $request->validate($rules);
 
-            // Validar que pelo menos um tipo deve ser selecionado
-            if (!$validated['is_pagante'] && !$validated['is_fornecedor']) {
-                return redirect()->back()
-                    ->withErrors(['is_pagante' => 'Selecione pelo menos um tipo (Pagante ou Fornecedor).'])
-                    ->withInput();
-            }
-
-            $supplier = Supplier::create($validated);
+            // Criar usando o service (lógica de negócio está no service)
+            $supplier = $this->supplierService->create($validated);
 
             return redirect()->route('financial.suppliers.index')
                 ->with('success', 'Fornecedor/Pagante registrado com sucesso!');
         } catch (\Illuminate\Validation\ValidationException $e) {
+            
             Log::error('Erro de validação ao criar fornecedor/pagante: ' . $e->getMessage());
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
+
             Log::error('Erro ao criar fornecedor/pagante: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             return redirect()->back()
@@ -156,16 +103,31 @@ class SupplierController extends Controller
     public function show($id)
     {
         try {
-            $supplier = Supplier::withCount([
-                'transactionsAsPayer',
-                'transactionsAsPayee'
-            ])->findOrFail($id);
+            // Verificar se é requisição Inertia (redirecionamento após update/create)
+            $isInertiaRequest = request()->header('X-Inertia') || request()->header('X-Inertia-Version');
+            
+            // Se for requisição AJAX explícita (fetch do JavaScript) e NÃO for Inertia, retornar JSON
+            if ((request()->wantsJson() || request()->ajax()) && !$isInertiaRequest) {
+                $supplier = $this->supplierService->findWithTransactionCounts($id);
+                return response()->json([
+                    'supplier' => $supplier
+                ]);
+            }
 
+            // Sempre retornar resposta Inertia para requisições normais ou Inertia
+            $supplier = $this->supplierService->findWithTransactionCounts($id);
             return Inertia::render('Financial/Suppliers/Show', [
                 'supplier' => $supplier,
             ]);
         } catch (\Exception $e) {
             Log::error('Erro ao exibir fornecedor/pagante: ' . $e->getMessage());
+            
+            $isInertiaRequest = request()->header('X-Inertia') || request()->header('X-Inertia-Version');
+            
+            if ((request()->wantsJson() || request()->ajax()) && !$isInertiaRequest) {
+                return response()->json(['error' => 'Fornecedor/Pagante não encontrado.'], 404);
+            }
+            
             return redirect()->back()->with('error', 'Fornecedor/Pagante não encontrado.');
         }
     }
@@ -176,7 +138,11 @@ class SupplierController extends Controller
     public function edit($id)
     {
         try {
-            $supplier = Supplier::findOrFail($id);
+            $supplier = $this->supplierService->find($id);
+            
+            if (!$supplier) {
+                return redirect()->back()->with('error', 'Fornecedor/Pagante não encontrado.');
+            }
 
             return Inertia::render('Financial/Suppliers/Edit', [
                 'supplier' => $supplier,
@@ -193,17 +159,7 @@ class SupplierController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $supplier = Supplier::findOrFail($id);
-
-            // Converter valores booleanos antes da validação
-            $data = $request->all();
-            $data['is_pagante'] = filter_var($data['is_pagante'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $data['is_fornecedor'] = filter_var($data['is_fornecedor'] ?? false, FILTER_VALIDATE_BOOLEAN);
-            $data['active'] = isset($data['active']) ? filter_var($data['active'], FILTER_VALIDATE_BOOLEAN) : true;
-
-            // Criar uma nova request com os valores convertidos
-            $request->merge($data);
-
+            // Validação de dados
             $rules = [
                 'is_pagante' => 'required|boolean',
                 'is_fornecedor' => 'required|boolean',
@@ -228,23 +184,19 @@ class SupplierController extends Controller
 
             $validated = $request->validate($rules);
 
-            // Validar que pelo menos um tipo deve ser selecionado
-            if (!$validated['is_pagante'] && !$validated['is_fornecedor']) {
-                return redirect()->back()
-                    ->withErrors(['is_pagante' => 'Selecione pelo menos um tipo (Pagante ou Fornecedor).'])
-                    ->withInput();
-            }
-
-            $supplier->update($validated);
+            // Atualizar usando o service (lógica de negócio está no service)
+            $this->supplierService->update($id, $validated);
 
             return redirect()->route('financial.suppliers.show', $id)
                 ->with('success', 'Fornecedor/Pagante atualizado com sucesso!');
         } catch (\Illuminate\Validation\ValidationException $e) {
+
             Log::error('Erro de validação ao atualizar fornecedor/pagante: ' . $e->getMessage());
             return redirect()->back()
                 ->withErrors($e->errors())
                 ->withInput();
         } catch (\Exception $e) {
+
             Log::error('Erro ao atualizar fornecedor/pagante: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
             return redirect()->back()
@@ -259,23 +211,20 @@ class SupplierController extends Controller
     public function destroy($id)
     {
         try {
-            $supplier = Supplier::findOrFail($id);
-
-            // Verificar se há transações vinculadas
-            $hasTransactions = $supplier->transactionsAsPayer()->exists() 
-                || $supplier->transactionsAsPayee()->exists();
-
-            if ($hasTransactions) {
-                return redirect()->back()
-                    ->with('error', 'Não é possível excluir fornecedor/pagante com transações vinculadas.');
-            }
-
-            $supplier->delete();
+            // Excluir usando o service (lógica de negócio está no service)
+            $this->supplierService->delete($id);
 
             return redirect()->route('financial.suppliers.index')
                 ->with('success', 'Fornecedor/Pagante removido com sucesso!');
         } catch (\Exception $e) {
             Log::error('Erro ao remover fornecedor/pagante: ' . $e->getMessage());
+            
+            // Se for erro de regra de negócio, retornar mensagem específica
+            if (str_contains($e->getMessage(), 'transações vinculadas')) {
+                return redirect()->back()
+                    ->with('error', 'Não é possível excluir fornecedor/pagante com transações vinculadas.');
+            }
+            
             return redirect()->back()->with('error', 'Erro ao remover fornecedor/pagante.');
         }
     }
@@ -286,27 +235,12 @@ class SupplierController extends Controller
     public function api(Request $request)
     {
         try {
-            $query = Supplier::active();
-
-            if ($request->filled('is_pagante')) {
-                $query->where('is_pagante', $request->is_pagante === 'true');
-            }
-            if ($request->filled('is_fornecedor')) {
-                $query->where('is_fornecedor', $request->is_fornecedor === 'true');
-            }
-
-            if ($request->filled('search')) {
-                $search = $request->search;
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', '%' . $search . '%')
-                      ->orWhere('document', 'like', '%' . $search . '%');
-                });
-            }
-
-            $suppliers = $query->orderBy('name')->get(['id', 'is_pagante', 'is_fornecedor', 'name', 'document']);
+            $filters = $request->only(['is_pagante', 'is_fornecedor', 'search']);
+            $suppliers = $this->supplierService->listActive($filters);
 
             return response()->json($suppliers);
         } catch (\Exception $e) {
+
             Log::error('Erro ao buscar fornecedores/pagantes via API: ' . $e->getMessage());
             return response()->json(['error' => 'Erro ao buscar fornecedores/pagantes'], 500);
         }

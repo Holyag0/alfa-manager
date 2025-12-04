@@ -99,10 +99,8 @@ class FinancialTransactionController extends Controller
             
             $query->orderBy($sortBy, $sortOrder);
 
-            // Paginação - Validar e limitar per_page para prevenir DoS
-            $perPage = $request->get('per_page', 15);
-            $perPage = max(1, min(100, (int) $perPage)); // Limitar entre 1 e 100
-            $transactions = $query->paginate($perPage);
+            // Paginação - Usar valor padrão fixo e seguro
+            $transactions = $query->paginate(15);
 
             $categories = FinancialCategory::active()->orderBy('name')->get();
 
@@ -161,9 +159,12 @@ class FinancialTransactionController extends Controller
                 $transaction = $this->financialService->registerExpense($validated);
             } else {
                 // Receitas manuais também podem ser registradas
-                $transaction = DB::transaction(function () use ($this, $validated) {
+                // Armazenar referência do serviço para usar na closure
+                $financialService = $this->financialService;
+                
+                $transaction = DB::transaction(function () use ($validated, $financialService) {
                     return FinancialTransaction::create([
-                        'transaction_number' => $this->financialService->generateTransactionNumber('REC'),
+                        'transaction_number' => $financialService->generateTransactionNumber('REC'),
                         'type' => 'receita',
                         'category_id' => $validated['category_id'],
                         'description' => $validated['description'],
@@ -385,6 +386,40 @@ class FinancialTransactionController extends Controller
             Log::error('Erro ao cancelar transação financeira: ' . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'Erro ao cancelar transação.');
+        }
+    }
+
+    /**
+     * Excluir transação cancelada
+     */
+    public function destroy($id)
+    {
+        try {
+            $transaction = FinancialTransaction::findOrFail($id);
+            
+            $this->financialService->deleteTransaction($transaction);
+
+            // Verificar se é requisição AJAX/Inertia
+            if (request()->wantsJson() || request()->ajax() || request()->header('X-Inertia')) {
+                return response()->json([
+                    'message' => 'Transação excluída com sucesso!'
+                ], 200);
+            }
+
+            return redirect()->route('financial.transactions.index')
+                ->with('success', 'Transação excluída com sucesso!');
+        } catch (\Exception $e) {
+            Log::error('Erro ao excluir transação financeira: ' . $e->getMessage());
+            
+            // Verificar se é requisição AJAX/Inertia
+            if (request()->wantsJson() || request()->ajax() || request()->header('X-Inertia')) {
+                return response()->json([
+                    'error' => $e->getMessage()
+                ], 422);
+            }
+
+            return redirect()->back()
+                ->with('error', $e->getMessage());
         }
     }
 

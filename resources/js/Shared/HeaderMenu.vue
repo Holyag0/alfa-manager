@@ -420,7 +420,6 @@ const comercialActions = [
     { name: 'Novo Serviço', href: route('services.create'), icon: CogIcon },
     { name: 'Novo Pacote', href: route('packages.create'), icon: CubeIcon },
     { name: 'Nova Categoria', href: route('categories.create'), icon: TagIcon },
-    { name: 'Ver Todos', href: route('services.index'), icon: ShoppingCartIcon },
 ]
 
 const financialItems = [

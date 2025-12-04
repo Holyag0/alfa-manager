@@ -44,8 +44,11 @@ class FinancialService
             
             // Buscar responsável que pagou
             $guardian = $payment->guardian;
+            
+            // Armazenar referência do serviço para usar na closure
+            $service = $this;
 
-            return DB::transaction(function () use ($this, $payment, $category, $student, $installment, $guardian) {
+            return DB::transaction(function () use ($service, $payment, $category, $student, $installment, $guardian) {
                 // Verificar duplicatas dentro da transação com lock para prevenir race condition
                 $existingTransaction = FinancialTransaction::where('source_type', MonthlyFeePayment::class)
                     ->where('source_id', $payment->id)
@@ -64,7 +67,7 @@ class FinancialService
                 $month = $installment?->reference_month ?? 'N/A';
                 
                 $transaction = FinancialTransaction::create([
-                    'transaction_number' => $this->generateTransactionNumber('REC'),
+                    'transaction_number' => $service->generateTransactionNumber('REC'),
                     'type' => 'receita',
                     'category_id' => $category->id,
                     'source_type' => MonthlyFeePayment::class,
@@ -140,8 +143,11 @@ class FinancialService
             
             // Buscar responsável que pagou (se disponível)
             $guardian = $payment->paidByGuardian ?? $enrollment?->student?->guardians?->first();
+            
+            // Armazenar referência do serviço para usar na closure
+            $service = $this;
 
-            return DB::transaction(function () use ($this, $payment, $category, $student, $guardian) {
+            return DB::transaction(function () use ($service, $payment, $category, $student, $guardian) {
                 // Verificar duplicatas dentro da transação para prevenir race condition
                 $existingTransaction = FinancialTransaction::where('source_type', EnrollmentPayment::class)
                     ->where('source_id', $payment->id)
@@ -156,7 +162,7 @@ class FinancialService
                     return $existingTransaction;
                 }
                 $transaction = FinancialTransaction::create([
-                    'transaction_number' => $this->generateTransactionNumber('REC'),
+                    'transaction_number' => $service->generateTransactionNumber('REC'),
                     'type' => 'receita',
                     'category_id' => $category->id,
                     'source_type' => EnrollmentPayment::class,
@@ -198,9 +204,12 @@ class FinancialService
     public function registerExpense(array $data): FinancialTransaction
     {
         try {
-            return DB::transaction(function () use ($this, $data) {
+            // Armazenar referência do serviço para usar na closure
+            $service = $this;
+            
+            return DB::transaction(function () use ($service, $data) {
                 $transaction = FinancialTransaction::create([
-                    'transaction_number' => $this->generateTransactionNumber('DESP'),
+                    'transaction_number' => $service->generateTransactionNumber('DESP'),
                     'type' => 'despesa',
                     'category_id' => $data['category_id'],
                     'description' => $data['description'],
@@ -259,6 +268,53 @@ class FinancialService
                 'error' => $e->getMessage(),
             ]);
             return false;
+        }
+    }
+
+    /**
+     * Excluir transação cancelada
+     * Apenas transações canceladas e não rastreadas podem ser excluídas
+     */
+    public function deleteTransaction(FinancialTransaction $transaction): bool
+    {
+        try {
+            // Verificar se a transação está cancelada
+            if ($transaction->status !== 'cancelled') {
+                throw new \Exception('Apenas transações canceladas podem ser excluídas.');
+            }
+
+            // Verificar se é uma transação rastreada (não pode ser excluída)
+            if ($transaction->source_type) {
+                throw new \Exception('Transações rastreadas automaticamente não podem ser excluídas.');
+            }
+
+            return DB::transaction(function () use ($transaction) {
+                // Excluir anexos relacionados e arquivos físicos se existirem
+                foreach ($transaction->attachments as $attachment) {
+                    // Excluir arquivo físico do storage
+                    if ($attachment->file_path && \Illuminate\Support\Facades\Storage::exists($attachment->file_path)) {
+                        \Illuminate\Support\Facades\Storage::delete($attachment->file_path);
+                    }
+                    // Excluir registro do banco
+                    $attachment->delete();
+                }
+
+                // Excluir a transação (soft delete)
+                $transaction->delete();
+
+                Log::info("Transação financeira excluída", [
+                    'transaction_id' => $transaction->id,
+                    'transaction_number' => $transaction->transaction_number,
+                ]);
+
+                return true;
+            });
+        } catch (\Exception $e) {
+            Log::error("Erro ao excluir transação financeira", [
+                'transaction_id' => $transaction->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
     }
 

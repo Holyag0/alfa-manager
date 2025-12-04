@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="lg:flex lg:items-center lg:justify-between mb-6">
         <div class="min-w-0 flex-1">
-          <h2 class="text-2xl font-bold text-gray-900 sm:text-3xl">
+          <h2 class="text-2xl font-bold text-sky-700 sm:text-3xl">
             Fornecedores e Pagantes
           </h2>
           <p class="mt-1 text-sm text-gray-500">
@@ -94,13 +94,15 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ações
-                </th>
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-for="supplier in suppliers.data" :key="supplier.id" class="hover:bg-gray-50">
+              <tr 
+                v-for="supplier in suppliers.data" 
+                :key="supplier.id" 
+                @click="openModal(supplier)"
+                class="hover:bg-gray-50 cursor-pointer transition-transform duration-200 hover:scale-105"
+              >
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span :class="[
                     'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -135,23 +137,9 @@
                     {{ supplier.active ? 'Ativo' : 'Inativo' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <Link :href="route('financial.suppliers.show', supplier.id)"
-                        class="text-indigo-600 hover:text-indigo-900 mr-4">
-                    Ver
-                  </Link>
-                  <Link :href="route('financial.suppliers.edit', supplier.id)"
-                        class="text-indigo-600 hover:text-indigo-900 mr-4">
-                    Editar
-                  </Link>
-                  <button @click="deleteSupplier(supplier)"
-                          class="text-red-600 hover:text-red-900">
-                    Excluir
-                  </button>
-                </td>
               </tr>
               <tr v-if="suppliers.data.length === 0">
-                <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
                   Nenhum fornecedor/pagante encontrado
                 </td>
               </tr>
@@ -202,12 +190,22 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de Detalhes -->
+    <SupplierDetailsModal
+      v-if="selectedSupplier"
+      :show="showModal"
+      :supplier="selectedSupplier"
+      @close="closeModal"
+      @delete="handleDelete"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Link, router } from '@inertiajs/vue3'
+import SupplierDetailsModal from './components/SupplierDetailsModal.vue'
 
 const props = defineProps({
   suppliers: Object,
@@ -220,6 +218,10 @@ const filters = ref({
 })
 
 const filterType = ref('')
+
+// Estado do modal
+const showModal = ref(false)
+const selectedSupplier = ref(null)
 
 const applyTypeFilter = () => {
   if (filterType.value === 'pagante') {
@@ -254,11 +256,43 @@ const clearFilters = () => {
   applyFilters()
 }
 
-const deleteSupplier = (supplier) => {
+const openModal = async (supplier) => {
+  // Buscar detalhes completos do fornecedor
+  try {
+    const response = await fetch(route('financial.suppliers.show', supplier.id), {
+      headers: {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      selectedSupplier.value = data.supplier || supplier
+      showModal.value = true
+    } else {
+      // Se não conseguir buscar detalhes, usar os dados básicos
+      selectedSupplier.value = supplier
+      showModal.value = true
+    }
+  } catch (error) {
+    // Em caso de erro, usar os dados básicos
+    selectedSupplier.value = supplier
+    showModal.value = true
+  }
+}
+
+const closeModal = () => {
+  showModal.value = false
+  selectedSupplier.value = null
+}
+
+const handleDelete = (supplier) => {
   if (confirm(`Tem certeza que deseja excluir "${supplier.name}"?`)) {
     router.delete(route('financial.suppliers.destroy', supplier.id), {
       preserveScroll: true,
       onSuccess: () => {
+        closeModal()
         alert('Fornecedor/Pagante excluído com sucesso!')
       },
       onError: () => {

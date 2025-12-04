@@ -129,6 +129,7 @@ Route::middleware([
         Route::patch('/transactions/{id}/status', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'updateStatus'])->name('transactions.updateStatus');
         Route::get('/transactions/{id}', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'show'])->name('transactions.show');
         Route::post('/transactions/{id}/cancel', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'cancel'])->name('transactions.cancel');
+        Route::delete('/transactions/{id}', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'destroy'])->name('transactions.destroy');
         
         // Relatório
         Route::get('/report', [App\Http\Controllers\Financial\FinancialTransactionController::class, 'report'])->name('report');

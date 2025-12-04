@@ -8,6 +8,7 @@ use App\Models\EnrollmentPayment;
 use App\Models\Service;
 use App\Models\Package;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Exception;
 
 class EnrollmentFinanceService
@@ -105,14 +106,15 @@ class EnrollmentFinanceService
     public function registerPayment(Enrollment $enrollment, array $data)
     {
         $payment = DB::transaction(function () use ($enrollment, $data) {
-            // Calcular valor original (base do serviço sem juros/desconto)
+            // Usar original_amount fornecido ou calcular (base do serviço sem juros/desconto)
             // Se o amount é o valor final pago, então: original = amount - juros + desconto
-            $originalAmount = $data['amount'] - ($data['interest_amount'] ?? 0) + ($data['discount_amount'] ?? 0);
+            $originalAmount = $data['original_amount'] ?? ($data['amount'] - ($data['interest_amount'] ?? 0) + ($data['discount_amount'] ?? 0));
             
             // Criar pagamento
             $payment = EnrollmentPayment::create([
                 'enrollment_id' => $enrollment->id,
                 'invoice_id' => $data['invoice_id'] ?? null,
+                'paid_by_guardian_id' => $data['paid_by_guardian_id'] ?? null,
                 'payment_number' => EnrollmentPayment::generatePaymentNumber(),
                 'type' => $data['type'] ?? 'other',
                 'description' => $data['description'],

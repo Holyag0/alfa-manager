@@ -122,4 +122,51 @@ class Supplier extends Model
     {
         return $this->is_pagante && $this->is_fornecedor;
     }
+
+    /**
+     * Aplicar ordenação com validação de colunas permitidas
+     */
+    public function applySorting($query, string $sortBy, string $sortOrder = 'asc')
+    {
+        $allowedSortColumns = [
+            'id',
+            'name',
+            'document',
+            'email',
+            'phone',
+            'is_pagante',
+            'is_fornecedor',
+            'active',
+            'created_at',
+            'updated_at',
+        ];
+        
+        $sortBy = in_array($sortBy, $allowedSortColumns) ? $sortBy : 'name';
+        
+        $allowedSortOrders = ['asc', 'desc'];
+        $sortOrder = in_array(strtolower($sortOrder), $allowedSortOrders) ? strtolower($sortOrder) : 'asc';
+        
+        return $query->orderBy($sortBy, $sortOrder);
+    }
+
+    /**
+     * Verifica se o fornecedor/pagante possui transações vinculadas
+     */
+    public function hasTransactions(): bool
+    {
+        return $this->transactionsAsPayer()->exists() 
+            || $this->transactionsAsPayee()->exists();
+    }
+
+    /**
+     * Scope para buscar por texto (nome, documento, email)
+     */
+    public function scopeSearch($query, string $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', '%' . $search . '%')
+              ->orWhere('document', 'like', '%' . $search . '%')
+              ->orWhere('email', 'like', '%' . $search . '%');
+        });
+    }
 }

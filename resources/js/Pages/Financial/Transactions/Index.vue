@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="lg:flex lg:items-center lg:justify-between">
         <div class="min-w-0 flex-1">
-          <h2 class="text-2xl/7 font-bold text-gray-100 sm:truncate sm:text-3xl sm:tracking-tight">
+          <h2 class="text-2xl/7 font-bold text-sky-700 sm:truncate sm:text-3xl sm:tracking-tight">
             Transações Financeiras
           </h2>
           <div class="mt-1 flex flex-col sm:mt-0 sm:flex-row sm:flex-wrap sm:space-x-6">
@@ -261,6 +261,7 @@
       :loading="isLoadingDetails"
       @close="closeModal"
       @status-updated="handleStatusUpdated"
+      @deleted="handleTransactionDeleted"
     />
   </div>
 </template>
@@ -361,6 +362,19 @@ const handleStatusUpdated = (updatedTransaction) => {
     props.transactions.data[index].status = updatedTransaction.status
     props.transactions.data[index].status_label = updatedTransaction.status_label
   }
+}
+
+const handleTransactionDeleted = (transactionId) => {
+  // Remover a transação da lista
+  const index = props.transactions.data.findIndex(t => t.id === transactionId)
+  if (index !== -1) {
+    props.transactions.data.splice(index, 1)
+    // Atualizar total
+    props.transactions.total = Math.max(0, props.transactions.total - 1)
+  }
+  
+  // Recarregar a lista para garantir sincronização
+  router.reload({ only: ['transactions'] })
 }
 
 const formatDate = (dateString) => {

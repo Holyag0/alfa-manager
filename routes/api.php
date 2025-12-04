@@ -135,11 +135,26 @@ Route::get('enrollments/{enrollment}/services', function ($enrollment) {
         ->where('type', 'service')
         ->get()
         ->map(function ($invoice) {
+            // Extrair nome do serviço da descrição (formato: "Nome do Serviço - Descrição")
+            $description = $invoice->description ?? '';
+            $serviceName = $description;
+            $serviceDescription = $invoice->notes ?? '';
+            
+            // Se a descrição contém " - ", separar nome e descrição
+            if (strpos($description, ' - ') !== false) {
+                $parts = explode(' - ', $description, 2);
+                $serviceName = trim($parts[0]);
+                if (empty($serviceDescription)) {
+                    $serviceDescription = trim($parts[1] ?? '');
+                }
+            }
+            
             return [
                 'id' => $invoice->id, // ID da fatura
                 'invoice_number' => $invoice->invoice_number,
-                'name' => $invoice->description, // Nome vem da descrição da fatura
-                'description' => $invoice->notes ?? 'Serviço adicional',
+                'name' => $serviceName, // Nome do serviço extraído
+                'description' => $serviceDescription ?: 'Serviço adicional',
+                'full_description' => $description, // Descrição completa original
                 'amount' => $invoice->amount, // Valor original da fatura
                 'formatted_amount' => $invoice->formatted_amount,
                 'status' => $invoice->status,
