@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
             UsersTableSeeder::class,
             ComercialSeeder::class,
             PromotionTestSeeder::class,
-            SiblingTestSeeder::class
+            SiblingTestSeeder::class,
+            PositionSeeder::class,
+            EmployeeSeeder::class,
         ]);
         //criando um user isolado  para teste
         User::factory()->withPersonalTeam()->create([

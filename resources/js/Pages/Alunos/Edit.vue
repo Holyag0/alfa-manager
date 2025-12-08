@@ -315,8 +315,17 @@ const updateStudent = () => {
   processing.value = true
   errors.value = {}
 
+  // Preparar dados do formulário
+  const formData = { ...form }
+  
+  // Se não houver nova foto selecionada e não for para deletar, remover o campo photo
+  // para não sobrescrever a foto existente
+  if (!formData.photo || formData.photo === null) {
+    delete formData.photo
+  }
+
   router.post(route('students.update', props.student.id), {
-    ...form,
+    ...formData,
     _method: 'PATCH'
   }, {
     forceFormData: true, // Força uso de FormData para upload

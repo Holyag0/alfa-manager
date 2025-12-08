@@ -46,6 +46,25 @@ Route::middleware([
             Route::get('{category}/toggle-status', 'toggleStatus')->name('toggle-status');
         });
     
+    // Rotas CRUD de Cargos e Colaboradores
+    Route::prefix('cadastros')->name('cadastros.')->group(function () {
+        // Cargos - Rotas específicas ANTES do resource para evitar conflito
+        Route::prefix('positions')->name('positions.')->controller(App\Http\Controllers\Cadastros\PositionController::class)
+            ->group(function () {
+                Route::get('api', 'api')->name('api');
+                Route::get('{position}/toggle-status', 'toggleStatus')->name('toggle-status');
+            });
+        Route::resource('positions', App\Http\Controllers\Cadastros\PositionController::class);
+        
+        // Colaboradores - Rotas específicas ANTES do resource para evitar conflito
+        Route::prefix('employees')->name('employees.')->controller(App\Http\Controllers\Cadastros\EmployeeController::class)
+            ->group(function () {
+                Route::get('api', 'api')->name('api');
+                Route::get('{employee}/toggle-status', 'toggleStatus')->name('toggle-status');
+            });
+        Route::resource('employees', App\Http\Controllers\Cadastros\EmployeeController::class);
+    });
+    
     //rotas adicionais 
     Route::prefix('usuario')->controller(App\Http\Controllers\Cadastros\UserController::class)
         ->group(function () {

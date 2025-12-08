@@ -227,6 +227,12 @@
                     <Link :href="route('permissions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
                         Permissões
                     </Link>
+                    <Link :href="route('cadastros.positions.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Cargos de Colaboradores
+                    </Link>
+                    <Link :href="route('cadastros.employees.index')" class="block rounded-md px-3 py-2 text-sm font-medium text-gray-400 hover:bg-gray-700 hover:text-white">
+                        Colaboradores
+                    </Link>
                 </DisclosurePanel>
             </Disclosure>
             
@@ -380,6 +386,18 @@ const products = [
         description: 'Permita,crie e edite o que cada usuário pode fazer no sistema',
         href: route('permissions.index'),
         icon: SquaresPlusIcon,
+    },
+    {
+        name: 'Cargos de Colaboradores',
+        description: 'Gerencie os cargos dos colaboradores da instituição',
+        href: route('cadastros.positions.index'),
+        icon: FingerPrintIcon,
+    },
+    {
+        name: 'Colaboradores',
+        description: 'Cadastre e gerencie os colaboradores da instituição',
+        href: route('cadastros.employees.index'),
+        icon: CursorArrowRaysIcon,
     },
     
 ]
