@@ -156,6 +156,12 @@
                     </transition>
                 </Popover>
                 
+                <!-- Módulo Folha de Pagamento -->
+                <Link :href="route('payroll.index')" class="text-sm/6 font-semibold text-gray-100
+                    transition ease-in-out delay-150 hover:text-sky-800 hover:translate-y-1 hover:scale-110">
+                    Folha de Pagamento
+                </Link>
+                
                 <a href="#" class="text-sm/6 font-semibold text-gray-100">Company</a>
             </PopoverGroup>
             <div class="lg:flex lg:flex-1 lg:justify-end">
@@ -286,6 +292,9 @@
             <!-- Outros Links Mobile -->
             <Link :href="route('matriculas.index')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
                 Matrículas
+            </Link>
+            <Link :href="route('payroll.index')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                Folha de Pagamento
             </Link>
         </div>
         <div class="border-t border-gray-700 pb-3 pt-4">

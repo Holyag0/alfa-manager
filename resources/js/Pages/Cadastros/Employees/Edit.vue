@@ -218,9 +218,15 @@ const form = useForm({
 })
 
 const submit = () => {
-  form.put(route('cadastros.employees.update', props.employee.id), {
-    forceFormData: true
-  })
+  // Usamos POST com spoofing de método para evitar perda de campos ao enviar FormData com PUT
+  form
+    .transform((data) => ({
+      ...data,
+      _method: 'put'
+    }))
+    .post(route('cadastros.employees.update', props.employee.id), {
+      forceFormData: true
+    })
 }
 </script>
 

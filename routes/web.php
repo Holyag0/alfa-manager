@@ -169,4 +169,28 @@ Route::middleware([
         Route::delete('/suppliers/{id}', [App\Http\Controllers\Financial\SupplierController::class, 'destroy'])->name('suppliers.destroy');
         Route::get('/suppliers-api', [App\Http\Controllers\Financial\SupplierController::class, 'api'])->name('suppliers.api');
     });
+    
+    // Rotas de Folha de Pagamento
+    Route::prefix('payroll')->name('payroll.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Payroll\PayrollController::class, 'index'])->name('index');
+        Route::post('/generate', [App\Http\Controllers\Payroll\PayrollController::class, 'generate'])->name('generate');
+        Route::post('/create', [App\Http\Controllers\Payroll\PayrollController::class, 'store'])->name('store');
+        
+        // Rotas específicas (devem vir antes das rotas genéricas {id})
+        Route::post('/update-all', [App\Http\Controllers\Payroll\PayrollController::class, 'updateAll'])->name('update-all');
+        Route::delete('/delete-all-draft', [App\Http\Controllers\Payroll\PayrollController::class, 'deleteAllDraft'])->name('delete-all-draft');
+        
+        // Rotas de lançamentos (devem vir antes das rotas genéricas {id})
+        Route::get('/{payrollId}/entries/{employeeId}', [App\Http\Controllers\Payroll\PayrollController::class, 'getEntry'])->name('entry.show');
+        Route::post('/{payrollId}/entries/{employeeId}', [App\Http\Controllers\Payroll\PayrollController::class, 'storeEntry'])->name('entry.store');
+        Route::put('/{payrollId}/entries/{entryId}', [App\Http\Controllers\Payroll\PayrollController::class, 'updateEntry'])->name('entry.update');
+        Route::post('/{payrollId}/entries/{entryId}/mark-paid', [App\Http\Controllers\Payroll\PayrollController::class, 'markPaid'])->name('entry.mark-paid');
+        
+        // Rotas genéricas (devem vir depois das rotas específicas)
+        Route::get('/{id}', [App\Http\Controllers\Payroll\PayrollController::class, 'show'])->name('show');
+        Route::put('/{id}', [App\Http\Controllers\Payroll\PayrollController::class, 'update'])->name('update');
+        Route::delete('/{id}', [App\Http\Controllers\Payroll\PayrollController::class, 'destroy'])->name('destroy');
+        Route::post('/{id}/close', [App\Http\Controllers\Payroll\PayrollController::class, 'close'])->name('close');
+        Route::post('/{id}/reopen', [App\Http\Controllers\Payroll\PayrollController::class, 'reopen'])->name('reopen');
+    });
 });
