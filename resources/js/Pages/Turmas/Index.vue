@@ -232,7 +232,7 @@
                   <MenuItems class="absolute right-0 z-10 mt-0.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg outline-1 outline-gray-900/5">
                     <MenuItem v-slot="{ active }">
                       <button @click="viewClassroomDetails(classroom)" :class="[active ? 'bg-gray-50 outline-hidden' : '', 'block px-3 py-1 text-sm/6 text-gray-900 w-full text-left']">
-                        Ver<span class="sr-only">, {{ classroom.name }}</span>
+                        Ver alunos<span class="sr-only">, {{ classroom.name }}</span>
                       </button>
                     </MenuItem>
                     <MenuItem v-slot="{ active }">
@@ -381,10 +381,9 @@ const getOccupationColor = (percentage) => {
   return 'bg-green-500'
 }
 
-// Ver detalhes da turma
+// Ver alunos da turma
 const viewClassroomDetails = (classroom) => {
-  // TODO: Implementar modal ou página de detalhes
-  console.log('Ver detalhes da turma:', classroom)
+  router.get(route('turmas.alunos', classroom.id))
 }
 
 // Editar turma

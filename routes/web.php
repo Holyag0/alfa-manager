@@ -13,21 +13,27 @@ Route::get('/', function () {
     ]);
 });
 
-// Rota para gestão de turmas
-Route::get('/turmas', function () {
-    return Inertia::render('Turmas/Index');
-})->name('turmas.index');
-
-Route::get('/turmas/{classroom}/edit', function ($classroom) {
-    return Inertia::render('Turmas/Edit', [
-        'classroomId' => (int) $classroom,
-    ]);
-})->name('turmas.edit');
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {
+    // Rota para gestão de turmas
+    Route::get('/turmas', function () {
+        return Inertia::render('Turmas/Index');
+    })->name('turmas.index');
+
+    Route::get('/turmas/{classroom}/edit', function ($classroom) {
+        return Inertia::render('Turmas/Edit', [
+            'classroomId' => (int) $classroom,
+        ]);
+    })->name('turmas.edit');
+
+    Route::get('/turmas/{classroom}/alunos', function ($classroom) {
+        return Inertia::render('Turmas/Alunos', [
+            'classroomId' => (int) $classroom,
+        ]);
+    })->name('turmas.alunos');
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');

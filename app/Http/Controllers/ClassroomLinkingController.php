@@ -14,7 +14,7 @@ class ClassroomLinkingController extends Controller
 {
     public function linked(Classroom $classroom)
     {
-        $enrollments = Enrollment::with(['student'])
+        $enrollments = Enrollment::with(['student', 'guardian'])
             ->where('classroom_id', $classroom->id)
             ->where('process', 'completa')
             ->where('status', 'active')
