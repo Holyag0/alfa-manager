@@ -100,10 +100,31 @@ class Enrollment extends Model
 
     /**
      * Verificar se a matrícula pode ser vinculada à turma
+     * 
+     * REGRA: Aluno só pode ser vinculado à turma se o ano letivo da matrícula
+     * corresponder ao ano letivo da turma
      */
-    public function canBeLinkedToClassroom()
+    public function canBeLinkedToClassroom($classroom = null)
     {
-        return $this->isFullyEnrolled();
+        // Verificar se está completamente matriculado
+        if (!$this->isFullyEnrolled()) {
+            return false;
+        }
+
+        // Se uma turma foi fornecida, validar ano letivo
+        if ($classroom) {
+            // Se a turma tem ano letivo (year) definido, deve corresponder ao da matrícula
+            if ($classroom->year && $this->academic_year) {
+                return $classroom->year == $this->academic_year;
+            }
+            
+            // Se a turma não tem ano letivo, permitir (compatibilidade com dados antigos)
+            if (!$classroom->year) {
+                return true;
+            }
+        }
+
+        return true;
     }
 
     /**

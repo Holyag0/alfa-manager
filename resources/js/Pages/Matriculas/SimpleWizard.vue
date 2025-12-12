@@ -144,10 +144,13 @@ const formData = reactive({
   classroom: null
 });
 
+const currentYear = new Date().getFullYear()
+
 const enrollmentForm = useForm({
   student_id: null,
   guardian_id: null,
   classroom_id: null,
+  academic_year: currentYear.toString(), // Ano letivo padrão: ano atual
   status: 'active',
   process: 'completa',
   enrollment_date: new Date().toISOString().split('T')[0],

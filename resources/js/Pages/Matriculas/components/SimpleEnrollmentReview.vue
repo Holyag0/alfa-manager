@@ -106,6 +106,23 @@
           </div>
         </div>
 
+        <!-- Ano Letivo -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Ano Letivo *
+            <span class="text-xs text-gray-500 font-normal ml-1">(O aluno só poderá ser vinculado a turmas do mesmo ano letivo)</span>
+          </label>
+          <input 
+            type="number" 
+            v-model="enrollmentConfig.academic_year" 
+            :min="2000"
+            :max="new Date().getFullYear() + 5"
+            class="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            required
+            placeholder="Ex: 2024"
+          />
+        </div>
+
         <!-- Data da Matrícula -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Data da Matrícula</label>
@@ -117,7 +134,7 @@
         </div>
 
         <!-- Observações -->
-        <div>
+        <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-2">Observações</label>
           <textarea 
             v-model="enrollmentConfig.notes" 
@@ -176,9 +193,12 @@ const emit = defineEmits(['submit', 'error']);
 
 const submitting = ref(false);
 
+const currentYear = new Date().getFullYear()
+
 const enrollmentConfig = reactive({
   status: 'active',
   process: 'completa',
+  academic_year: currentYear.toString(), // Ano letivo padrão: ano atual
   enrollment_date: new Date().toISOString().split('T')[0],
   notes: ''
 });

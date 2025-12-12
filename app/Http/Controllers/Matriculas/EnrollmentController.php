@@ -30,7 +30,7 @@ class EnrollmentController extends Controller
 
     public function index(Request $request)
     {
-        $filters = $request->only(['student', 'student_id', 'guardian_id', 'classroom_id', 'status']);
+        $filters = $request->only(['student', 'student_id', 'guardian_id', 'classroom_id', 'status', 'process', 'academic_year']);
         $perPage = $request->input('per_page', 10);
         $paginated = $this->service->searchEnrollments($filters, $perPage);
         $classrooms = Classroom::all();

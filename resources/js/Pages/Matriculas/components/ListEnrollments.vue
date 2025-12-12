@@ -1,13 +1,18 @@
 <template>
   <ul role="list" class="divide-y divide-gray-100">
-    <li v-for="enrollment in enrollments" :key="enrollment.id" class="flex justify-between gap-x-6 py-5">
+    <li 
+      v-for="enrollment in enrollments" 
+      :key="enrollment.id" 
+      @click="openPhotoModal(enrollment.student, enrollment)"
+      class="flex justify-between gap-x-6 py-5 cursor-pointer transition-transform duration-200 hover:scale-105 hover:bg-gray-50 rounded-lg px-2 -mx-2"
+    >
       <div class="flex min-w-0 gap-x-4">
         <div>
           <template v-if="enrollment.student?.photo">
-            <img :src="`/storage/${enrollment.student.photo}`" alt="Foto do aluno" class="size-12 rounded-full object-cover border border-gray-200 cursor-pointer transition hover:ring-2 hover:ring-blue-400" @click="openPhotoModal(enrollment.student, enrollment)" />
+            <img :src="`/storage/${enrollment.student.photo}`" alt="Foto do aluno" class="size-12 rounded-full object-cover border border-gray-200" />
           </template>
           <template v-else>
-            <div class="size-12 flex-none rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-700 cursor-pointer transition hover:ring-2 hover:ring-blue-400" @click="openPhotoModal(enrollment.student, enrollment)">
+            <div class="size-12 flex-none rounded-full bg-blue-100 flex items-center justify-center text-xl font-bold text-blue-700">
               {{ enrollment.student?.name?.charAt(0) || '?' }}
             </div>
           </template>
@@ -16,7 +21,7 @@
           <p class="text-sm font-semibold text-gray-900">{{ enrollment.student?.name }}</p>
           <p class="text-xs text-gray-500">Responsável: {{ enrollment.guardian?.name }}</p>
           <p class="text-xs text-gray-500">Turma: {{ enrollment.classroom?.name }}</p>
-          <p class="text-xs text-gray-500">Data: {{ enrollment.enrollment_date }}</p>
+          <p class="text-xs text-gray-500">Ano Letivo: {{ enrollment.academic_year || 'N/A' }}</p>
         </div>
       </div>
       <div class="flex items-center gap-x-4">
@@ -26,26 +31,6 @@
             {{ processLabel(enrollment.process) }}
           </span>
         </div>
-        <Menu as="div" class="relative ">
-          <MenuButton class="relative block text-gray-500 hover:text-gray-900">
-            <span class="absolute -inset-2.5" />
-            <span class="sr-only">Abrir opções</span>
-            <EllipsisVerticalIcon class="size-5" aria-hidden="true" />
-          </MenuButton>
-          <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
-            <MenuItems class="absolute right-0 mt-2 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
-              <MenuItem v-slot="{ active }">
-                <a :href="route('matriculas.edit', enrollment.id)" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-gray-900']">Editar</a>
-              </MenuItem>
-              <MenuItem v-slot="{ active }">
-                <button @click.prevent="$emit('cancel', enrollment)" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-red-600 w-full text-left']">Cancelar</button>
-              </MenuItem>
-              <MenuItem v-slot="{ active }">
-                <button @click.prevent="$emit('change-classroom', enrollment)" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm text-yellow-600 w-full text-left']">Trocar Turma</button>
-              </MenuItem>
-            </MenuItems>
-          </transition>
-        </Menu>
       </div>
     </li>
     <li v-if="!enrollments.length" class="text-center py-4 text-gray-400">Nenhuma matrícula encontrada.</li>
@@ -84,6 +69,19 @@
               <div v-if="selectedStudent?.birth_certificate_number" class="text-sm text-gray-500">Certidão: {{ selectedStudent.birth_certificate_number }}</div>
               <div v-if="selectedStudent?.notes" class="text-sm text-gray-500">Notas: {{ selectedStudent.notes }}</div>
             </div>
+          </div>
+
+          <!-- Botão de Editar -->
+          <div class="border-t border-gray-200 pt-4 mb-6">
+            <a 
+              :href="route('matriculas.edit', selectedEnrollment?.id)"
+              class="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            >
+              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+              Editar Matrícula
+            </a>
           </div>
 
           <!-- Informações Financeiras -->
@@ -164,9 +162,8 @@
 </template>
 
 <script setup>
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue';
-import { EllipsisVerticalIcon } from '@heroicons/vue/20/solid';
 import { ref, computed } from 'vue';
+import { route } from 'ziggy-js';
 
 const props = defineProps({
   enrollments: {

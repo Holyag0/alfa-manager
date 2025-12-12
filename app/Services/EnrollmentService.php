@@ -133,7 +133,8 @@ class EnrollmentService
             $enrollment = Enrollment::lockForUpdate()->findOrFail($enrollmentId);
             
             // Validar se matrícula pode ser vinculada/transferida
-            if (!$enrollment->canBeLinkedToClassroom()) {
+            // Nota: Validação completa será feita quando a turma for definida
+            if (!$enrollment->isFullyEnrolled()) {
                 throw new Exception('A matrícula não está completa/ativa para transferência.');
             }
             
@@ -172,8 +173,21 @@ class EnrollmentService
                 // Validar capacidade e duplicidade
                 $newClassroom = Classroom::lockForUpdate()->findOrFail($newClassroomId);
                 
+                // Validar capacidade e duplicidade
                 if (!$newClassroom->canEnrollStudent($enrollment->student_id)) {
                     throw new Exception('No vacancies available in the new classroom or student already enrolled.');
+                }
+                
+                // REGRA: Validar se a matrícula pode ser vinculada à turma (inclui validação de ano letivo)
+                if (!$enrollment->canBeLinkedToClassroom($newClassroom)) {
+                    $enrollmentYear = $enrollment->academic_year ?? 'não definido';
+                    $classroomYear = $newClassroom->year ?? 'não definido';
+                    
+                    throw new Exception(
+                        "Não é possível vincular o aluno à turma. " .
+                        "O ano letivo da matrícula ({$enrollmentYear}) não corresponde ao ano letivo da turma ({$classroomYear}). " .
+                        "Alunos só podem ser vinculados a turmas do mesmo ano letivo."
+                    );
                 }
                 
                 // Se havia turma anterior (e não foi desvinculado), finalizar histórico
@@ -255,6 +269,9 @@ class EnrollmentService
         }
         if (!empty($filters['process'])) {
             $query->where('process', $filters['process']);
+        }
+        if (!empty($filters['academic_year'])) {
+            $query->where('academic_year', $filters['academic_year']);
         }
         
         // Ordenar por ID desc (mais recentes primeiro)

@@ -30,18 +30,25 @@
           />
         </div>
 
-        <!-- Ano -->
+        <!-- Ano Letivo -->
         <div>
           <label for="year" class="block text-sm font-medium text-gray-700 mb-1">
-            Ano <span class="text-red-500">*</span>
+            Ano Letivo <span class="text-red-500">*</span>
+            <span class="text-xs text-gray-500 font-normal ml-1">(Ex: 2024)</span>
           </label>
           <input
             id="year"
             v-model="form.year"
-            type="text"
+            type="number"
+            :min="2000"
+            :max="new Date().getFullYear() + 5"
             required
             class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Ex: 2024"
           />
+          <p class="mt-1 text-xs text-gray-500">
+            Alunos só podem ser vinculados a turmas do mesmo ano letivo
+          </p>
         </div>
 
         <!-- Turno -->
@@ -134,9 +141,11 @@ const props = defineProps({
 
 const emit = defineEmits(['submit', 'cancel'])
 
+const currentYear = new Date().getFullYear()
+
 const form = ref({
   name: '',
-  year: '',
+  year: currentYear.toString(), // Ano letivo padrão: ano atual
   shift: 'Manhã',
   max_students: 30,
   is_active: true
@@ -147,7 +156,7 @@ watch(() => props.classroom, (newClassroom) => {
   if (newClassroom) {
     form.value = {
       name: newClassroom.name || '',
-      year: newClassroom.year || '',
+      year: newClassroom.year || currentYear.toString(),
       shift: newClassroom.shift || 'Manhã',
       max_students: newClassroom.max_students || 30,
       is_active: Boolean(newClassroom.is_active === true || newClassroom.is_active === 1 || newClassroom.is_active === '1')

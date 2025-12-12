@@ -24,7 +24,7 @@ class EnrollmentWizardRequest extends FormRequest
             'student_id' => 'required|exists:students,id',
             'guardian_id' => 'required|exists:guardians,id',
             'classroom_id' => 'nullable|exists:classrooms,id',
-            'academic_year' => 'nullable|integer|min:2000|max:' . (now()->year + 5),
+            'academic_year' => 'required|integer|min:2000|max:' . (now()->year + 5),
             'status' => 'required|in:active,pending,cancelled,inactive,completed',
             'process' => 'required|in:reserva,aguardando_pagamento,aguardando_documentos,desistencia,transferencia,renovacao,completa',
             'enrollment_date' => 'required|date|before_or_equal:today',
@@ -94,6 +94,20 @@ class EnrollmentWizardRequest extends FormRequest
                 
                 if ($exists) {
                     $validator->errors()->add('student_id', 'Este aluno já está matriculado nesta turma.');
+                }
+            }
+
+            // REGRA: Validar se o ano letivo da matrícula corresponde ao ano letivo da turma
+            if ($this->classroom_id && $this->academic_year) {
+                $classroom = \App\Models\Classroom::find($this->classroom_id);
+                if ($classroom && $classroom->year) {
+                    if ($classroom->year != $this->academic_year) {
+                        $validator->errors()->add(
+                            'academic_year',
+                            "O ano letivo da matrícula ({$this->academic_year}) não corresponde ao ano letivo da turma ({$classroom->year}). " .
+                            "Alunos só podem ser vinculados a turmas do mesmo ano letivo."
+                        );
+                    }
                 }
             }
         });

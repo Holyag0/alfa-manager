@@ -154,6 +154,34 @@
             </div>
           </div>
 
+          <!-- Ano Letivo -->
+          <div>
+            <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              Ano Letivo *
+            </label>
+            <input 
+              type="number" 
+              v-model="form.academic_year" 
+              :min="2000"
+              :max="new Date().getFullYear() + 5"
+              :class="[
+                'w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 transition-colors duration-200',
+                form.errors.academic_year ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-purple-500'
+              ]"
+              required
+              placeholder="Ex: 2024"
+            />
+            <p class="mt-1 text-xs text-gray-500">
+              O aluno só poderá ser vinculado a turmas do mesmo ano letivo
+            </p>
+            <div v-if="form.errors.academic_year" class="mt-1 text-sm text-red-600">
+              {{ form.errors.academic_year }}
+            </div>
+          </div>
+
           <!-- Data da Matrícula -->
           <div>
             <label class="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -222,11 +250,14 @@ const emit = defineEmits(['finish', 'back']);
 
 const classrooms = ref([]);
 
+const currentYear = new Date().getFullYear()
+
 const form = useForm({
   step: 'matricula', // Adicionar o step para a validação
   student_id: props.aluno.id,
   guardian_id: props.responsavel.id,
   classroom_id: '',
+  academic_year: currentYear.toString(), // Ano letivo padrão: ano atual
   status: 'active',
   process: 'completa',
   enrollment_date: new Date().toISOString().split('T')[0],

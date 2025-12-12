@@ -52,7 +52,7 @@ class ClassroomApiController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'year' => 'required|string|max:255',
+            'year' => 'required|integer|min:2000|max:' . (now()->year + 5),
             'shift' => 'required|string|in:Manhã,Tarde,Noite,Integral',
             'max_students' => 'required|integer|min:1',
             'is_active' => 'boolean',

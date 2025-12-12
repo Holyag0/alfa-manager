@@ -41,6 +41,7 @@
       <FiltersCard 
         v-model:filters="filters"
         :classrooms="classrooms"
+        :enrollments="enrollments"
         @apply-filters="applyFilters"
         @student-input="onStudentInput"
       />
@@ -131,7 +132,8 @@ const filters = ref({
   student: '',
   classroom_id: '',
   status: '',
-  process: ''
+  process: '',
+  academic_year: ''
 });
 
 const applyFilters = debounce(() => {
@@ -139,7 +141,8 @@ const applyFilters = debounce(() => {
     student: filters.value.student,
     classroom_id: filters.value.classroom_id,
     status: filters.value.status,
-    process: filters.value.process
+    process: filters.value.process,
+    academic_year: filters.value.academic_year
   }, {
     preserveState: true,
     replace: true
