@@ -290,10 +290,50 @@ class EnrollmentService
         return DB::transaction(function () use ($id, $data) {
             $enrollment = Enrollment::findOrFail($id);
             
+            // Validar se o ano letivo corresponde ao ano da turma (se ambos estiverem sendo atualizados)
+            if (array_key_exists('academic_year', $data) && array_key_exists('classroom_id', $data) && $data['classroom_id']) {
+                $classroom = Classroom::find($data['classroom_id']);
+                if ($classroom && $classroom->year) {
+                    if ($classroom->year != $data['academic_year']) {
+                        throw new Exception(
+                            "O ano letivo da matrícula ({$data['academic_year']}) não corresponde ao ano letivo da turma ({$classroom->year}). " .
+                            "Alunos só podem ser vinculados a turmas do mesmo ano letivo."
+                        );
+                    }
+                }
+            }
+            
+            // Se apenas o academic_year está sendo atualizado e há uma turma vinculada, validar
+            if (array_key_exists('academic_year', $data) && !array_key_exists('classroom_id', $data) && $enrollment->classroom_id) {
+                $classroom = Classroom::find($enrollment->classroom_id);
+                if ($classroom && $classroom->year) {
+                    if ($classroom->year != $data['academic_year']) {
+                        throw new Exception(
+                            "O ano letivo da matrícula ({$data['academic_year']}) não corresponde ao ano letivo da turma vinculada ({$classroom->year}). " .
+                            "Alunos só podem ser vinculados a turmas do mesmo ano letivo."
+                        );
+                    }
+                }
+            }
+            
             // Se a turma está sendo alterada
             if (array_key_exists('classroom_id', $data) && $data['classroom_id'] != $enrollment->classroom_id) {
                 $newClassroomId = $data['classroom_id'];
                 $oldClassroomId = $enrollment->classroom_id;
+                
+                // Validar se o ano letivo (novo ou atual) corresponde ao ano da nova turma
+                if ($newClassroomId) {
+                    $newClassroom = Classroom::find($newClassroomId);
+                    if ($newClassroom && $newClassroom->year) {
+                        $academicYear = $data['academic_year'] ?? $enrollment->academic_year;
+                        if ($academicYear && $newClassroom->year != $academicYear) {
+                            throw new Exception(
+                                "O ano letivo da matrícula ({$academicYear}) não corresponde ao ano letivo da turma selecionada ({$newClassroom->year}). " .
+                                "Alunos só podem ser vinculados a turmas do mesmo ano letivo."
+                            );
+                        }
+                    }
+                }
                 
                 // Se havia turma anterior, desvincular primeiro
                 if ($oldClassroomId) {

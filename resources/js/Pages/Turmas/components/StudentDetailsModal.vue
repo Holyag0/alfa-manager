@@ -280,6 +280,8 @@ const monthlyFees = ref([])
 const loading = ref(false)
 const error = ref(null)
 
+const enrollment = computed(() => enrollmentData.value || props.enrollment)
+
 const hasMonthlyFees = computed(() => monthlyFees.value.length > 0)
 
 const totalPending = computed(() => {
@@ -324,6 +326,8 @@ const loadData = async () => {
     ])
 
     student.value = studentRes.data
+    
+    // Usar diretamente o enrollment do prop que já tem classroom carregado
     enrollmentData.value = props.enrollment
     
     // A API pode retornar paginado ou array direto

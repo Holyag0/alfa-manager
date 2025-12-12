@@ -14,8 +14,8 @@
 
     <!-- Formulário -->
     <form @submit.prevent="updateMatricula" class="p-6 space-y-6">
-      <!-- Turma e Data -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Turma, Ano Letivo e Data -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Turma</label>
           <select 
@@ -35,6 +35,27 @@
             </option>
           </select>
           <p v-if="errors.classroom_id" class="mt-1 text-sm text-red-600">{{ errors.classroom_id }}</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Ano Letivo <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="number"
+            v-model="form.academic_year"
+            :min="2000"
+            :max="new Date().getFullYear() + 5"
+            :class="[
+              'block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500',
+              errors.academic_year ? 'border-red-300' : ''
+            ]"
+            placeholder="Ex: 2024"
+          />
+          <p v-if="errors.academic_year" class="mt-1 text-sm text-red-600">{{ errors.academic_year }}</p>
+          <p class="mt-1 text-xs text-gray-500">
+            O aluno só poderá ser vinculado a turmas do mesmo ano letivo
+          </p>
         </div>
 
         <div>
@@ -69,32 +90,16 @@
       <!-- Botões de Ação -->
       <div class="flex items-center justify-between pt-4 border-t border-gray-200">
         <div class="flex space-x-3">
-          <!-- Ações Rápidas -->
+          <!-- Botão para Abrir Ações Rápidas -->
           <button 
             type="button"
-            @click="openQuickActionModal('suspended')"
-            v-if="form.status === 'active'"
-            class="inline-flex items-center px-3 py-2 border border-orange-300 text-sm leading-4 font-medium rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            @click="$emit('open-quick-actions')"
+            class="inline-flex items-center px-4 py-2 border border-indigo-300 text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200"
           >
-            🟠 Suspender
-          </button>
-          
-          <button 
-            type="button"
-            @click="openQuickActionModal('active')"
-            v-if="form.status === 'suspended'"
-            class="inline-flex items-center px-3 py-2 border border-green-300 text-sm leading-4 font-medium rounded-md text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            🟢 Reativar
-          </button>
-
-          <button 
-            type="button"
-            @click="openQuickActionModal('cancelled')"
-            v-if="['active', 'suspended', 'pending'].includes(form.status)"
-            class="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-          >
-            🔴 Cancelar
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+            </svg>
+            Ações Rápidas
           </button>
         </div>
 
@@ -132,6 +137,8 @@ import { reactive, ref, computed } from 'vue'
 import { router } from '@inertiajs/vue3'
 import ConfirmationModal from '@/Shared/ConfirmationModal.vue'
 
+const emit = defineEmits(['open-quick-actions'])
+
 const props = defineProps({
   enrollment: Object,
   classrooms: Array
@@ -148,6 +155,7 @@ const form = reactive({
   status: props.enrollment.status,
   process: props.enrollment.process || 'completa',
   classroom_id: props.enrollment.classroom_id,
+  academic_year: props.enrollment.academic_year || new Date().getFullYear().toString(),
   enrollment_date: props.enrollment.enrollment_date,
   notes: props.enrollment.notes || ''
 })
@@ -180,6 +188,7 @@ const updateMatricula = () => {
   // Remove status e process do form data, pois eles são gerenciados pelo QuickActionsCard
   const formData = {
     classroom_id: form.classroom_id,
+    academic_year: form.academic_year,
     enrollment_date: form.enrollment_date,
     notes: form.notes
   }

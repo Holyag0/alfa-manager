@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+  <div v-if="!isInModal" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">Ações Rápidas</h3>
       <div class="flex items-center space-x-2 text-sm text-gray-500">
@@ -90,7 +90,7 @@
     </div>
 
     <!-- Modal de Confirmação Melhorado -->
-    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div v-if="showModal" :class="['fixed inset-0 flex items-center justify-center bg-black', isInModal ? 'z-[60]' : 'z-50', 'bg-opacity-50']">
       <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
@@ -206,7 +206,7 @@
     </div>
 
     <!-- Modal de Renovação Melhorado -->
-    <div v-if="showRenewModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+    <div v-if="showRenewModal" :class="['fixed inset-0 flex items-center justify-center bg-black', isInModal ? 'z-[60]' : 'z-50', 'bg-opacity-50']">
       <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <!-- Header -->
         <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-xl">
@@ -377,6 +377,88 @@
       </div>
     </div>
   </div>
+  
+  <!-- Versão para modal (sem o card wrapper) -->
+  <div v-else class="space-y-6">
+    <!-- Status Atual -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-medium text-gray-700">Status da Matrícula</h4>
+        <span :class="getStatusClass(currentStatus)" class="px-3 py-1 rounded-full text-sm font-medium">
+          {{ getStatusLabel(currentStatus) }}
+        </span>
+      </div>
+      
+      <div class="flex flex-wrap gap-2">
+        <button 
+          v-for="status in availableStatuses"
+          :key="status.value"
+          @click="openConfirmationModal('status', status.value, status.label)"
+          :disabled="status.value === currentStatus"
+          :class="[
+            'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200',
+            status.value === currentStatus 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : `${status.bgClass} ${status.textClass} hover:${status.hoverClass} cursor-pointer`
+          ]"
+        >
+          {{ status.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Processo Atual -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-medium text-gray-700">Processo da Matrícula</h4>
+        <span :class="getProcessClass(currentProcess)" class="px-3 py-1 rounded-full text-sm font-medium">
+          {{ getProcessLabel(currentProcess) }}
+        </span>
+      </div>
+      
+      <div class="flex flex-wrap gap-2">
+        <button 
+          v-for="process in availableProcesses"
+          :key="process.value"
+          @click="openConfirmationModal('process', process.value, process.label)"
+          :disabled="process.value === currentProcess"
+          :class="[
+            'inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full transition-all duration-200',
+            process.value === currentProcess 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : `${process.bgClass} ${process.textClass} hover:${process.hoverClass} cursor-pointer`
+          ]"
+        >
+          {{ process.label }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Ações Especiais -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="text-sm font-medium text-gray-700">Ações Especiais</h4>
+      </div>
+      
+      <div class="flex flex-wrap gap-2">
+        <button 
+          @click="openRenewModal"
+          :disabled="!canRenew"
+          :class="[
+            'inline-flex items-center px-4 py-2 text-sm font-medium rounded-md transition-all duration-200',
+            canRenew
+              ? 'bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+          ]"
+        >
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+          🔄 Renovar para Novo Ano
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -392,10 +474,14 @@ const props = defineProps({
   classrooms: {
     type: Array,
     default: () => []
+  },
+  isInModal: {
+    type: Boolean,
+    default: false
   }
 })
 
-const emit = defineEmits(['updated'])
+const emit = defineEmits(['updated', 'close-modal'])
 
 // Estados reativos
 const showModal = ref(false)
@@ -580,6 +666,7 @@ const openConfirmationModal = (type, value, label) => {
 
 const closeModal = () => {
   showModal.value = false
+  emit('close-modal')
   pendingAction.value = null
 }
 
@@ -643,6 +730,7 @@ const openRenewModal = () => {
 }
 
 const closeRenewModal = () => {
+  emit('close-modal')
   showRenewModal.value = false
   renewForm.value = {
     academic_year: '',

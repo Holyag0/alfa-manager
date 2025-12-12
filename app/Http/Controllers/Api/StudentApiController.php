@@ -62,7 +62,17 @@ class StudentApiController extends Controller
 
     public function show($id)
     {
-        $student = Student::with(['guardians', 'enrollments.classroom'])->findOrFail($id);
+        $student = Student::with([
+            'guardians',
+            'enrollments' => function($q) {
+                $q->where('status', 'active')
+                  ->orWhere('status', 'pending')
+                  ->orderBy('created_at', 'desc');
+            },
+            'enrollments.classroom',
+            'enrollments.guardian'
+        ])->findOrFail($id);
+        
         return response()->json($student);
     }
 

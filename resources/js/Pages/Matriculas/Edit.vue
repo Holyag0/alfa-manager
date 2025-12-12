@@ -49,18 +49,53 @@
     </div>
 
     <!-- Conteúdo das Abas -->
-    <div class="grid grid-cols-1 gap-8" :class="currentTab === 'Matrícula' ? 'lg:grid-cols-5' : 'lg:grid-cols-1'">
+    <div class="grid grid-cols-1 gap-8">
       <!-- Conteúdo Principal -->
-      <div :class="currentTab === 'Matrícula' ? 'lg:col-span-3' : 'lg:col-span-1'">
-        <EditMatricula v-if="currentTab === 'Matrícula'" :enrollment="enrollment" :classrooms="classrooms" />
+      <div>
+        <EditMatricula 
+          v-if="currentTab === 'Matrícula'" 
+          :enrollment="enrollment" 
+          :classrooms="classrooms"
+          @open-quick-actions="showQuickActionsModal = true"
+        />
         <EditFinanceiro v-else-if="currentTab === 'Financeiro'" :enrollment="enrollment" />
       </div>
-      
-      <!-- Sidebar com Ações Rápidas - APENAS na aba Matrícula -->
-      <div v-if="currentTab === 'Matrícula'" class="lg:col-span-2">
-        <QuickActionsCard :enrollment="enrollment" :classrooms="classrooms" />
-      </div>
     </div>
+
+    <!-- Modal de Ações Rápidas -->
+    <transition name="fade">
+      <div v-if="showQuickActionsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 overflow-y-auto p-4">
+        <div class="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto relative">
+          <!-- Header do Modal -->
+          <div class="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-xl flex items-center justify-between z-10">
+            <h2 class="text-xl font-bold text-white flex items-center">
+              <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Ações Rápidas
+            </h2>
+            <button 
+              @click="showQuickActionsModal = false"
+              class="text-white hover:text-gray-200 transition-colors duration-200"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Conteúdo do Modal -->
+          <div class="p-6">
+            <QuickActionsCard 
+              :enrollment="enrollment" 
+              :classrooms="classrooms"
+              :is-in-modal="true"
+              @close-modal="showQuickActionsModal = false"
+            />
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -84,4 +119,14 @@ const tabs = [
 ];
 
 const currentTab = ref(tabs[0].name);
-</script> 
+const showQuickActionsModal = ref(false);
+</script>
+
+<style scoped>
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+</style> 
