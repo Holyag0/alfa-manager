@@ -20,8 +20,8 @@ class StudentController extends Controller
 
     public function index(Request $request)
     {
-        $students = $this->service->search($request->input('q'));
-        return response()->json($students);
+        // Redireciona para o dashboard onde está a busca de alunos
+        return redirect()->route('dashboard');
     }
 
     public function store(StudentRequest $request)

@@ -63,7 +63,6 @@
                     </transition>
                 </Popover>
 
-                <a href="#" class="text-sm/6 font-semibold text-gray-100">Features</a>
                 <Link :href="route('matriculas.index')" class="text-sm/6 font-semibold text-gray-100">Matrículas</Link>
                 
                 <!-- Módulo Comercial -->

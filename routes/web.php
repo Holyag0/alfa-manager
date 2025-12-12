@@ -35,7 +35,55 @@ Route::middleware([
         ]);
     })->name('turmas.alunos');
     Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
+        // Buscar últimas 5 mensalidades pagas
+        $paidInstallments = \App\Models\MonthlyFeePayment::with([
+            'installment.monthlyFee.enrollment.student',
+            'installment.classroomService.service',
+        ])
+        ->where('status', 'confirmed')
+        ->whereHas('installment', function($query) {
+            $query->where('status', 'paid');
+        })
+        ->orderBy('payment_date', 'desc')
+        ->orderBy('created_at', 'desc')
+        ->limit(5)
+        ->get()
+        ->map(function($payment) {
+            $installment = $payment->installment;
+            return [
+                'id' => $installment->id,
+                'service_name' => $installment->classroomService->service->name ?? 'Serviço não encontrado',
+                'amount' => $payment->amount,
+                'status' => $installment->status,
+                'payment_date' => $payment->payment_date,
+                'due_date' => $installment->due_date,
+                'student_id' => $installment->monthlyFee->enrollment->student_id ?? null,
+                'student_name' => $installment->monthlyFee->enrollment->student->name ?? 'Aluno não encontrado',
+            ];
+        });
+
+        // Buscar últimas 5 transações confirmadas
+        $transactions = \App\Models\FinancialTransaction::with('category')
+            ->where('status', 'confirmed')
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($transaction) {
+                return [
+                    'id' => $transaction->id,
+                    'type' => $transaction->type,
+                    'amount' => $transaction->amount,
+                    'status' => $transaction->status,
+                    'description' => $transaction->description,
+                    'transaction_date' => $transaction->transaction_date,
+                ];
+            });
+
+        return Inertia::render('Dashboard', [
+            'paidInstallments' => $paidInstallments,
+            'transactions' => $transactions,
+        ]);
     })->name('dashboard');
     // Rotas CRUD`s
     Route::resource('guardian',App\Http\Controllers\Matriculas\GuardianController::class);

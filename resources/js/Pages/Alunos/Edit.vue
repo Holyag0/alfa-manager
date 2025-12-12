@@ -11,10 +11,10 @@
           </p>
         </div>
         <div class="flex space-x-3">
-          <Link :href="route('students.index')" 
+          <Link :href="route('dashboard')" 
                 class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
             <ArrowLeftIcon class="w-4 h-4 mr-2" />
-            Voltar para Lista
+            Voltar para Dashboard
           </Link>
         </div>
       </div>
@@ -202,7 +202,7 @@
             <!-- Botões -->
             <div class="flex items-center justify-end pt-6 border-t border-gray-200 mt-6">
               <div class="flex space-x-3">
-                <Link :href="route('students.index')" 
+                <Link :href="route('dashboard')" 
                       class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
                   Cancelar
                 </Link>
