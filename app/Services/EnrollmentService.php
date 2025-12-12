@@ -58,6 +58,24 @@ class EnrollmentService
             // Isso evita gerar mensalidades incorretas caso a vinculação/transferência de turma esteja errada
             // A geração manual permite que o usuário confirme a turma correta antes de criar as mensalidades
 
+            // Detectar e vincular irmãos automaticamente quando criar matrícula
+            // Isso garante que alunos com o mesmo responsável sejam identificados como irmãos
+            try {
+                $guardian = Guardian::find($data['guardian_id']);
+                $student = Student::find($data['student_id']);
+                
+                if ($guardian && $student) {
+                    $siblingService = app(\App\Services\SiblingAutoDetectionService::class);
+                    $siblingService->detectAndLinkSiblings($guardian, $student);
+                }
+            } catch (\Exception $e) {
+                // Log do erro mas não interrompe o fluxo de criação da matrícula
+                Log::warning('Erro ao detectar irmãos na criação de matrícula', [
+                    'enrollment_id' => $enrollment->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
             return $enrollment;
         });
     }

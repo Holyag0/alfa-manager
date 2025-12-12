@@ -102,6 +102,8 @@ class ServiceGuardian
 
     /**
      * Vincular responsável a um aluno
+     * 
+     * Após vincular, detecta automaticamente irmãos se o responsável tiver múltiplos alunos
      */
     public function attachToStudent($guardianId, $studentId)
     {
@@ -117,6 +119,10 @@ class ServiceGuardian
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Detectar e vincular irmãos automaticamente
+        $siblingService = app(\App\Services\SiblingAutoDetectionService::class);
+        $siblingService->detectAndLinkSiblings($guardian, $student);
         
         return $guardian;
     }

@@ -220,9 +220,13 @@
         </div>
       </div>
 
-      <!-- Aba Responsáveis -->
-      <div v-else-if="currentTab === 'Responsáveis'">
-        <StudentGuardians :student="student" :guardians="guardians" />
+      <!-- Aba Parentes -->
+      <div v-else-if="currentTab === 'Parentes'">
+        <StudentGuardians 
+          :student="student" 
+          :guardians="guardians" 
+          :siblings="siblings || []"
+        />
       </div>
 
       <!-- Aba Matrículas -->
@@ -253,6 +257,10 @@ import StudentEnrollments from './components/StudentEnrollments.vue'
 const props = defineProps({
   student: Object,
   guardians: Array,
+  siblings: {
+    type: Array,
+    default: () => []
+  },
   installments: {
     type: Array,
     default: () => []
@@ -270,7 +278,7 @@ const photoInput = ref(null)
 
 const tabs = [
   { name: 'Dados Pessoais', icon: UserIcon },
-  { name: 'Responsáveis', icon: UsersIcon },
+  { name: 'Parentes', icon: UsersIcon },
   { name: 'Matrículas', icon: AcademicCapIcon },
   { name: 'Mensalidades', icon: CurrencyDollarIcon }
 ]

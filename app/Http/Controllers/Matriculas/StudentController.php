@@ -58,6 +58,9 @@ class StudentController extends Controller
             return $monthlyFeeService->checkSiblingDiscount($enrollment);
         });
         
+        // Buscar irmãos do aluno
+        $siblings = $this->service->getSiblings($student);
+        
         // Buscar parcelas de mensalidades do aluno (apenas não deletadas)
         $installments = \App\Models\MonthlyFeeInstallment::whereHas('monthlyFee', function($query) use ($student) {
             $query->whereHas('enrollment', function($q) use ($student) {
@@ -77,6 +80,7 @@ class StudentController extends Controller
         return Inertia::render('Alunos/Edit', [
             'student' => $student,
             'guardians' => $student->guardians,
+            'siblings' => $siblings,
             'installments' => $installments,
             'hasSiblingDiscountSuggestion' => $hasSiblingDiscountSuggestion,
         ]);

@@ -419,7 +419,7 @@ Route::post('enrollments/{enrollment}/register-payment', function ($enrollment, 
 });
 
 // Rotas para gestão de irmãos
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['web', 'auth'])->group(function () {
     // Grupos de irmãos
     Route::apiResource('sibling-groups', \App\Http\Controllers\Api\SiblingGroupController::class);
     
@@ -428,6 +428,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('guardians/{guardian}/siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'store']);
     Route::delete('guardians/{guardian}/siblings/{sibling}', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'destroy']);
     Route::get('guardians/{guardian}/has-active-siblings', [\App\Http\Controllers\Api\GuardianSiblingController::class, 'hasActiveSiblings']);
+    
+    // Irmãos de alunos
+    Route::get('students/{student}/siblings', [\App\Http\Controllers\Api\StudentSiblingController::class, 'index']);
+    Route::post('students/{student}/siblings', [\App\Http\Controllers\Api\StudentSiblingController::class, 'store']);
+    Route::delete('students/{student}/siblings/{sibling}', [\App\Http\Controllers\Api\StudentSiblingController::class, 'destroy']);
 });
 
 // ========================================
