@@ -1231,3 +1231,4 @@ O design seguirá o padrão existente no sistema:
 - `app/Http/Controllers/Cadastros/EmployeeController.php` - Padrão de controller
 - `resources/js/Pages/Cadastros/Employees/` - Padrão de componentes Vue
 
+
