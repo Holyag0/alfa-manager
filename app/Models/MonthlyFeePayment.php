@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\LogsActivity;
 
 class MonthlyFeePayment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'monthly_fee_installment_id',
@@ -203,6 +204,19 @@ class MonthlyFeePayment extends Model
     public function isRefunded(): bool
     {
         return $this->status === 'refunded';
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        $installment = $this->installment;
+        if ($installment && $installment->monthlyFee && $installment->monthlyFee->enrollment) {
+            $studentName = $installment->monthlyFee->enrollment->student->name ?? 'Aluno #' . $installment->monthlyFee->enrollment->student_id;
+            return "Pagamento de {$studentName} - Parcela {$installment->installment_number}";
+        }
+        return "Pagamento #{$this->id}";
     }
 }
 

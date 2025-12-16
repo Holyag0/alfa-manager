@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use App\Traits\LogsActivity;
 
 class MonthlyFeeInstallment extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'monthly_fee_id',
@@ -232,6 +233,19 @@ class MonthlyFeeInstallment extends Model
     public function canBePaid(): bool
     {
         return !in_array($this->status, ['paid', 'cancelled', 'waived']);
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        $monthlyFee = $this->monthlyFee;
+        if ($monthlyFee && $monthlyFee->enrollment && $monthlyFee->enrollment->student) {
+            $studentName = $monthlyFee->enrollment->student->name ?? 'Aluno #' . $monthlyFee->enrollment->student_id;
+            return "Parcela {$this->installment_number} de {$studentName} - {$this->reference_month}";
+        }
+        return "Parcela #{$this->installment_number}";
     }
 }
 
