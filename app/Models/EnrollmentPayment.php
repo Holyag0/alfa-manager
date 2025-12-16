@@ -276,6 +276,17 @@ class EnrollmentPayment extends Model
      */
     protected function getIdentifier(): string
     {
+        $enrollment = $this->enrollment;
+        if ($enrollment) {
+            $studentName = $enrollment->student->name ?? 'Aluno #' . $enrollment->student_id;
+            $classroomName = $enrollment->classroom->name ?? '';
+            
+            $identifier = "Pagamento #{$this->payment_number} - {$studentName}";
+            if ($classroomName) {
+                $identifier .= " - {$classroomName}";
+            }
+            return $identifier;
+        }
         return "Pagamento #{$this->payment_number}";
     }
 }

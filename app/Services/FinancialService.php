@@ -41,6 +41,7 @@ class FinancialService
             $installment = $payment->installment;
             $enrollment = $installment?->monthlyFee?->enrollment;
             $student = $enrollment?->student;
+            $classroom = $enrollment?->classroom;
             
             // Buscar responsável que pagou
             $guardian = $payment->guardian;
@@ -48,7 +49,7 @@ class FinancialService
             // Armazenar referência do serviço para usar na closure
             $service = $this;
 
-            return DB::transaction(function () use ($service, $payment, $category, $student, $installment, $guardian) {
+            return DB::transaction(function () use ($service, $payment, $category, $student, $installment, $guardian, $classroom) {
                 // Verificar duplicatas dentro da transação com lock para prevenir race condition
                 $existingTransaction = FinancialTransaction::where('source_type', MonthlyFeePayment::class)
                     ->where('source_id', $payment->id)
@@ -65,6 +66,13 @@ class FinancialService
 
                 $studentName = $student?->name ?? 'N/A';
                 $month = $installment?->reference_month ?? 'N/A';
+                $classroomName = $classroom?->name ?? '';
+                
+                // Montar descrição com turma
+                $description = "Mensalidade - {$studentName} - {$month}";
+                if ($classroomName) {
+                    $description .= " - {$classroomName}";
+                }
                 
                 // Tentar criar transação com número único, re-gerando em caso de colisão de UNIQUE
                 $maxAttempts = 3;
@@ -89,7 +97,7 @@ class FinancialService
                             'category_id' => $category->id,
                             'source_type' => MonthlyFeePayment::class,
                             'source_id' => $payment->id,
-                            'description' => "Mensalidade - {$studentName} - {$month}",
+                            'description' => $description,
                             'amount' => $payment->amount,
                             'transaction_date' => $payment->payment_date,
                             'payment_method' => $payment->method,
@@ -172,6 +180,7 @@ class FinancialService
 
             $enrollment = $payment->enrollment;
             $student = $enrollment?->student;
+            $classroom = $enrollment?->classroom;
             $invoice = $payment->invoice;
             
             // Buscar responsável que pagou (se disponível)
@@ -180,7 +189,7 @@ class FinancialService
             // Armazenar referência do serviço para usar na closure
             $service = $this;
 
-            return DB::transaction(function () use ($service, $payment, $category, $student, $guardian, $invoice) {
+            return DB::transaction(function () use ($service, $payment, $category, $student, $guardian, $invoice, $classroom) {
                 // Verificar duplicatas dentro da transação para prevenir race condition
                 $existingTransaction = FinancialTransaction::where('source_type', EnrollmentPayment::class)
                     ->where('source_id', $payment->id)
@@ -197,11 +206,16 @@ class FinancialService
                 // Definir descrição com:
                 // - Nome completo do serviço (da fatura, se disponível)
                 // - Nome do aluno
+                // - Nome da turma
                 $serviceDescription = $invoice?->description ?: $payment->description;
                 $studentName = $student?->name;
+                $classroomName = $classroom?->name;
                 $description = $serviceDescription ?: 'Pagamento de matrícula';
                 if ($studentName) {
                     $description .= " - {$studentName}";
+                }
+                if ($classroomName) {
+                    $description .= " - {$classroomName}";
                 }
 
                 // Tentar criar transação com número único, re-gerando em caso de colisão de UNIQUE

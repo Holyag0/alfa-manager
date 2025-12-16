@@ -61,32 +61,54 @@ class ActivityLogController extends Controller
     {
         $user = \App\Models\User::findOrFail($userId);
 
-        $query = Activity::with(['subject'])
-            ->where('causer_id', $userId)
+        // Buscar atividades do usuário OU atividades sem causer_id (sistema/automáticas)
+        // Isso garante que atividades automáticas também apareçam no feed
+        $query = Activity::with(['subject', 'causer'])
+            ->where(function($q) use ($userId) {
+                $q->where('causer_id', $userId)
+                  ->orWhereNull('causer_id')
+                  ->orWhere('causer_id', ''); // Também incluir causer_id vazio (string)
+            })
             ->latest();
 
-        // Filtros
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
+        // Filtros com validação
+        if ($request->filled('date_from') && $request->date_from !== '') {
+            try {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            } catch (\Exception $e) {
+                // Data inválida, ignorar filtro
+            }
         }
 
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
+        if ($request->filled('date_to') && $request->date_to !== '') {
+            try {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            } catch (\Exception $e) {
+                // Data inválida, ignorar filtro
+            }
         }
 
-        if ($request->filled('time_from')) {
-            $query->whereTime('created_at', '>=', $request->time_from);
+        if ($request->filled('time_from') && $request->time_from !== '') {
+            try {
+                $query->whereTime('created_at', '>=', $request->time_from);
+            } catch (\Exception $e) {
+                // Hora inválida, ignorar filtro
+            }
         }
 
-        if ($request->filled('time_to')) {
-            $query->whereTime('created_at', '<=', $request->time_to);
+        if ($request->filled('time_to') && $request->time_to !== '') {
+            try {
+                $query->whereTime('created_at', '<=', $request->time_to);
+            } catch (\Exception $e) {
+                // Hora inválida, ignorar filtro
+            }
         }
 
-        if ($request->filled('log_name')) {
+        if ($request->filled('log_name') && $request->log_name !== '') {
             $query->where('log_name', $request->log_name);
         }
 
-        if ($request->filled('event')) {
+        if ($request->filled('event') && $request->event !== '') {
             $query->where('event', $request->event);
         }
 
@@ -138,6 +160,8 @@ class ActivityLogController extends Controller
             'activities_this_week' => Activity::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             'activities_this_month' => Activity::whereMonth('created_at', now()->month)->count(),
             'top_users' => Activity::selectRaw('causer_id, COUNT(*) as count')
+                ->whereNotNull('causer_id')
+                ->where('causer_id', '!=', '')
                 ->with('causer:id,name')
                 ->groupBy('causer_id')
                 ->orderByDesc('count')
@@ -147,10 +171,10 @@ class ActivityLogController extends Controller
                     'user' => $item->causer->name ?? 'Sistema',
                     'count' => $item->count,
                 ]),
-            'by_event' => Activity::selectRaw('event, COUNT(*) as count')
+            'by_event' => Activity::selectRaw('COALESCE(event, \'sem_evento\') as event, COUNT(*) as count')
                 ->groupBy('event')
                 ->get()
-                ->mapWithKeys(fn($item) => [$item->event => $item->count]),
+                ->mapWithKeys(fn($item) => [$item->event ?? 'sem_evento' => $item->count]),
             'by_module' => Activity::selectRaw('log_name, COUNT(*) as count')
                 ->groupBy('log_name')
                 ->orderByDesc('count')
@@ -178,27 +202,68 @@ class ActivityLogController extends Controller
      */
     protected function formatActivity(Activity $activity): array
     {
-        return [
-            'id' => $activity->id,
-            'description' => $activity->description,
-            'event' => $activity->event,
-            'event_label' => $this->getEventLabel($activity->event ?? ''),
-            'log_name' => $activity->log_name,
-            'subject_type' => $activity->subject_type ? class_basename($activity->subject_type) : null,
-            'subject_id' => $activity->subject_id,
-            'causer' => $activity->causer ? [
+        // Verificar se causer existe e é válido
+        $causer = null;
+        if ($activity->causer_id && $activity->causer_id !== '' && $activity->causer) {
+            $causer = [
                 'id' => $activity->causer->id,
                 'name' => $activity->causer->name,
                 'email' => $activity->causer->email,
-            ] : null,
-            'properties' => $activity->properties ?? [],
+            ];
+        }
+
+        // Verificar se subject existe e é válido
+        $subjectType = null;
+        if ($activity->subject_type) {
+            try {
+                if (class_exists($activity->subject_type)) {
+                    $subjectType = class_basename($activity->subject_type);
+                }
+            } catch (\Exception $e) {
+                // Classe não existe, manter null
+            }
+        }
+
+        return [
+            'id' => $activity->id,
+            'description' => $activity->description ?? 'Sem descrição',
+            'event' => $activity->event,
+            'event_label' => $this->getEventLabel($activity->event ?? ''),
+            'log_name' => $activity->log_name ?? 'default',
+            'subject_type' => $subjectType,
+            'subject_id' => $activity->subject_id,
+            'causer' => $causer ?? [
+                'id' => null,
+                'name' => 'Sistema',
+                'email' => null,
+            ],
+            'properties' => $this->safeGetProperties($activity),
             'changes' => $this->getChanges($activity),
             'created_at' => $activity->created_at,
-            'created_at_human' => $activity->created_at->diffForHumans(),
-            'created_at_formatted' => $activity->created_at->format('d/m/Y H:i:s'),
-            'created_at_date' => $activity->created_at->format('d/m/Y'),
-            'created_at_time' => $activity->created_at->format('H:i:s'),
+            'created_at_human' => $activity->created_at ? $activity->created_at->diffForHumans() : 'Data inválida',
+            'created_at_formatted' => $activity->created_at ? $activity->created_at->format('d/m/Y H:i:s') : 'Data inválida',
+            'created_at_date' => $activity->created_at ? $activity->created_at->format('d/m/Y') : 'Data inválida',
+            'created_at_time' => $activity->created_at ? $activity->created_at->format('H:i:s') : 'Hora inválida',
         ];
+    }
+
+    /**
+     * Obter properties de forma segura
+     */
+    protected function safeGetProperties(Activity $activity): array
+    {
+        try {
+            $properties = $activity->properties;
+            if (is_array($properties)) {
+                return $properties;
+            }
+            if (is_object($properties)) {
+                return (array) $properties;
+            }
+            return [];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 
     /**
