@@ -165,6 +165,7 @@ class EnrollmentPayment extends Model
             'pix' => 'PIX',
             'credit_card' => 'Cartão de Crédito',
             'debit_card' => 'Cartão de Débito',
+            'boleto' => 'Boleto',
             'bank_transfer' => 'Transferência Bancária',
             'check' => 'Cheque',
             'other' => 'Outro'

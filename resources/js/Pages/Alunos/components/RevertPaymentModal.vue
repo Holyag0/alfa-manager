@@ -238,6 +238,7 @@ const getMethodLabel = (method) => {
     'pix': 'PIX',
     'credit_card': 'Cartão de Crédito',
     'debit_card': 'Cartão de Débito',
+    'boleto': 'Boleto',
     'cash': 'Dinheiro',
     'bank_transfer': 'Transferência Bancária',
     'check': 'Cheque',

@@ -105,6 +105,15 @@ class MonthlyFeePaymentController extends Controller
                 'transaction_id' => $request->transaction_id ?? null,
                 'notes' => $request->notes ?? null,
                 'auto_confirm' => $request->auto_confirm ?? false,
+                // Campos extras para alinhar com o cálculo feito no front-end
+                // e permitir que o usuário zere juros/multa/descontos manualmente
+                'other_discounts' => $request->other_discounts ?? 0,
+                'interest_override' => $request->has('interest_override')
+                    ? $request->input('interest_override')
+                    : null,
+                'fine_override' => $request->has('fine_override')
+                    ? $request->input('fine_override')
+                    : null,
             ];
 
             $payment = $this->paymentService->processPayment($installment, $paymentData);
@@ -316,7 +325,7 @@ class MonthlyFeePaymentController extends Controller
                     'other_discounts' => ['sometimes', 'numeric', 'min:0'],
                     'interest_applied' => ['sometimes', 'numeric', 'min:0'],
                     'fine_applied' => ['sometimes', 'numeric', 'min:0'],
-                    'method' => ['sometimes', 'string', 'in:pix,credit_card,debit_card,cash,bank_transfer,check'],
+                    'method' => ['sometimes', 'string', 'in:pix,credit_card,debit_card,cash,bank_transfer,check,boleto'],
                     'payment_date' => ['sometimes', 'date'],
                     'reference' => ['sometimes', 'string', 'max:255'],
                     'transaction_id' => ['sometimes', 'string', 'max:255'],

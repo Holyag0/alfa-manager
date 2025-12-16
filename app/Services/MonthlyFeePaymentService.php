@@ -265,7 +265,7 @@ class MonthlyFeePaymentService
     public function refundPayment(MonthlyFeePayment $payment, string $reason = null): bool
     {
         try {
-            return DB::transaction(function () use ($payment, $reason) {
+            $result = DB::transaction(function () use ($payment, $reason) {
                 if ($payment->status !== 'confirmed') {
                     throw new \Exception("Apenas pagamentos confirmados podem ser estornados.");
                 }
@@ -296,6 +296,34 @@ class MonthlyFeePaymentService
 
                 return true;
             });
+
+            // Após estornar o pagamento, remover automaticamente a receita financeira associada
+            if ($result) {
+                try {
+                    /** @var \App\Services\FinancialService $financialService */
+                    $financialService = app(\App\Services\FinancialService::class);
+
+                    $transaction = \App\Models\FinancialTransaction::where('source_type', MonthlyFeePayment::class)
+                        ->where('source_id', $payment->id)
+                        ->first();
+
+                    if ($transaction) {
+                        // Primeiro cancelar a transação para manter histórico
+                        $financialService->cancelTransaction($transaction, 'Cancelamento automático por estorno de mensalidade.');
+                        // Em seguida, excluir a transação (permitido para receitas de mensalidade canceladas)
+                        $financialService->deleteTransaction($transaction->fresh());
+                    }
+                } catch (\Exception $e) {
+                    // Não falhar o estorno se houver problema ao apagar a receita
+                    Log::error("Erro ao remover receita financeira vinculada ao estorno de mensalidade", [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+
+            return $result;
         } catch (\Exception $e) {
             Log::error("Erro ao estornar pagamento", [
                 'payment_id' => $payment->id,
@@ -312,18 +340,27 @@ class MonthlyFeePaymentService
     public function revertPayment(MonthlyFeePayment $payment, ?string $reason = null): bool
     {
         try {
-            return DB::transaction(function () use ($payment, $reason) {
+            // Flag para sabermos se o pagamento estava confirmado ANTES da reversão
+            $wasConfirmed = $payment->status === 'confirmed';
+
+            $result = DB::transaction(function () use ($payment, $reason, &$wasConfirmed) {
                 // Validar se o pagamento pode ser revertido
                 if ($payment->status === 'cancelled') {
                     throw new \Exception("Não é possível reverter um pagamento cancelado.");
                 }
 
                 if ($payment->status === 'refunded') {
-                    throw new \Exception("Este pagamento já foi revertido anteriormente.");
+                    // Tornar operação idempotente: se já foi revertido, apenas registrar log
+                    // e considerar a operação como sucesso, evitando erro 400 no frontend.
+                    Log::warning("Tentativa de reverter pagamento já revertido anteriormente", [
+                        'payment_id' => $payment->id,
+                    ]);
+                    // Garantir que não tentaremos remover receita novamente
+                    $wasConfirmed = false;
+                    return true;
                 }
 
                 $installment = $payment->installment;
-                $wasConfirmed = $payment->status === 'confirmed';
 
                 // Marcar pagamento como revertido
                 $payment->update([
@@ -360,6 +397,33 @@ class MonthlyFeePaymentService
 
                 return true;
             });
+
+            // Após reverter o pagamento, remover automaticamente a receita financeira associada
+            if ($result && $wasConfirmed) {
+                try {
+                    /** @var \App\Services\FinancialService $financialService */
+                    $financialService = app(\App\Services\FinancialService::class);
+
+                    $transaction = \App\Models\FinancialTransaction::where('source_type', MonthlyFeePayment::class)
+                        ->where('source_id', $payment->id)
+                        ->first();
+
+                    if ($transaction) {
+                        // Primeiro cancelar a transação para manter histórico
+                        $financialService->cancelTransaction($transaction, 'Cancelamento automático por reversão de pagamento de mensalidade.');
+                        // Em seguida, excluir a transação (permitido para receitas de mensalidade canceladas)
+                        $financialService->deleteTransaction($transaction->fresh());
+                    }
+                } catch (\Exception $e) {
+                    Log::error("Erro ao remover receita financeira vinculada à reversão de pagamento de mensalidade", [
+                        'payment_id' => $payment->id,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+
+            return $result;
         } catch (\Exception $e) {
             Log::error("Erro ao reverter pagamento", [
                 'payment_id' => $payment->id,

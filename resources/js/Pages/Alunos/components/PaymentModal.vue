@@ -113,6 +113,7 @@
               >
                 <option value="">Selecione o método</option>
                   <option value="cash">Dinheiro</option>
+              <option value="boleto">Boleto</option>
                 <option value="pix">PIX</option>
                 <option value="credit_card">Cartão de Crédito</option>
                 <option value="debit_card">Cartão de Débito</option>
@@ -448,15 +449,10 @@ const form = reactive({
 
 // Função para atualizar o valor final
 const updateFinalAmount = () => {
-  // Usar o computed finalAmount que já tem toda a lógica correta
+  // Usar sempre o computed finalAmount para manter o campo "Valor Pago"
+  // alinhado com juros, multa e desconto configurados na tela
   const calculatedAmount = finalAmount.value
-  
-  // Só atualizar se o valor atual estiver muito próximo do valor calculado anterior
-  // ou se for a primeira vez (valor 0)
-  const currentAmount = parseFloat(form.amount) || 0
-  if (currentAmount === 0 || Math.abs(currentAmount - calculatedAmount) < 0.01) {
     form.amount = calculatedAmount
-  }
 }
 
 // Atualizar valores calculados de juros e multa quando a data de pagamento mudar

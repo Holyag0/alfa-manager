@@ -66,25 +66,62 @@ class FinancialService
                 $studentName = $student?->name ?? 'N/A';
                 $month = $installment?->reference_month ?? 'N/A';
                 
-                $transaction = FinancialTransaction::create([
-                    'transaction_number' => $service->generateTransactionNumber('REC'),
-                    'type' => 'receita',
-                    'category_id' => $category->id,
-                    'source_type' => MonthlyFeePayment::class,
-                    'source_id' => $payment->id,
-                    'description' => "Mensalidade - {$studentName} - {$month}",
-                    'amount' => $payment->amount,
-                    'transaction_date' => $payment->payment_date,
-                    'payment_method' => $payment->method,
-                    'reference' => $payment->reference,
-                    'notes' => $payment->notes,
-                    'status' => 'confirmed',
-                    // Usar confirmation_date se disponível, caso contrário usar payment_date para manter integridade temporal
-                    'confirmed_at' => $payment->confirmation_date ?? $payment->payment_date ?? now(),
-                    'confirmed_by' => auth()->id(),
-                    'payer_name' => $guardian?->name ?? null,
-                    'payer_document' => $guardian?->cpf ?? null,
-                ]);
+                // Tentar criar transação com número único, re-gerando em caso de colisão de UNIQUE
+                $maxAttempts = 3;
+                $attempt = 0;
+                $transaction = null;
+
+                $transactionNumber = null;
+                while ($attempt < $maxAttempts && !$transaction) {
+                    $attempt++;
+                    // Na primeira tentativa, usar o gerador padrão
+                    // Em colisões, vamos apenas adicionar um sufixo aleatório ao último número gerado
+                    if ($attempt === 1 || !$transactionNumber) {
+                        $transactionNumber = $service->generateTransactionNumber('REC');
+                    } else {
+                        $transactionNumber = $transactionNumber . '-' . random_int(1000, 9999);
+                    }
+
+                    try {
+                        $transaction = FinancialTransaction::create([
+                            'transaction_number' => $transactionNumber,
+                            'type' => 'receita',
+                            'category_id' => $category->id,
+                            'source_type' => MonthlyFeePayment::class,
+                            'source_id' => $payment->id,
+                            'description' => "Mensalidade - {$studentName} - {$month}",
+                            'amount' => $payment->amount,
+                            'transaction_date' => $payment->payment_date,
+                            'payment_method' => $payment->method,
+                            'reference' => $payment->reference,
+                            'notes' => $payment->notes,
+                            'status' => 'confirmed',
+                            // Usar confirmation_date se disponível, caso contrário usar payment_date para manter integridade temporal
+                            'confirmed_at' => $payment->confirmation_date ?? $payment->payment_date ?? now(),
+                            'confirmed_by' => auth()->id(),
+                            'payer_name' => $guardian?->name ?? null,
+                            'payer_document' => $guardian?->cpf ?? null,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        // Em caso de colisão de UNIQUE no transaction_number, tentar novamente com outro número
+                        if (str_contains($e->getMessage(), 'Duplicate entry')
+                            && str_contains($e->getMessage(), 'financial_transactions_transaction_number_unique')) {
+                            Log::warning('Colisão de número de transação ao registrar receita de mensalidade. Gerando novo número.', [
+                                'attempt' => $attempt,
+                                'payment_id' => $payment->id,
+                                'transaction_number' => $transactionNumber,
+                            ]);
+                            $transaction = null;
+                            continue;
+                        }
+
+                        throw $e;
+                    }
+                }
+
+                if (!$transaction) {
+                    throw new \Exception('Não foi possível gerar um número único de transação para a receita de mensalidade.');
+                }
 
                 Log::info("Receita de mensalidade registrada", [
                     'transaction_id' => $transaction->id,
@@ -114,14 +151,9 @@ class FinancialService
                 return null;
             }
 
-            // Buscar categoria baseada no tipo de pagamento
-            $categoryName = match ($payment->type) {
-                'reservation' => 'Reserva de Matrícula',
-                'monthly' => 'Mensalidade',
-                'service' => 'Serviços Adicionais',
-                'package' => 'Pacotes',
-                default => 'Outros',
-            };
+            // Categoria fixa para quaisquer pagamentos vinculados à matrícula:
+            // todas as receitas de EnrollmentPayment serão agrupadas como "Matrículas"
+            $categoryName = 'Matrículas';
 
             $category = FinancialCategory::where('type', 'receita')
                 ->where('name', $categoryName)
@@ -132,7 +164,7 @@ class FinancialService
                 $category = FinancialCategory::create([
                     'name' => $categoryName,
                     'type' => 'receita',
-                    'description' => "Pagamentos de {$categoryName}",
+                    'description' => "Pagamentos de serviços e mensalidades de matrícula",
                     'color' => '#3B82F6',
                     'is_active' => true,
                 ]);
@@ -140,6 +172,7 @@ class FinancialService
 
             $enrollment = $payment->enrollment;
             $student = $enrollment?->student;
+            $invoice = $payment->invoice;
             
             // Buscar responsável que pagou (se disponível)
             $guardian = $payment->paidByGuardian ?? $enrollment?->student?->guardians?->first();
@@ -147,7 +180,7 @@ class FinancialService
             // Armazenar referência do serviço para usar na closure
             $service = $this;
 
-            return DB::transaction(function () use ($service, $payment, $category, $student, $guardian) {
+            return DB::transaction(function () use ($service, $payment, $category, $student, $guardian, $invoice) {
                 // Verificar duplicatas dentro da transação para prevenir race condition
                 $existingTransaction = FinancialTransaction::where('source_type', EnrollmentPayment::class)
                     ->where('source_id', $payment->id)
@@ -161,25 +194,69 @@ class FinancialService
                     ]);
                     return $existingTransaction;
                 }
-                $transaction = FinancialTransaction::create([
-                    'transaction_number' => $service->generateTransactionNumber('REC'),
-                    'type' => 'receita',
-                    'category_id' => $category->id,
-                    'source_type' => EnrollmentPayment::class,
-                    'source_id' => $payment->id,
-                    'description' => "{$payment->description}" . ($student ? " - {$student->name}" : ''),
-                    'amount' => $payment->amount,
-                    'transaction_date' => $payment->payment_date,
-                    'payment_method' => $payment->method,
-                    'reference' => $payment->reference,
-                    'notes' => $payment->notes,
-                    'status' => 'confirmed',
-                    // Usar payment_date para manter integridade temporal (EnrollmentPayment não tem confirmation_date)
-                    'confirmed_at' => $payment->payment_date ?? now(),
-                    'confirmed_by' => auth()->id(),
-                    'payer_name' => $guardian?->name ?? null,
-                    'payer_document' => $guardian?->cpf ?? null,
-                ]);
+                // Definir descrição com:
+                // - Nome completo do serviço (da fatura, se disponível)
+                // - Nome do aluno
+                $serviceDescription = $invoice?->description ?: $payment->description;
+                $studentName = $student?->name;
+                $description = $serviceDescription ?: 'Pagamento de matrícula';
+                if ($studentName) {
+                    $description .= " - {$studentName}";
+                }
+
+                // Tentar criar transação com número único, re-gerando em caso de colisão de UNIQUE
+                $maxAttempts = 3;
+                $attempt = 0;
+                $transaction = null;
+
+                $transactionNumber = null;
+                while ($attempt < $maxAttempts && !$transaction) {
+                    $attempt++;
+                    if ($attempt === 1 || !$transactionNumber) {
+                        $transactionNumber = $service->generateTransactionNumber('REC');
+                    } else {
+                        $transactionNumber = $transactionNumber . '-' . random_int(1000, 9999);
+                    }
+
+                    try {
+                        $transaction = FinancialTransaction::create([
+                            'transaction_number' => $transactionNumber,
+                            'type' => 'receita',
+                            'category_id' => $category->id,
+                            'source_type' => EnrollmentPayment::class,
+                            'source_id' => $payment->id,
+                            'description' => $description,
+                            'amount' => $payment->amount,
+                            'transaction_date' => $payment->payment_date,
+                            'payment_method' => $payment->method,
+                            'reference' => $payment->reference,
+                            'notes' => $payment->notes,
+                            'status' => 'confirmed',
+                            // Usar payment_date para manter integridade temporal (EnrollmentPayment não tem confirmation_date)
+                            'confirmed_at' => $payment->payment_date ?? now(),
+                            'confirmed_by' => auth()->id(),
+                            'payer_name' => $guardian?->name ?? null,
+                            'payer_document' => $guardian?->cpf ?? null,
+                        ]);
+                    } catch (\Illuminate\Database\QueryException $e) {
+                        if (str_contains($e->getMessage(), 'Duplicate entry')
+                            && str_contains($e->getMessage(), 'financial_transactions_transaction_number_unique')) {
+                            Log::warning('Colisão de número de transação ao registrar receita de matrícula. Gerando novo número.', [
+                                'attempt' => $attempt,
+                                'payment_id' => $payment->id,
+                                'transaction_number' => $transactionNumber,
+                            ]);
+                            $transaction = null;
+                            continue;
+                        }
+
+                        throw $e;
+                    }
+                }
+
+                if (!$transaction) {
+                    throw new \Exception('Não foi possível gerar um número único de transação para a receita de matrícula.');
+                }
 
                 Log::info("Receita de matrícula/serviço registrada", [
                     'transaction_id' => $transaction->id,
@@ -283,8 +360,11 @@ class FinancialService
                 throw new \Exception('Apenas transações canceladas podem ser excluídas.');
             }
 
-            // Verificar se é uma transação rastreada (não pode ser excluída)
-            if ($transaction->source_type) {
+            // Verificar se é uma transação rastreada
+            // Regra geral: transações rastreadas não podem ser excluídas manualmente,
+            // EXCETO receitas geradas a partir de pagamentos de mensalidade,
+            // que podem ser excluídas desde que estejam canceladas.
+            if ($transaction->source_type && $transaction->source_type !== MonthlyFeePayment::class) {
                 throw new \Exception('Transações rastreadas automaticamente não podem ser excluídas.');
             }
 

@@ -133,6 +133,7 @@
               <option value="pix">PIX</option>
               <option value="credit_card">Cartão de Crédito</option>
               <option value="debit_card">Cartão de Débito</option>
+              <option value="boleto">Boleto</option>
               <option value="cash">Dinheiro</option>
               <option value="bank_transfer">Transferência Bancária</option>
               <option value="check">Cheque</option>
