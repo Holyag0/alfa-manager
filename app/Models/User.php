@@ -67,6 +67,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Relacionamento com atividades (logs)
+     */
+    public function activities()
+    {
+        return $this->hasMany(\Spatie\Activitylog\Models\Activity::class, 'causer_id');
+    }
      
      
 }

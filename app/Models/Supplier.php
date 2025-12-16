@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\LogsActivity;
 
 class Supplier extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'is_pagante',
@@ -168,5 +169,13 @@ class Supplier extends Model
               ->orWhere('document', 'like', '%' . $search . '%')
               ->orWhere('email', 'like', '%' . $search . '%');
         });
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return $this->name;
     }
 }

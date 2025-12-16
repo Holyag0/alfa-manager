@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Traits\LogsActivity;
 
 class PayrollEntry extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'payroll_id',
@@ -126,5 +127,17 @@ class PayrollEntry extends Model
             // Recalcular totais da folha
             $entry->payroll->recalculateTotals();
         });
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        $employee = $this->employee;
+        if ($employee) {
+            return "Lançamento de {$employee->name} - Folha {$this->payroll->reference}";
+        }
+        return "Lançamento #{$this->id}";
     }
 }

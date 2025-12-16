@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Package extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -90,5 +91,13 @@ class Package extends Model
             return round($discount, 2);
         }
         return 0;
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return $this->name;
     }
 }

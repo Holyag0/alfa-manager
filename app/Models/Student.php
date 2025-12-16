@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Student extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'students';
 
@@ -70,5 +71,13 @@ class Student extends Model
     public function hasSiblings(): bool
     {
         return $this->getSiblings()->count() > 0;
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return $this->name;
     }
 } 

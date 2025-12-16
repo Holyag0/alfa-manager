@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\LogsActivity;
 
 class MonthlyFee extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity;
 
     protected $fillable = [
         'enrollment_id',
@@ -146,6 +147,19 @@ class MonthlyFee extends Model
     public function isSuspended(): bool
     {
         return $this->status === 'suspended';
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        $enrollment = $this->enrollment;
+        if ($enrollment && $enrollment->student) {
+            $studentName = $enrollment->student->name ?? 'Aluno #' . $enrollment->student_id;
+            return "Contrato de {$studentName} - {$this->academic_year}";
+        }
+        return "Contrato #{$this->contract_number}";
     }
 }
 

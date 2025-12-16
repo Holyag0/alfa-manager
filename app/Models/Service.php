@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Package;
+use App\Traits\LogsActivity;
 
 class Service extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -223,5 +224,13 @@ class Service extends Model
             ->first();
 
         return $classroomService ? $classroomService->full_description : $this->name;
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return $this->name;
     }
 }

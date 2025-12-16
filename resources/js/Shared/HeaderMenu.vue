@@ -161,7 +161,10 @@
                     Folha de Pagamento
                 </Link>
                 
-                <a href="#" class="text-sm/6 font-semibold text-gray-100">Company</a>
+                <Link :href="route('auditoria.users')" class="text-sm/6 font-semibold text-gray-100
+                    transition ease-in-out delay-150 hover:text-sky-800 hover:translate-y-1 hover:scale-110">
+                    Auditoria
+                </Link>
             </PopoverGroup>
             <div class="lg:flex lg:flex-1 lg:justify-end">
                 <Dropdown align="right" width="48">
@@ -294,6 +297,9 @@
             </Link>
             <Link :href="route('payroll.index')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
                 Folha de Pagamento
+            </Link>
+            <Link :href="route('auditoria.users')" class="block rounded-md px-3 py-2 text-base font-medium text-gray-300 hover:bg-gray-700 hover:text-white">
+                Auditoria
             </Link>
         </div>
         <div class="border-t border-gray-700 pb-3 pt-4">

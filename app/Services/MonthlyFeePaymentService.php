@@ -8,6 +8,7 @@ use App\Models\Guardian;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Helpers\ActivityHelper;
 
 class MonthlyFeePaymentService
 {
@@ -91,6 +92,19 @@ class MonthlyFeePaymentService
                     'installment_id' => $installment->id,
                     'amount' => $payment->amount,
                 ]);
+
+                // LOG DA AÇÃO
+                $studentName = $installment->monthlyFee->enrollment->student->name ?? 'Aluno #' . $installment->monthlyFee->enrollment->student_id;
+                ActivityHelper::logFinancial(
+                    "registrou pagamento de mensalidade para {$studentName}",
+                    $payment,
+                    $payment->amount,
+                    [
+                        'reference_month' => $installment->reference_month,
+                        'payment_method' => $payment->method_label,
+                        'installment_number' => $installment->installment_number,
+                    ]
+                );
 
                 return $payment;
             }); // Fim da transação - pagamento salvo
@@ -219,6 +233,16 @@ class MonthlyFeePaymentService
                     'installment_id' => $installment->id,
                 ]);
 
+                // LOG DA AÇÃO
+                ActivityHelper::logPayment(
+                    "confirmou pagamento de mensalidade",
+                    $payment,
+                    [
+                        'confirmation_date' => now(),
+                        'installment_id' => $payment->monthly_fee_installment_id,
+                    ]
+                );
+
                 $wasNewlyConfirmed = true; // Marca que foi recém confirmado
                 return true;
             });
@@ -293,6 +317,16 @@ class MonthlyFeePaymentService
                     'installment_id' => $installment->id,
                     'reason' => $reason,
                 ]);
+
+                // LOG DA AÇÃO
+                ActivityHelper::logPayment(
+                    "estornou pagamento de mensalidade",
+                    $payment,
+                    [
+                        'reason' => $reason,
+                        'refund_date' => now(),
+                    ]
+                );
 
                 return true;
             });

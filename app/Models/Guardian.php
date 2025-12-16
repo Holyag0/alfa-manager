@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Guardian extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'guardians';
 
@@ -108,5 +109,13 @@ class Guardian extends Model
     public function hasActiveSiblings()
     {
         return $this->getActiveSiblings()->count() > 0;
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return $this->name;
     }
 } 

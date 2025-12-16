@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class EnrollmentInvoice extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $fillable = [
         'enrollment_id',
@@ -181,5 +182,13 @@ class EnrollmentInvoice extends Model
         $this->enrollment->recalculateFinancials();
 
         return $this;
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        return "Fatura #{$this->invoice_number}";
     }
 }

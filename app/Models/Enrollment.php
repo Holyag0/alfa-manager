@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogsActivity;
 
 class Enrollment extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'enrollments';
 
@@ -243,5 +244,15 @@ class Enrollment extends Model
     public function getAllClassrooms()
     {
         return $this->classroomHistory()->with('classroom')->get();
+    }
+
+    /**
+     * Customizar identificador para logs
+     */
+    protected function getIdentifier(): string
+    {
+        $studentName = $this->student->name ?? 'Aluno #' . $this->student_id;
+        $classroomName = $this->classroom->name ?? 'Turma #' . $this->classroom_id;
+        return "{$studentName} - {$classroomName} ({$this->academic_year})";
     }
 } 

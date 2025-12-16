@@ -247,4 +247,13 @@ Route::middleware([
         Route::post('/{id}/close', [App\Http\Controllers\Payroll\PayrollController::class, 'close'])->name('close');
         Route::post('/{id}/reopen', [App\Http\Controllers\Payroll\PayrollController::class, 'reopen'])->name('reopen');
     });
+
+    // Rotas de Auditoria
+    Route::prefix('auditoria')->name('auditoria.')->group(function () {
+        Route::get('/usuarios', [App\Http\Controllers\ActivityLogController::class, 'users'])->name('users');
+        Route::get('/usuarios/{user}/atividades', [App\Http\Controllers\ActivityLogController::class, 'userActivities'])->name('user.activities');
+        Route::get('/atividades', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('index');
+        Route::get('/estatisticas', [App\Http\Controllers\ActivityLogController::class, 'stats'])->name('stats');
+        Route::get('/atividades/{activity}', [App\Http\Controllers\ActivityLogController::class, 'show'])->name('show');
+    });
 });
