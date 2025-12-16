@@ -127,7 +127,7 @@
                                                 </div>
                                                 <!-- Propriedades (se houver) -->
                                                 <div
-                                                    v-if="Object.keys(activity.properties).length > 0"
+                                                    v-if="activity.properties && Object.keys(activity.properties).length > 0"
                                                     class="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded"
                                                 >
                                                     <div
@@ -136,7 +136,7 @@
                                                         class="flex gap-2"
                                                     >
                                                         <span class="font-medium">{{ key }}:</span>
-                                                        <span>{{ value }}</span>
+                                                        <span>{{ value !== null && value !== undefined ? value : '-' }}</span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -211,6 +211,10 @@ const loadActivities = async (page = 1) => {
         }
     } catch (error) {
         console.error('Erro ao carregar atividades:', error);
+        // Mostrar mensagem de erro ao usuário
+        if (error.response?.status === 500) {
+            alert('Erro ao carregar atividades. Tente novamente.');
+        }
     } finally {
         loading.value = false;
     }

@@ -213,8 +213,15 @@ class MonthlyFeePayment extends Model
     {
         $installment = $this->installment;
         if ($installment && $installment->monthlyFee && $installment->monthlyFee->enrollment) {
-            $studentName = $installment->monthlyFee->enrollment->student->name ?? 'Aluno #' . $installment->monthlyFee->enrollment->student_id;
-            return "Pagamento de {$studentName} - Parcela {$installment->installment_number}";
+            $enrollment = $installment->monthlyFee->enrollment;
+            $studentName = $enrollment->student->name ?? 'Aluno #' . $enrollment->student_id;
+            $classroomName = $enrollment->classroom->name ?? '';
+            
+            $identifier = "Pagamento de {$studentName} - Parcela {$installment->installment_number}";
+            if ($classroomName) {
+                $identifier .= " - {$classroomName}";
+            }
+            return $identifier;
         }
         return "Pagamento #{$this->id}";
     }

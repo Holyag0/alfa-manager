@@ -94,15 +94,27 @@ class MonthlyFeePaymentService
                 ]);
 
                 // LOG DA AÇÃO
-                $studentName = $installment->monthlyFee->enrollment->student->name ?? 'Aluno #' . $installment->monthlyFee->enrollment->student_id;
+                $enrollment = $installment->monthlyFee->enrollment;
+                $studentName = $enrollment->student->name ?? 'Aluno #' . $enrollment->student_id;
+                $classroomName = $enrollment->classroom->name ?? '';
+                
+                // Montar descrição com turma
+                $description = "registrou pagamento de mensalidade para {$studentName}";
+                if ($classroomName) {
+                    $description .= " - Parcela {$installment->installment_number} - {$classroomName}";
+                } else {
+                    $description .= " - Parcela {$installment->installment_number}";
+                }
+                
                 ActivityHelper::logFinancial(
-                    "registrou pagamento de mensalidade para {$studentName}",
+                    $description,
                     $payment,
                     $payment->amount,
                     [
                         'reference_month' => $installment->reference_month,
                         'payment_method' => $payment->method_label,
                         'installment_number' => $installment->installment_number,
+                        'classroom' => $classroomName,
                     ]
                 );
 
