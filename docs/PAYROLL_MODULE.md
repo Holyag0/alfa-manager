@@ -1232,3 +1232,5 @@ O design seguirá o padrão existente no sistema:
 - `resources/js/Pages/Cadastros/Employees/` - Padrão de componentes Vue
 
 
+
+
