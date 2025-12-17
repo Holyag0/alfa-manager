@@ -1,0 +1,62 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+docker/
+.dockerignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+storage/logs/*
+
+# Dependencies
+node_modules/
+vendor/
+
+# Build artifacts
+public/hot
+public/storage
+public/build
+public/mix-manifest.json
+
+# Environment
+.env
+.env.*
+!.env.production.example
+
+# Tests
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Documentation
+docs/
+*.md
+!README.md
+!README-PRODUCTION.md
+
+# Scripts
+*.sh
+Makefile
+
+# Temporary files
+*.tmp
+*.cache
+.cache/
+
