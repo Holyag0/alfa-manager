@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# PHP-FPM Healthcheck Script
+# Verifica se o PHP-FPM está respondendo corretamente
+
+# Método 1: Usar cgi-fcgi se disponível
+if command -v cgi-fcgi >/dev/null 2>&1; then
+    SCRIPT_NAME=/fpm-ping
+    SCRIPT_FILENAME=/fpm-ping
+    REQUEST_METHOD=GET
+    
+    export SCRIPT_NAME
+    export SCRIPT_FILENAME
+    export REQUEST_METHOD
+    
+    OUTPUT=$(cgi-fcgi -bind -connect 127.0.0.1:9000 2>&1)
+    
+    if echo "$OUTPUT" | grep -q "pong"; then
+        exit 0
+    fi
+fi
+
+# Método 2: Verificar se o processo está rodando
+if pgrep -f "php-fpm.*master" > /dev/null; then
+    # Método 3: Verificar se a porta está aberta
+    if command -v nc >/dev/null 2>&1; then
+        if nc -z localhost 9000 2>/dev/null; then
+            exit 0
+        fi
+    elif command -v ss >/dev/null 2>&1; then
+        if ss -ln | grep -q ":9000"; then
+            exit 0
+        fi
+    fi
+fi
+
+exit 1
