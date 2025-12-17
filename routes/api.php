@@ -56,10 +56,16 @@ Route::prefix('classrooms/{classroom}')->group(function () {
 });
 
 // Rota para obter informações detalhadas das turmas
-Route::get('classrooms-detailed', function () {
-    $classrooms = \App\Models\Classroom::withCount(['enrollments as total_enrollments'])
-        ->active()
-        ->get()
+Route::get('classrooms-detailed', function (\Illuminate\Http\Request $request) {
+    $query = \App\Models\Classroom::withCount(['enrollments as total_enrollments'])
+        ->active();
+    
+    // Filtrar por ano letivo se fornecido (usando o campo year da turma)
+    if ($request->has('academic_year') && !empty($request->academic_year)) {
+        $query->where('year', $request->academic_year);
+    }
+    
+    $classrooms = $query->get()
         ->map(function ($classroom) {
             return [
                 'id' => $classroom->id,
@@ -77,6 +83,32 @@ Route::get('classrooms-detailed', function () {
         });
     
     return response()->json($classrooms);
+});
+
+// Endpoint para obter anos letivos disponíveis (baseado no campo year das turmas)
+Route::get('classrooms/academic-years', function () {
+    $years = \App\Models\Classroom::select('year')
+        ->whereNotNull('year')
+        ->distinct()
+        ->orderBy('year', 'desc')
+        ->pluck('year')
+        ->map(function ($year) {
+            // Converter para string para manter consistência
+            return (string)$year;
+        })
+        ->toArray();
+    
+    // Adicionar anos recentes (últimos 5 anos e próximos 2 anos) para facilitar seleção
+    $currentYear = date('Y');
+    for ($i = $currentYear - 5; $i <= $currentYear + 2; $i++) {
+        if (!in_array((string)$i, $years)) {
+            $years[] = (string)$i;
+        }
+    }
+    
+    rsort($years);
+    
+    return response()->json($years);
 });
 
 // Rotas API para Guardian (usadas pelo frontend)

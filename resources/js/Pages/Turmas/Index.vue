@@ -75,7 +75,7 @@
         >
           <div v-show="isExpanded" class="overflow-hidden">
             <div class="p-6">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <!-- Filtro por Nome da Turma -->
           <div>
             <label for="filter-name" class="block text-sm font-medium text-gray-700 mb-1">
@@ -120,6 +120,23 @@
               <option value="">Todas as turmas</option>
               <option value="active">Ativa</option>
               <option value="inactive">Inativa</option>
+            </select>
+          </div>
+
+          <!-- Filtro por Ano Letivo -->
+          <div>
+            <label for="filter-academic-year" class="block text-sm font-medium text-gray-700 mb-1">
+              Ano Letivo
+            </label>
+            <select
+              id="filter-academic-year"
+              v-model="filters.academic_year"
+              class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            >
+              <option value="">Todos os anos</option>
+              <option v-for="year in availableAcademicYears" :key="year" :value="year">
+                {{ year }}
+              </option>
             </select>
           </div>
               </div>
@@ -287,7 +304,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/vue'
 import { EllipsisHorizontalIcon } from '@heroicons/vue/20/solid'
 import { router } from '@inertiajs/vue3'
@@ -304,8 +321,12 @@ const isExpanded = ref(false)
 const filters = ref({
   name: '',
   occupation: '',
-  status: ''
+  status: '',
+  academic_year: ''
 })
+
+// Anos letivos disponíveis
+const availableAcademicYears = ref([])
 
 // Computed para turmas filtradas
 const filteredClassrooms = computed(() => {
@@ -338,9 +359,39 @@ const filteredClassrooms = computed(() => {
       if (filters.value.status === 'inactive' && isActive) return false
     }
 
+    // Nota: O filtro por ano letivo é feito no backend para melhor performance
+    // Se necessário, podemos adicionar uma verificação adicional aqui
+
     return true
   })
 })
+
+// Carregar anos letivos disponíveis
+const loadAcademicYears = async () => {
+  try {
+    const response = await axios.get('/api/classrooms/academic-years')
+    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      availableAcademicYears.value = response.data
+    } else {
+      // Fallback: se não houver anos na API, usar anos recentes
+      const currentYear = new Date().getFullYear()
+      const years = []
+      for (let i = currentYear - 5; i <= currentYear + 2; i++) {
+        years.push(i.toString())
+      }
+      availableAcademicYears.value = years.sort((a, b) => parseInt(b) - parseInt(a))
+    }
+  } catch (err) {
+    console.error('Erro ao carregar anos letivos:', err)
+    // Fallback em caso de erro
+    const currentYear = new Date().getFullYear()
+    const years = []
+    for (let i = currentYear - 5; i <= currentYear + 2; i++) {
+      years.push(i.toString())
+    }
+    availableAcademicYears.value = years.sort((a, b) => parseInt(b) - parseInt(a))
+  }
+}
 
 // Carregar dados das turmas
 const loadClassrooms = async () => {
@@ -348,7 +399,12 @@ const loadClassrooms = async () => {
   error.value = null
   
   try {
-    const response = await axios.get('/api/classrooms-detailed')
+    const params = {}
+    if (filters.value.academic_year) {
+      params.academic_year = filters.value.academic_year
+    }
+    
+    const response = await axios.get('/api/classrooms-detailed', { params })
     classrooms.value = response.data
   } catch (err) {
     console.error('Erro ao carregar turmas:', err)
@@ -396,12 +452,20 @@ const clearFilters = () => {
   filters.value = {
     name: '',
     occupation: '',
-    status: ''
+    status: '',
+    academic_year: ''
   }
+  loadClassrooms()
 }
+
+// Watch para recarregar turmas quando o filtro de ano letivo mudar
+watch(() => filters.value.academic_year, () => {
+  loadClassrooms()
+})
 
 // Carregar dados ao montar o componente
 onMounted(() => {
+  loadAcademicYears()
   loadClassrooms()
 })
 </script>
