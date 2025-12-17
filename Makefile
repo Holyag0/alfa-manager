@@ -48,16 +48,16 @@ status: ## Status dos containers
 	$(COMPOSE) ps
 
 deploy: ## Deploy completo
-	@./deploy.sh
+	@./scripts/deploy.sh
 
 backup: ## Criar backup do banco
-	@./backup.sh
+	@./scripts/backup.sh
 
 restore: ## Restaurar backup (uso: make restore FILE=backup.sql.gz)
-	@./restore.sh $(FILE)
+	@./scripts/restore.sh $(FILE)
 
 monitor: ## Monitorar containers
-	@./monitor.sh
+	@./scripts/monitor.sh
 
 clean: ## Limpar containers, volumes e imagens
 	@echo "$(YELLOW)⚠️  ATENÇÃO: Isso irá remover TODOS os containers, volumes e imagens!$(NC)"

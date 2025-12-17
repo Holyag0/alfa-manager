@@ -5,6 +5,11 @@
 
 set -e
 
+# Obter diretório do script e mudar para raiz do projeto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
+
 # Configurações
 BACKUP_DIR="./backups"
 DATE=$(date +%Y%m%d_%H%M%S)
@@ -32,8 +37,8 @@ docker exec "$CONTAINER" mysqldump \
     "${DB_DATABASE}" \
     | gzip > "$BACKUP_FILE"
 
-if [ -f $BACKUP_FILE ]; then
-    SIZE=$(du -h $BACKUP_FILE | cut -f1)
+if [ -f "$BACKUP_FILE" ]; then
+    SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
     echo "✅ Backup criado com sucesso!"
     echo "📊 Tamanho: $SIZE"
     
@@ -47,3 +52,4 @@ else
     echo "❌ Erro ao criar backup!"
     exit 1
 fi
+

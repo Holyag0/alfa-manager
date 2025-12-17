@@ -5,6 +5,11 @@
 
 set -e
 
+# Obter diretório do script e mudar para raiz do projeto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
+
 echo "🚀 Iniciando deploy da aplicação..."
 
 # Cores para output
@@ -65,3 +70,4 @@ docker-compose -f docker-compose.prod.yml ps
 echo ""
 echo -e "${GREEN}🎉 Aplicação rodando em: http://localhost${NC}"
 echo -e "${YELLOW}📝 Para ver logs: docker-compose -f docker-compose.prod.yml logs -f${NC}"
+

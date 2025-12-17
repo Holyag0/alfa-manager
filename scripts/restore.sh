@@ -5,6 +5,11 @@
 
 set -e
 
+# Obter diretório do script e mudar para raiz do projeto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
+
 BACKUP_DIR="./backups"
 CONTAINER="alfa-mysql"
 
@@ -15,7 +20,7 @@ fi
 
 # Verificar se foi passado um arquivo de backup
 if [ -z "$1" ]; then
-    echo "❌ Uso: ./restore.sh [arquivo_backup.sql.gz]"
+    echo "❌ Uso: ./scripts/restore.sh [arquivo_backup.sql.gz]"
     echo ""
     echo "📋 Backups disponíveis:"
     ls -lh "$BACKUP_DIR"/backup_*.sql.gz 2>/dev/null || echo "Nenhum backup encontrado"
@@ -60,3 +65,4 @@ else
     echo "❌ Erro ao restaurar backup!"
     exit 1
 fi
+

@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Obter diretório do script e mudar para raiz do projeto
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$PROJECT_ROOT" || exit 1
+
 # Cores
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
